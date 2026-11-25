@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.24u polish ---- */
+/* ---- v2026.11.25a polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.24u ---- */
+/* ---- v2026.11.25a ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -578,6 +578,11 @@ const PROVS = [
 // line: T2125 line number. gf = GST claimable fraction. df = deductible fraction.
 // CRA says "Don't include GST/HST in your expenses; claim an ITC instead."
 // So deductible = subtotal × df  (NOT subtotal+GST)
+// Saved/synced categories can carry old CRA values; force the locked fields from the defaults
+const fixCats = list => (Array.isArray(list)?list:[]).map(c => {
+  const d = DEFAULT_CATS.find(x=>x.id===c.id);
+  return d ? {...c, line:d.line, gf:d.gf, df:d.df, cra:d.cra} : c;
+});
 const DEFAULT_CATS = [
   {id:'advertising',   label:'Advertising',                       line:'8521', icon:'📣', color:'#4b8ef5', gf:1, df:1, cra:'Line 8521 — 100% deductible. Flyers, digital ads, marketing materials.'},
   {id:'meals',         label:'Meals & Entertainment',             line:'8523', icon:'🍽️', color:'#f0a033', gf:.5, df:.5, cra:'Line 8523 — 50% deductible, 50% GST claimable. Document who/why.'},
@@ -599,9 +604,9 @@ const DEFAULT_CATS = [
   {id:'gas',           label:'Motor Vehicle — Fuel & Gas',        line:'9281', icon:'🚗', color:'#2ecc8a', gf:1, df:1, cra:'Line 9281 — Vehicle fuel. Subtotal deductible. GST claimed as ITC. Tip NOT deductible.'},
   {id:'delivery',      label:'Delivery, Freight & Courier',       line:'9275', icon:'📬', color:'#f0a033', gf:1, df:1, cra:'Line 9275 — 100% deductible. Shipping, courier, freight.'},
   {id:'vehicle',       label:'Motor Vehicle (other)',             line:'9281', icon:'🛻', color:'#36c9c9', gf:1, df:1, cra:'Line 9281 — Parking, repairs, insurance for business vehicle.'},
-  {id:'cca',           label:'Capital Cost Allowance (CCA)',      line:'9936', icon:'💻', color:'#9b72f5', gf:0, df:1, cra:'Line 9936 — Depreciation on business assets. See CRA CCA classes.'},
+  {id:'cca',           label:'Capital Cost Allowance (CCA)',      line:'9936', icon:'💻', color:'#9b72f5', gf:1, df:1, cra:'Line 9936 — Depreciation on business assets. GST/HST on the purchase is claimed as an ITC; the CCA deduction itself follows your class rate.'},
   {id:'other',         label:'Other Expenses',                    line:'9270', icon:'📋', color:'#8b93b0', gf:1, df:1, cra:'Line 9270 — Any other ordinary/necessary business expense. Document clearly.'},
-  {id:'homeoffice',    label:'Home Office Expenses',              line:'9270', icon:'🏠', color:'#4b8ef5', gf:1, df:1, cra:'Line 9270 / T777 — % sq footage × heat/electricity/rent. T2200 may be needed.'},
+  {id:'homeoffice',    label:'Home Office Expenses',              line:'9945', icon:'🏠', color:'#4b8ef5', gf:1, df:1, cra:'Line 9945 — Business-use-of-home expenses: % sq footage × heat/electricity/rent. Keep it separate from line 9270.'},
   {id:'software',      label:'Software & Subscriptions',         line:'8810', icon:'🖥️', color:'#f0a033', gf:1, df:1, cra:'Line 8810 (Office) — 100% deductible if for business use.'},
 ];
 
@@ -772,7 +777,7 @@ function App() {
   useEffect(()=>{ try { const mq = window.matchMedia('(prefers-color-scheme: dark)'); const h = e=>setSysDark(e.matches); if (mq.addEventListener) mq.addEventListener('change',h); else mq.addListener(h); return ()=>{ if (mq.removeEventListener) mq.removeEventListener('change',h); else mq.removeListener(h); }; } catch {} },[]);
   const effTheme = autoTheme ? {...(sysDark?DARK:LIGHT), fontId: theme.fontId} : theme;
   const [logo,     setLogo]     = useState(()=>fixLogo(lsLoad('logo', DEFAULT_LOGO)));
-  const [cats,     setCats]     = useState(()=>lsLoad('cats',  DEFAULT_CATS));
+  const [cats,     setCats]     = useState(()=>fixCats(lsLoad('cats',  DEFAULT_CATS)));
   const [cards,    setCards]    = useState(()=>lsLoad('cards', []));
   window.kbwCards = cards;
   const [clients,  setClients]  = useState(()=>lsLoad('clients', []));
@@ -1331,7 +1336,7 @@ function App() {
       if (st && typeof st === 'object' && !settingsDirty.current) {
         if (st.theme && typeof st.theme === 'object') setTheme(fixTheme(st.theme));
         if (st.logo && typeof st.logo === 'object') setLogo(fixLogo(st.logo));
-        if (Array.isArray(st.cats) && st.cats.length) setCats(st.cats);
+        if (Array.isArray(st.cats) && st.cats.length) setCats(fixCats(st.cats));
         if (typeof st.province === 'string' && st.province) setProvince(st.province);
         if (Array.isArray(st.statCards) && st.statCards.length) setStatCards(st.statCards);
         if (Array.isArray(st.cards)) { setCards(st.cards); lsSave('cards', st.cards); }
@@ -4082,7 +4087,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24u</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25a</div>
       </div>
     </div>
   );
