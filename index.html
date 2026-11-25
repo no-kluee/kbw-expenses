@@ -344,6 +344,45 @@ select.xbtn{width:auto;padding:8px 30px 8px 12px}
   .xfilters .xsep{display:none}
   .xtools .xsep,.xtools>div{display:none}
 }
+
+/* ── POLISH PASS ── */
+.etbl{overflow:hidden;overflow:clip}
+.th.sortable{cursor:pointer;user-select:none;transition:opacity .12s}
+.th.sortable:hover,.th.sortable.on{opacity:.9}
+.mhead{position:sticky;top:var(--stk,0px);z-index:4;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:8px 17px;font-size:12px;font-weight:600;letter-spacing:.2px;backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:.5px solid rgba(128,128,128,.2)}
+.mhead span:last-child{font-weight:500;opacity:.6}
+.selbox{position:absolute;top:-5px;left:-5px;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(128,128,128,.7);background:rgba(28,28,30,.85);display:flex;align-items:center;justify-content:center;z-index:2;color:#fff}
+.selbox.on{background:#0a84ff;border-color:#0a84ff}
+.selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:900;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;max-width:calc(100vw - 24px);padding:10px 12px;border-radius:16px;border:1px solid rgba(128,128,128,.25);box-shadow:0 10px 36px rgba(0,0,0,.4);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.selbar select,.selbar button{font-size:13px;padding:7px 11px;border-radius:9px;border:1px solid rgba(128,128,128,.3);background:transparent;color:inherit;font-family:inherit}
+.chipw{display:flex;margin-bottom:10px}
+.chipw button{display:inline-flex;align-items:center;gap:7px;font-size:13px;padding:7px 12px;border-radius:999px;background:transparent;font-family:inherit}
+.kbdhint{display:none}
+@media(min-width:901px){.kbdhint{display:inline-block;position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.4;border:1px solid currentColor;border-radius:5px;padding:0 6px;line-height:17px;pointer-events:none}}
+.empty .eb{margin-top:14px;display:inline-flex;gap:7px;align-items:center;padding:9px 16px;border-radius:999px;border:1px solid rgba(128,128,128,.35);background:transparent;color:inherit;font-size:14px;opacity:1;font-family:inherit}
+.toastwrap{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:9997;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;max-width:calc(100vw - 24px)}
+.toast{pointer-events:auto;background:#2c2c2e;color:#fff;padding:10px 14px;border-radius:14px;font-size:14px;display:flex;gap:14px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.45);animation:kbwin .18s ease-out}
+.toast button{color:#0a84ff;font-weight:600;background:none;border:none;font-size:14px;padding:0;font-family:inherit}
+.toast.pill{padding:6px 12px;font-size:12px;gap:6px;border-radius:999px;color:#30d158}
+@keyframes kbwin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.rfs-nav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.16);border:none;display:flex;align-items:center;justify-content:center;z-index:5;cursor:pointer}
+.rfs-nav.l{left:16px}.rfs-nav.r{right:16px}
+.rfs-cnt{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);color:rgba(255,255,255,.75);font-size:13px;background:rgba(0,0,0,.45);padding:4px 12px;border-radius:999px;pointer-events:none}
+.fab2{display:none}
+@media(max-width:480px){
+  .fab2{display:flex;position:fixed;right:21px;bottom:calc(150px + env(safe-area-inset-bottom));width:44px;height:44px;border-radius:50%;background:#2c2c2e;color:#fff;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.35);z-index:250;border:none}
+  body[data-mode=light] .fab2{background:#fff;color:#1d1d1f}
+  .toastwrap{bottom:calc(84px + env(safe-area-inset-bottom))}
+  .selbar{bottom:calc(76px + env(safe-area-inset-bottom));left:8px;right:8px;transform:none;max-width:none}
+  .mhead{padding:7px 14px}
+  .rfs-nav{width:38px;height:38px}.rfs-nav.l{left:8px}.rfs-nav.r{right:8px}
+  .selbar select{flex:1 1 42%;min-width:0}
+  .selbar{gap:6px;padding:8px 10px}
+  .erow{position:relative}
+  .erow .rac{position:absolute;top:10px;right:12px;gap:6px}
+  .erow .rac .bsm{padding:5px 11px;font-size:13px}
+  .erow .vname{padding-right:96px}
+}
 </style>
 </head>
 <body>
@@ -571,6 +610,10 @@ function App() {
   const [syncMsg,  setSyncMsg]  = useState('');
 
   const [theme,    setTheme]    = useState(()=>fixTheme(lsLoad('theme', DARK)));
+  const [autoTheme,setAutoTheme] = useState(()=>!!lsLoad('themeAuto', false));
+  const [sysDark,  setSysDark]  = useState(()=>{ try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch { return true; } });
+  useEffect(()=>{ try { const mq = window.matchMedia('(prefers-color-scheme: dark)'); const h = e=>setSysDark(e.matches); if (mq.addEventListener) mq.addEventListener('change',h); else mq.addListener(h); return ()=>{ if (mq.removeEventListener) mq.removeEventListener('change',h); else mq.removeListener(h); }; } catch {} },[]);
+  const effTheme = autoTheme ? {...(sysDark?DARK:LIGHT), fontId: theme.fontId} : theme;
   const [logo,     setLogo]     = useState(()=>fixLogo(lsLoad('logo', DEFAULT_LOGO)));
   const [cats,     setCats]     = useState(()=>lsLoad('cats',  DEFAULT_CATS));
   const [cards,    setCards]    = useState(()=>lsLoad('cards', []));
@@ -666,6 +709,12 @@ function App() {
   const [gStatus,   setGStatus]  = useState('');
   const [medical,   setMedical]  = useState(()=>lsLoad('medical', []));
   const [fullImg,  setFullImg]  = useState(null);
+  const [zoomList, setZoomList] = useState(null);
+  const [startFile,setStartFile]= useState(null);
+  const [undo,     setUndo]     = useState(null);
+  const [syncFlash, setSyncFlash] = useState(false);
+  const camRef = useRef(null); const undoRef = useRef(null); const prevSync = useRef('idle');
+  const zoomTo = (r,l)=>{ setFullImg(r); setZoomList(l||null); };
   const [saveFlash,setSaveFlash]= useState(false);
 
   // ── Google Drive helpers ──────────────────────────────────────────────────
@@ -1031,7 +1080,8 @@ function App() {
   }
 
   // Auto-save every time key state changes
-  useEffect(()=>{ lsSave('theme',    theme);     applyTheme(theme); },[theme]);
+  useEffect(()=>{ lsSave('theme', theme); },[theme]);
+  useEffect(()=>{ applyTheme(effTheme); },[theme, autoTheme, sysDark]);
   useEffect(()=>{ lsSave('logo',     logo);      },[logo]);
   useEffect(()=>{ lsSave('cats',     cats);      },[cats]);
   useEffect(()=>{ lsSave('province', province);  },[province]);
@@ -1222,7 +1272,7 @@ function App() {
 
   function flash(){ setSaveFlash(true); setTimeout(()=>setSaveFlash(false),1400); }
 
-  const T = theme;
+  const T = effTheme;
   const getCat = id => cats.find(c=>c.id===id)||cats[cats.length-1];
 
   const filtered = useMemo(()=>{
@@ -1264,7 +1314,7 @@ function App() {
     return [...s].sort().reverse();
   },[expenses]);
 
-  function closeModal(){ setModal(null);setEditId(null);setDetailExp(null);setEditCat(null);setEditStat(null); }
+  function closeModal(){ setStartFile(null);setModal(null);setEditId(null);setDetailExp(null);setEditCat(null);setEditStat(null); }
 
   function dl(filename, mime, content) {
     const blob = new Blob([content], {type: mime});
@@ -1406,6 +1456,43 @@ function App() {
       alert(`✅ Removed ${removed} duplicate${removed!==1?'s':''}. ${deduped.length} expenses remain.`);
     }
   }
+
+  function flushUndo() {
+    const u = undoRef.current; if (!u) return;
+    clearTimeout(u.t); u.items.forEach(it=>{ if (it.receipt) gDeleteFile(it); });
+    undoRef.current = null; setUndo(null);
+  }
+  function deleteExpenses(ids) {
+    const set = new Set(ids);
+    const items = expenses.filter(e=>set.has(e.id));
+    if (!items.length) return;
+    if (undoRef.current) flushUndo();
+    setExpenses(p=>p.filter(e=>!set.has(e.id)));
+    const t = setTimeout(()=>{ items.forEach(it=>{ if (it.receipt) gDeleteFile(it); }); undoRef.current = null; setUndo(null); }, 7000);
+    undoRef.current = {items, t};
+    setUndo({n: items.length, name: items.length===1 ? items[0].vendor : ''});
+  }
+  function undoDelete() {
+    const u = undoRef.current; if (!u) return;
+    clearTimeout(u.t); setExpenses(p=>[...p, ...u.items]);
+    undoRef.current = null; setUndo(null);
+  }
+  useEffect(()=>{
+    if (prevSync.current==='syncing' && syncSt.s==='ok') { setSyncFlash(true); const t=setTimeout(()=>setSyncFlash(false),1800); prevSync.current = syncSt.s; return ()=>clearTimeout(t); }
+    prevSync.current = syncSt.s;
+  },[syncSt.s]);
+  useEffect(()=>{
+    const h = e => {
+      if (e.metaKey||e.ctrlKey||e.altKey) return;
+      const t = e.target, tag = ((t&&t.tagName)||'').toLowerCase();
+      if (tag==='input'||tag==='textarea'||tag==='select'||(t&&t.isContentEditable)) return;
+      if (modal||fullImg) return;
+      if (e.key==='n'||e.key==='N') { e.preventDefault(); setEditId(null); setModal('expense'); }
+      else if (e.key==='/') { e.preventDefault(); setTab('expenses'); setTimeout(()=>{ const el=document.getElementById('qsearch'); if(el) el.focus(); },60); }
+    };
+    window.addEventListener('keydown', h);
+    return ()=>window.removeEventListener('keydown', h);
+  },[modal, fullImg]);
   const borderC = {borderColor:T.border};
   const cardS   = {background:T.bg2,...borderC};
 
@@ -1428,15 +1515,15 @@ function App() {
           <div className="nav">
             {['dashboard','expenses','categories','medical','summary','mileage'].map(t=>(
               <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text,background:t==='medical'&&tab==='medical'?'rgba(236,72,153,.12)':undefined}} onClick={()=>setTab(t)}>
-                <span className="nb-i">{({dashboard:'📊',expenses:'🧾',categories:'🗂️',medical:'🏥',summary:'📈',mileage:'🚗'})[t]}</span><span>{t[0].toUpperCase()+t.slice(1)}</span>
+                <span className="nb-i"><Ic n={t} s={21}/></span><span>{t[0].toUpperCase()+t.slice(1)}</span>
               </button>
             ))}
           </div>
           <select className="psel" style={{borderColor:T.border,color:T.text}} value={province} onChange={e=>setProvince(e.target.value)}>
             {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
           </select>
-          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme">🎨<span className="mob-hide"> Theme</span></button>
-          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')}><span className="mob-hide">⚙️ Settings</span><span className="mob-only">⚙️</span></button>
+          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme"><Ic n="theme" s={16}/><span className="mob-hide"> Theme</span></button>
+          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')}><span className="mob-hide"><Ic n="settings" s={16}/> Settings</span><span className="mob-only"><Ic n="settings" s={18}/></span></button>
           {gStatus&&<span className="gstat" style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
         </div>
       </div>
@@ -1473,22 +1560,27 @@ function App() {
              style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:34,height:34,marginLeft:8,borderRadius:10,background:T.bg4,border:`1px solid ${T.border}`,flexShrink:0}}>
             <svg width="20" height="20" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
           </a>
-          <button className="addbtn" style={{background:T.accent,color:'#fff',marginLeft:12,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>{setEditId(null);setModal('expense');}}>+ Add Expense</button>
+          <button className="addbtn" title="Scan a receipt" style={{background:T.bg4,color:T.text,border:`1px solid ${T.border}`,marginLeft:12,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>camRef.current&&camRef.current.click()}><Ic n="camera" s={16}/> Scan</button>
+          <button className="addbtn" style={{background:T.accent,color:'#fff',marginLeft:8,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>{setEditId(null);setModal('expense');}}>+ Add Expense</button>
         </div>
       </div>
 
+      <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(f){ setStartFile(f); setEditId(null); setModal('expense'); } }}/>
       {/* Main */}
       <div className="main">
         {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
-        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{const exp=expenses.find(e=>e.id===id);setExpenses(p=>p.filter(e=>e.id!==id));if(exp?.receipt)setTimeout(()=>gDeleteFile(exp),300);}} onZoom={setFullImg} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
+        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={(ids,fn)=>{const st=new Set(ids);setExpenses(p=>p.map(e=>st.has(e.id)?{...e,...fn(e)}:e));}} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
-        {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={setFullImg} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
+        {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
 
       {!modal && ['dashboard','expenses','categories','summary'].includes(tab) && (
-        <button className="fab" aria-label="Add expense" onClick={()=>{setEditId(null);setModal('expense');}}>+</button>
+        <>
+          <button className="fab2" aria-label="Scan receipt" onClick={()=>camRef.current&&camRef.current.click()}><Ic n="camera" s={20}/></button>
+          <button className="fab" aria-label="Add expense" onClick={()=>{setEditId(null);setModal('expense');}}>+</button>
+        </>
       )}
       {syncSt.s==='error' && (
         <div style={{position:'fixed',left:12,right:12,bottom:'calc(76px + env(safe-area-inset-bottom))',zIndex:9998,display:'flex',justifyContent:'center',pointerEvents:'none'}}>
@@ -1498,8 +1590,14 @@ function App() {
           </div>
         </div>
       )}
+      {(undo||syncFlash) && (
+        <div className="toastwrap">
+          {undo && <div className="toast"><span>{undo.n>1?`${undo.n} expenses deleted`:`Deleted${undo.name?' '+(undo.name.length>22?undo.name.slice(0,22)+'…':undo.name):''}`}</span><button onClick={undoDelete}>Undo</button></div>}
+          {syncFlash && !undo && <div className="toast pill"><Ic n="check" s={14}/> Synced</div>}
+        </div>
+      )}
       {/* Modals */}
-      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} clients={clients} allExpenses={expenses} onSave={(data,opts)=>{
+      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} clients={clients} allExpenses={expenses} startFile={startFile} onSave={(data,opts)=>{
         const rid = editId || Date.now();
         // Start the Google sign-in right here, inside the tap, so phones do not block the popup
         const tokenP = (data.receipt && isLocalReceipt(data.receipt) && gClientId) ? driveTokenNow() : null;
@@ -1512,11 +1610,11 @@ function App() {
         closeModal();
         // Auto-backup to Drive after save
         setTimeout(()=>handleGDriveBackup({...data,id:rid}, tokenP), 500);
-      }} onClose={closeModal} onZoom={setFullImg} />}
-      {modal==='detail'   && detailExp && <DetailModal  expense={detailExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={setFullImg} />}
+      }} onClose={closeModal} onZoom={zoomTo} />}
+      {modal==='detail'   && detailExp && <DetailModal  expense={detailExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={zoomTo} />}
       {modal==='catEdit'  && editCat   && <CatEditModal cat={editCat} T={T} onSave={p=>{setCats(x=>x.map(c=>c.id===editCat.id?{...c,...p}:c));closeModal();}} onClose={closeModal} />}
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
-      {modal==='theme'    && <ThemeModal  theme={T} onSave={t=>{setTheme(t);closeModal();}} onClose={closeModal} />}
+      {modal==='theme'    && <ThemeModal  theme={T} auto={autoTheme} onSave={(t,a)=>{setAutoTheme(!!a);lsSave('themeAuto',!!a);setTheme(t);closeModal();}} onClose={closeModal} />}
       {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
       {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} clients={clients} setClients={setClients} recurring={recurring} setRecurring={setRecurring} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
         const tokenChanged = gh && gh !== lsLoad('ghToken','');
@@ -1532,7 +1630,7 @@ function App() {
       }} onClose={closeModal} onMigrate={moveReceiptsToDrive} localReceipts={expenses.filter(e=>isLocalReceipt(e.receipt)).length + medical.filter(m=>isLocalReceipt(m.receipt)).length} />}
 
       {/* Lightbox receipt viewer */}
-      {fullImg && <ReceiptLightbox src={fullImg} onClose={()=>setFullImg(null)} />}
+      {fullImg && <ReceiptLightbox src={fullImg} list={zoomList} onClose={()=>{setFullImg(null);setZoomList(null);}} />}
     </div>
   );
 }
@@ -1594,14 +1692,18 @@ function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,on
 }
 
 // ─── EXPENSES ─────────────────────────────────────────────────────────────────
-function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
+function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,sortKey,onAdd,onDetail,onEdit,onDelete,onBulkDelete,onBulk,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
   const fileRef = useRef();
   const PAGE = 60;
   const [limit, setLimit] = useState(PAGE);
-  const [rcpt, setRcpt] = useState('all');   // all | with | missing
+  const [rcpt, setRcpt] = useState('all');   // all | with | missing | missing30
   const [cl, setCl] = useState('all');
   const [q, setQ] = useState('');
   const [tools, setTools] = useState(false);
+  const [colSort, setColSort] = useState(null);   // {key, dir}
+  const [selMode, setSelMode] = useState(false);
+  const [sel, setSel] = useState([]);
+  const swipe = useRef({}); const swiped = useRef(0);
   const qn = q.trim().toLowerCase();
   const filteredAll = filteredAll0.filter(e=>{
     if (cl!=='all' && !(e.clients||[]).includes(cl)) return false;
@@ -1609,10 +1711,72 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
     const hay = [e.vendor, e.note, getCat(e.category).label, e.date, String(e.amount), (e.clients||[]).join(' '), e.payment?.name, e.payment?.last4, e.payment?.type].join(' ').toLowerCase();
     return qn.split(/\s+/).every(w=>hay.includes(w));
   });
-  const filtered = rcpt==='all' ? filteredAll : filteredAll.filter(e => rcpt==='with' ? !!e.receipt : !e.receipt);
+  const filtered = rcpt==='all' ? filteredAll
+    : rcpt==='with' ? filteredAll.filter(e=>!!e.receipt)
+    : rcpt==='missing30' ? filteredAll.filter(e=>!e.receipt && e.amount>=30)
+    : filteredAll.filter(e=>!e.receipt);
   const missingN = filteredAll.filter(e=>!e.receipt).length;
+  const miss30 = filteredAll.filter(e=>!e.receipt && e.amount>=30).length;
+  const adj = e => {
+    const bd = calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+    const pct = (e.bizPct!=null?e.bizPct:100)/100;
+    return {bd, itc:+(bd.gstClaimable*pct).toFixed(2), ded:+(bd.deductibleAmount*pct).toFixed(2)};
+  };
+  let rows = filtered;
+  if (colSort) {
+    const cache = new Map();
+    const val = e => {
+      if (cache.has(e.id)) return cache.get(e.id);
+      let v;
+      switch (colSort.key) {
+        case 'date': v = e.date; break;
+        case 'vendor': v = (e.vendor||'').toLowerCase(); break;
+        case 'cat': v = getCat(e.category).label.toLowerCase(); break;
+        case 'amount': v = e.amount; break;
+        case 'itc': v = adj(e).itc; break;
+        default: v = adj(e).ded;
+      }
+      cache.set(e.id, v); return v;
+    };
+    rows = [...filtered].sort((a,b)=>{ const va=val(a), vb=val(b); const r = typeof va==='string' ? va.localeCompare(vb) : va-vb; return colSort.dir==='asc' ? r : -r; });
+  }
+  const grouped = !colSort && /^date/.test(sortKey||'date');
+  const mt = {};
+  if (grouped) rows.forEach(e=>{ const k=e.date.slice(0,7); const m=(mt[k]=mt[k]||{n:0,s:0}); m.n++; m.s+=e.amount; });
+  const monthLabel = k => { const [y,m]=k.split('-'); return new Date(+y,+m-1,1).toLocaleString('en-CA',{month:'long',year:'numeric'}); };
   const clientNames = [...new Set([...(clients||[]), ...filteredAll0.flatMap(e=>e.clients||[])])];
-  const shown = filtered.slice(0, limit);
+  const shown = rows.slice(0, limit);
+  const anyLocalFilter = !!qn || cl!=='all' || rcpt!=='all';
+  const clearFilters = () => { setQ(''); setCl('all'); setRcpt('all'); };
+  const rlist = () => rows.map(e=>e.receipt).filter(Boolean);
+  const toggle = id => setSel(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+  const exitSel = () => { setSelMode(false); setSel([]); };
+  const sortBy = key => setColSort(cs=>{
+    const first = (key==='date'||key==='amount'||key==='itc'||key==='ded') ? 'desc' : 'asc';
+    if (!cs || cs.key!==key) return {key, dir:first};
+    if (cs.dir===first) return {key, dir:first==='asc'?'desc':'asc'};
+    return null;
+  });
+  const arrow = key => colSort && colSort.key===key ? (colSort.dir==='asc'?' ▲':' ▼') : '';
+  function bulkExport() {
+    const ids = new Set(sel);
+    const list = rows.filter(e=>ids.has(e.id));
+    const hdr = ['Date','Vendor','Category','T2125 Line','Receipt Total','GST ITC Claimable','CRA Deductible','Payment','Clients','Note'];
+    const out = list.map(e=>{ const c=getCat(e.category), a=adj(e); return [e.date,e.vendor,c.label,c.line,e.amount,a.itc,a.ded,[e.payment?.name||e.payment?.type||'', e.payment?.last4||''].join(' ').trim(),(e.clients||[]).join('; '),e.note||'']; });
+    kbwDownload('Selected_Expenses.csv','text/csv',[hdr,...out].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n'));
+  }
+  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl, qn, colSort]);
+  // Keep sticky month headers just under the app header
+  useEffect(()=>{
+    const set = ()=>{
+      const h=document.querySelector('.hdr'), f=document.querySelector('.fbar');
+      let top = h ? h.offsetHeight : 0;
+      if (f && getComputedStyle(f).position==='sticky') top += f.offsetHeight;
+      document.documentElement.style.setProperty('--stk', top+'px');
+    };
+    set(); window.addEventListener('resize', set);
+    return ()=>window.removeEventListener('resize', set);
+  },[]);
   // Load more rows automatically as you scroll to the bottom
   const sentinelRef = useRef(null);
   useEffect(()=>{
@@ -1621,35 +1785,54 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
     const io = new IntersectionObserver(es=>{ if (es[0].isIntersecting) setLimit(l=>l+PAGE); }, {rootMargin:'400px'});
     io.observe(el);
     return ()=>io.disconnect();
-  },[limit, filtered.length]);
-  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl, qn]);
+  },[limit, rows.length]);
+  const sw = {
+    onTouchStart: ev=>{ if (selMode || ev.touches.length!==1) return; const t=ev.touches[0]; swipe.current={x:t.clientX,y:t.clientY,dx:0,lock:null,el:ev.currentTarget}; },
+    onTouchMove: ev=>{
+      const S=swipe.current; if (!S.el) return;
+      const t=ev.touches[0], dx=t.clientX-S.x, dy=t.clientY-S.y;
+      if (S.lock===null) { if (Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)*1.4) S.lock='h'; else if (Math.abs(dy)>10) S.lock='v'; }
+      if (S.lock==='h') { S.dx=dx; S.el.style.transition='none'; S.el.style.transform=`translateX(${Math.max(-140,Math.min(140,dx))}px)`; S.el.style.background = dx<0 ? 'rgba(255,69,58,.2)' : 'rgba(10,132,255,.2)'; }
+    },
+    onTouchEnd: ()=>{
+      const S=swipe.current; if (!S.el) return;
+      const el=S.el; el.style.transition='transform .18s, background .18s'; el.style.transform=''; el.style.background='transparent';
+      const id=+el.dataset.id;
+      if (S.lock==='h') { swiped.current=Date.now(); if (S.dx<-90) onDelete(id); else if (S.dx>90) onEdit(id); }
+      swipe.current={};
+    },
+  };
+  let prevYm = null;
   return(
     <div>
       <div style={{position:'relative',marginBottom:10}}>
-        <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none',fontSize:15}}>🔍</span>
-        <input type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search expenses" autoComplete="off" autoCorrect="off" spellCheck={false}
+        <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none',display:'flex'}}><Ic n="search" s={16}/></span>
+        <input id="qsearch" type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search expenses" autoComplete="off" autoCorrect="off" spellCheck={false}
           style={{background:T.bg2,borderColor:T.border,color:T.text,border:'1px solid',borderRadius:12,padding:'10px 14px 10px 36px',fontSize:15,width:'100%'}}/>
+        {!q && <span className="kbdhint">/</span>}
       </div>
       <div className="xbar">
         <button type="button" className="xbtn xmore" style={{borderColor:T.border,color:T.text}} onClick={()=>setTools(t=>!t)}>⋯ Export &amp; import</button>
         <span className="xcount" style={{fontSize:12,opacity:.5,marginLeft:'auto'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
         <span className={'xtools'+(tools?' open':'')}>
         <span style={{fontSize:12,opacity:.5}}>Export:</span>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}>📄 CSV</button>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}>📊 Excel</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}><Ic n="file" s={14}/> CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}><Ic n="download" s={14}/> Excel</button>
         <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
         <span style={{fontSize:12,opacity:.5}}>Import:</span>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}>⬆ Import CSV</button>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}>📋 Template</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}><Ic n="upload" s={14}/> Import CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}><Ic n="file" s={14}/> Template</button>
         </span>
         <span className="xfilters">
         <div className="xsep" style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
+        <button className="xbtn" style={{borderColor:selMode?T.accent:T.border,color:selMode?T.accent:T.text}} onClick={()=>selMode?exitSel():setSelMode(true)}><Ic n="select" s={14}/> {selMode?'Done':'Select'}</button>
         <select value={rcpt} onChange={e=>setRcpt(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
           <option value="all" style={{color:'#000'}}>All receipts</option>
-          <option value="with" style={{color:'#000'}}>✓ Has receipt</option>
+          <option value="with" style={{color:'#000'}}>Has receipt</option>
           <option value="missing" style={{color:'#000'}}>No receipt</option>
+          <option value="missing30" style={{color:'#000'}}>Missing (over $30)</option>
         </select>
-        <button className="xbtn" style={{borderColor:rcpt==='missing'?T.amber:T.border,color:rcpt==='missing'?T.amber:T.text}} onClick={()=>setRcpt(rcpt==='missing'?'all':'missing')}>⚠ No receipt ({missingN})</button>
+        <button className="xbtn" style={{borderColor:rcpt==='missing'?T.amber:T.border,color:rcpt==='missing'?T.amber:T.text}} onClick={()=>setRcpt(rcpt==='missing'?'all':'missing')}><Ic n="warn" s={14}/> No receipt ({missingN})</button>
         {clientNames.length>0 && <span style={{display:'inline-flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
           <select value={cl} onChange={e=>setCl(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
             <option value="all" style={{color:'#000'}}>All clients</option>
@@ -1658,36 +1841,55 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
         </span>
         <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       </div>
-      {filtered.length===0
-        ?<div className="empty"><div style={{fontSize:44,marginBottom:12}}>🧾</div><div>No expenses match filter</div></div>
+      {rcpt==='all' && miss30>0 && (
+        <div className="chipw"><button type="button" style={{border:`1px solid ${T.amber}`,color:T.amber}} onClick={()=>setRcpt('missing30')}><Ic n="warn" s={14}/> {miss30} expense{miss30!==1?'s':''} over $30 {miss30!==1?'have':'has'} no receipt. Review</button></div>
+      )}
+      {rows.length===0
+        ?<div className="empty"><div style={{marginBottom:12,opacity:.8,display:'flex',justifyContent:'center'}}><Ic n="receipt" s={44} w={1.2}/></div>
+          <div>{anyLocalFilter ? 'No expenses match your search or filters' : filteredAll0.length===0 ? 'No expenses for this year or category yet' : 'Nothing to show'}</div>
+          {anyLocalFilter
+            ? <button type="button" className="eb" onClick={clearFilters}><Ic n="x" s={14}/> Clear filters</button>
+            : onAdd && <button type="button" className="eb" onClick={onAdd}><Ic n="plus" s={14}/> Add an expense</button>}
+        </div>
         :<div className="etbl" style={{borderColor:T.border}}>
           <div className="etbl-hd" style={{borderColor:T.border,background:T.bg2}}>
-            <span className="th"/><span className="th">Date</span><span className="th">Vendor</span><span className="th">Category</span>
-            <span className="th ra">Amount</span><span className="th ra">GST ITC</span>
-            <span className="th ra hcol">Deductible</span><span className="th ra">Actions</span>
+            <span className="th"/>
+            <span className={'th sortable'+(colSort&&colSort.key==='date'?' on':'')} onClick={()=>sortBy('date')}>Date{arrow('date')}</span>
+            <span className={'th sortable'+(colSort&&colSort.key==='vendor'?' on':'')} onClick={()=>sortBy('vendor')}>Vendor{arrow('vendor')}</span>
+            <span className={'th sortable'+(colSort&&colSort.key==='cat'?' on':'')} onClick={()=>sortBy('cat')}>Category{arrow('cat')}</span>
+            <span className={'th ra sortable'+(colSort&&colSort.key==='amount'?' on':'')} onClick={()=>sortBy('amount')}>Amount{arrow('amount')}</span>
+            <span className={'th ra sortable'+(colSort&&colSort.key==='itc'?' on':'')} onClick={()=>sortBy('itc')}>GST ITC{arrow('itc')}</span>
+            <span className={'th ra hcol sortable'+(colSort&&colSort.key==='ded'?' on':'')} onClick={()=>sortBy('ded')}>Deductible{arrow('ded')}</span>
+            <span className="th ra">Actions</span>
           </div>
           {shown.map(e=>{
             const c=getCat(e.category);
-            const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
-            const pct=(e.bizPct!=null?e.bizPct:100)/100;
-            const adjITC=+(bd.gstClaimable*pct).toFixed(2);
-            const adjDed=+(bd.deductibleAmount*pct).toFixed(2);
-            const payIcon = e.payment?.type==='Credit Card'?'💳':e.payment?.type==='Debit Card'?'🏧':e.payment?.type==='Cash'?'💵':'💳';
+            const A=adj(e); const adjITC=A.itc, adjDed=A.ded;
+            const payIcon = <Ic n={e.payment?.type==='Cash'?'cash':'card'} s={13}/>;
             const receipt = e.receipt;
             const isPdfReceipt = receipt?.startsWith('__PDF__:');
+            const isSel = sel.includes(e.id);
+            const tint = isSel ? (T.accent+'26') : 'transparent';
+            const ym = e.date.slice(0,7);
+            const head = grouped && ym!==prevYm;
+            prevYm = ym;
             return(
-              <div key={e.id} className="erow" style={{borderColor:T.border,background:'transparent'}}
+              <React.Fragment key={e.id}>
+              {head && <div className="mhead" style={{background:T.bg2,color:T.text}}><span>{monthLabel(ym)}</span><span>{mt[ym].n} expense{mt[ym].n!==1?'s':''} · {cad(mt[ym].s)}</span></div>}
+              <div className="erow" data-id={e.id} style={{borderColor:T.border,background:tint}}
+                {...sw}
                 onMouseEnter={ev=>ev.currentTarget.style.background=T.bg3}
-                onMouseLeave={ev=>ev.currentTarget.style.background='transparent'}
-                onClick={()=>onDetail(e)}>
+                onMouseLeave={ev=>ev.currentTarget.style.background=tint}
+                onClick={()=>{ if (Date.now()-swiped.current<400) return; if (selMode) toggle(e.id); else onDetail(e); }}>
                 {/* Thumbnail — always shown */}
                 <div className="r-wrap">
+                {selMode && <span className={'selbox'+(isSel?' on':'')}>{isSel&&<Ic n="check" s={13} w={2.4}/>}</span>}
                 {receipt
                   ? isPdfReceipt
-                    ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in',fontSize:20}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}>📄</div>
-                    : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
+                    ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}><Ic n="file" s={20}/></div>
+                    : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt, rlist());}}/>
                   : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
-                {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt);}}>✓</span>}
+                {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt, rlist());}}>✓</span>}
                 </div>
 
                 {/* Desktop: date column */}
@@ -1698,7 +1900,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
                   {/* Mobile-only: date */}
                   <div className="mob-only" style={{fontSize:11,opacity:.45,marginBottom:2}}>{e.date}</div>
                   <div className="vname">{e.vendor}</div>
-                  {(e.recurId||(e.clients&&e.clients.length>0))&&<div style={{fontSize:12,opacity:.6,marginTop:2}}>{e.recurId?'🔁 Monthly ':''}{e.clients&&e.clients.length>0?'👤 '+e.clients.join(', '):''}</div>}
+                  {(e.recurId||(e.clients&&e.clients.length>0))&&<div style={{fontSize:12,opacity:.6,marginTop:2,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>{e.recurId&&<span><Ic n="repeat" s={12}/> Monthly</span>}{e.clients&&e.clients.length>0&&<span><Ic n="user" s={12}/> {e.clients.join(', ')}</span>}</div>}
                   {e.note&&<div className="vnote">{e.note.length>300?e.note.slice(0,300)+'…':e.note}</div>}
                   {e.payment?.type&&<div style={{fontSize:12,opacity:.45,marginTop:2}}>
                     {payIcon}{' '}{e.payment.name||e.payment.type}{e.payment.last4?` ···· ${e.payment.last4}`:''}
@@ -1727,19 +1929,37 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
                 {/* Actions */}
                 <div className="rac" onClick={ev=>ev.stopPropagation()}>
                   <button className="bsm" style={{borderColor:T.border,color:T.text}} onClick={()=>onEdit(e.id)}>Edit</button>
-                  <button className="bsm" style={{borderColor:'rgba(232,85,85,.25)',color:T.red}} onClick={()=>onDelete(e.id)}>✕</button>
+                  <button className="bsm" style={{borderColor:'rgba(232,85,85,.25)',color:T.red}} onClick={()=>onDelete(e.id)} aria-label="Delete"><Ic n="x" s={13}/></button>
                 </div>
               </div>
+              </React.Fragment>
             );
           })}
-          {filtered.length > limit && <div ref={sentinelRef} style={{height:1}}/>}
-          {filtered.length > limit && (
+          {rows.length > limit && <div ref={sentinelRef} style={{height:1}}/>}
+          {rows.length > limit && (
             <button onClick={()=>setLimit(l=>l+PAGE)}
               style={{width:'100%',padding:'14px',background:'transparent',border:'none',borderTop:`1px solid ${T.border}`,color:T.text,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-              Show more ({filtered.length - limit} remaining)
+              Show more ({rows.length - limit} remaining)
             </button>
           )}
         </div>}
+      {selMode && (
+        <div className="selbar" style={{background:T.bg2+'f7',color:T.text}}>
+          <b style={{fontSize:13}}>{sel.length} selected</b>
+          <button type="button" onClick={()=>setSel(sel.length===rows.length?[]:rows.map(e=>e.id))}>{sel.length===rows.length?'Clear':`All ${rows.length}`}</button>
+          <select value="" disabled={!sel.length} onChange={e=>{ const v=e.target.value; if(v) onBulk(sel,()=>({category:v})); }}>
+            <option value="">Category…</option>
+            {cats.map(c=><option key={c.id} value={c.id} style={{color:'#000'}}>{c.label}</option>)}
+          </select>
+          {clientNames.length>0 && <select value="" disabled={!sel.length} onChange={e=>{ const v=e.target.value; if(v) onBulk(sel,x=>({clients:[...new Set([...(x.clients||[]),v])]})); }}>
+            <option value="">Add client…</option>
+            {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
+          </select>}
+          <button type="button" disabled={!sel.length} onClick={bulkExport}><Ic n="download" s={13}/> CSV</button>
+          <button type="button" disabled={!sel.length} style={{color:T.red,borderColor:'rgba(232,85,85,.4)'}} onClick={()=>{ onBulkDelete(sel); setSel([]); }}><Ic n="trash" s={13}/> Delete</button>
+          <button type="button" onClick={exitSel}>Done</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1796,6 +2016,23 @@ function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,expo
     const d  =exps.reduce((s,e)=>s+calcBD(e.amount,e.province||province,e.category,e.tax,cats).deductibleAmount,0);
     return{cat,n:exps.length,g,itc,p,d};
   }).filter(Boolean);
+  const sortedRows = rows.slice().sort((a,b)=>(parseFloat(a.cat.line)||0)-(parseFloat(b.cat.line)||0));
+  const yrs = [...new Set(filtered.map(e=>(e.date||'').slice(0,4)).filter(Boolean))].sort();
+  const period = yrs.length===0 ? 'All dates' : yrs.length===1 ? yrs[0] : yrs[0]+' to '+yrs[yrs.length-1];
+  function t2125Csv() {
+    const hdr = ['T2125 Line','Category','Count','Gross Spent','GST ITC','PST','Deductible','Deduction Rate'];
+    const out = sortedRows.map(r=>[r.cat.line,r.cat.label,r.n,r.g.toFixed(2),r.itc.toFixed(2),r.p.toFixed(2),r.d.toFixed(2),Math.round(r.cat.df*100)+'%']);
+    out.push(['','TOTALS',filtered.length,(+statVals.gross).toFixed(2),(+statVals.itc).toFixed(2),(+statVals.pst).toFixed(2),(+statVals.ded).toFixed(2),'']);
+    kbwDownload('T2125_Summary_'+period.replace(/\s+/g,'')+'.csv','text/csv',[['Period',period],[],hdr,...out].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n'));
+  }
+  function t2125Print() {
+    const w = window.open('', '_blank');
+    if (!w) { alert('Please allow pop-ups to print the summary.'); return; }
+    const tr = sortedRows.map(r=>`<tr><td>${kbwEsc(r.cat.line)}</td><td>${kbwEsc(r.cat.label)}</td><td class="n">${r.n}</td><td class="n">${cad(r.g)}</td><td class="n">${cad(r.itc)}</td><td class="n">${cad(r.p)}</td><td class="n">${cad(r.d)}</td><td class="n">${Math.round(r.cat.df*100)}%</td></tr>`).join('');
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>T2125 Summary ${kbwEsc(period)}</title><style>body{font:14px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;margin:36px;color:#111}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 18px;color:#555}table{border-collapse:collapse;width:100%}th,td{padding:8px 10px;border-bottom:1px solid #ddd;text-align:left}th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#555}.n{text-align:right;font-variant-numeric:tabular-nums}tfoot td{font-weight:700;border-top:2px solid #111;border-bottom:none}small{color:#777}</style></head><body><h1>T2125 Business Expense Summary</h1><p>Period: ${kbwEsc(period)} · ${filtered.length} expenses · Generated ${new Date().toLocaleDateString('en-CA')}</p><table><thead><tr><th>Line</th><th>Category</th><th class="n">Count</th><th class="n">Gross spent</th><th class="n">GST ITC</th><th class="n">PST</th><th class="n">Deductible</th><th class="n">Rate</th></tr></thead><tbody>${tr}</tbody><tfoot><tr><td></td><td>Totals</td><td class="n">${filtered.length}</td><td class="n">${cad(statVals.gross)}</td><td class="n">${cad(statVals.itc)}</td><td class="n">${cad(statVals.pst)}</td><td class="n">${cad(statVals.ded)}</td><td></td></tr></tfoot></table><p style="margin-top:18px"><small>Deductible amounts exclude GST and reflect each category's deduction rate and business use percentage.</small></p></body></html>`);
+    w.document.close();
+    setTimeout(()=>{ try { w.focus(); w.print(); } catch(e) {} }, 400);
+  }
 
   return(
     <div>
@@ -1811,8 +2048,12 @@ function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,expo
       </div>
       <div className="xbar">
         <span style={{fontSize:12,opacity:.5}}>Export for CRA:</span>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}>📄 CSV</button>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}>📊 Excel</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}><Ic n="file" s={14}/> CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}><Ic n="download" s={14}/> Excel</button>
+        <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
+        <span style={{fontSize:12,opacity:.5}}>T2125 summary:</span>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={t2125Csv}><Ic n="file" s={14}/> CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={t2125Print}><Ic n="print" s={14}/> Print / PDF</button>
       </div>
       <div className="etbl" style={{borderColor:T.border,marginBottom:16}}>
         <div style={{padding:'13px 17px',borderBottom:`1px solid ${T.border}`,fontSize:15,fontWeight:700,background:T.bg2}}>T2125 — Business Expense Summary</div>
@@ -1871,7 +2112,7 @@ function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,expo
 }
 
 // ─── EXPENSE MODAL ────────────────────────────────────────────────────────────
-function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clients,allExpenses,onSave,onClose,onZoom}) {
+function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clients,allExpenses,startFile,onSave,onClose,onZoom}) {
   const today=new Date().toISOString().split('T')[0];
   const [date,    setDate]    = useState(expense?.date    ||today);
   const [vendor,  setVendor]  = useState(expense?.vendor  ||'');
@@ -2044,6 +2285,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
     }
   }
 
+  useEffect(()=>{ if (startFile) handleFile({target:{files:[startFile], value:''}}); },[]);
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -2182,7 +2424,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
               Type the <b>total amount you paid</b> (inc. GST) and the subtotal + GST will be calculated automatically based on your province ({province}, {((PROVS.find(x=>x.code===province)||PROVS[0]).hst ? ((PROVS.find(x=>x.code===province)||PROVS[0]).hstRate*100).toFixed(0) : (PROVS.find(x=>x.code===province)||PROVS[0]).gst*100).toFixed(0)}% tax).
             </div>
             <label className="fl" style={{color:T.text}}>Total Paid (inc. GST) — from your receipt</label>
-            <input type="number" step="0.01" placeholder="e.g. 80.00" style={{background:T.bg4,borderColor:'rgba(46,204,138,.4)',color:T.text,borderRadius:8,padding:'9px 12px',fontSize:14,width:'100%',outline:'none'}}
+            <input type="number" inputMode="decimal" step="0.01" placeholder="e.g. 80.00" style={{background:T.bg4,borderColor:'rgba(46,204,138,.4)',color:T.text,borderRadius:8,padding:'9px 12px',fontSize:14,width:'100%',outline:'none'}}
               value={gasTotal} onChange={e=>handleGasTotal(e.target.value)}/>
             {parseFloat(gasTotal)>0&&(
               <div style={{marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
@@ -2205,7 +2447,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
         {!isGas&&(
         <div className="fg">
           <label className="fl">Pre-Tax Subtotal ($) <span style={{opacity:.4,fontWeight:400}}>before GST/PST/tip</span></label>
-          <input type="number" step="0.01" placeholder="0.00" style={inp} value={amount} onChange={e=>setAmount(e.target.value)}/>
+          <input type="number" inputMode="decimal" step="0.01" placeholder="0.00" style={inp} value={amount} onChange={e=>setAmount(e.target.value)}/>
         </div>
         )}
 
@@ -2215,22 +2457,22 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
           <div className="frow3">
             {!isGas&&<div>
               <label className="fl" style={{fontSize:10}}>GST / HST</label>
-              <input type="number" step="0.01" placeholder="0.00" style={inp} value={gst} onChange={e=>setGst(e.target.value)}/>
+              <input type="number" inputMode="decimal" step="0.01" placeholder="0.00" style={inp} value={gst} onChange={e=>setGst(e.target.value)}/>
             </div>}
             {!isGas&&<div>
               <label className="fl" style={{fontSize:10}}>Tip</label>
-              <input type="number" step="0.01" placeholder="0.00" style={inp} value={tip} onChange={e=>setTip(e.target.value)}/>
+              <input type="number" inputMode="decimal" step="0.01" placeholder="0.00" style={inp} value={tip} onChange={e=>setTip(e.target.value)}/>
             </div>}
             <div>
               <label className="fl" style={{fontSize:10}}>Liquor / Other Tax</label>
-              <input type="number" step="0.01" placeholder="0.00" style={inp} value={liquor} onChange={e=>setLiquor(e.target.value)}/>
+              <input type="number" inputMode="decimal" step="0.01" placeholder="0.00" style={inp} value={liquor} onChange={e=>setLiquor(e.target.value)}/>
             </div>
           </div>
           <label className="pst-row" style={{color:T.text}}>
             <input type="checkbox" checked={hasPst} onChange={e=>setHasPst(e.target.checked)}/>
             PST is shown on this receipt
           </label>
-          {hasPst&&<input type="number" step="0.01" placeholder="PST amount" style={{...inp,marginTop:6}} value={pst} onChange={e=>setPst(e.target.value)}/>}
+          {hasPst&&<input type="number" inputMode="decimal" step="0.01" placeholder="PST amount" style={{...inp,marginTop:6}} value={pst} onChange={e=>setPst(e.target.value)}/>}
         </div>
 
         {/* Live breakdown */}
@@ -2462,8 +2704,9 @@ function StatEditModal({stat,T,onSave,onClose}) {
 }
 
 // ─── THEME MODAL ──────────────────────────────────────────────────────────────
-function ThemeModal({theme,onSave,onClose}) {
+function ThemeModal({theme,auto:autoInit,onSave,onClose}) {
   const [t,setT]=useState({...theme});
+  const [auto,setAuto]=useState(!!autoInit);
   const inp={background:t.bg4,borderColor:t.border,color:t.text};
   const setF=k=>v=>setT(x=>({...x,[k]:v}));
   return(
@@ -2473,10 +2716,11 @@ function ThemeModal({theme,onSave,onClose}) {
 
         {/* Mode quick-switch */}
         <div className="fg">
-          <label className="fl">Base Mode</label>
+          <label className="fl">Base Mode <span style={{opacity:.5,fontWeight:400}}>(Auto follows this device's light or dark setting)</span></label>
           <div style={{display:'flex',gap:10}}>
-            <button onClick={()=>setT({...DARK,fontId:t.fontId})} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${t.mode==='dark'?t.blue:t.border}`,background:t.mode==='dark'?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>🌙 Dark</button>
-            <button onClick={()=>setT({...LIGHT,fontId:t.fontId})} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${t.mode==='light'?t.blue:t.border}`,background:t.mode==='light'?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>☀️ Light</button>
+            <button onClick={()=>setAuto(true)} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${auto?t.blue:t.border}`,background:auto?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>Auto</button>
+            <button onClick={()=>{setAuto(false);setT({...DARK,fontId:t.fontId});}} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${t.mode==='dark'?t.blue:t.border}`,background:t.mode==='dark'?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>🌙 Dark</button>
+            <button onClick={()=>{setAuto(false);setT({...LIGHT,fontId:t.fontId});}} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${t.mode==='light'?t.blue:t.border}`,background:t.mode==='light'?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>☀️ Light</button>
           </div>
         </div>
 
@@ -2532,7 +2776,7 @@ function ThemeModal({theme,onSave,onClose}) {
 
         <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:6}}>
           <button style={{background:t.bg4,border:`1px solid ${t.border}`,color:t.text,padding:'9px 17px',borderRadius:9}} onClick={onClose}>Cancel</button>
-          <button style={{background:t.accent,color:'#fff',padding:'9px 19px',borderRadius:9,fontWeight:600}} onClick={()=>onSave(t)}>Apply Theme</button>
+          <button style={{background:t.accent,color:'#fff',padding:'9px 19px',borderRadius:9,fontWeight:600}} onClick={()=>onSave(t,auto)}>Apply Theme</button>
         </div>
       </div>
     </div>
@@ -2811,6 +3055,50 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
     </div>
   );
 }
+
+const IC = {
+  dashboard:'M4 20V11M10 20V4M16 20v-8M21 20H3',
+  expenses:'M6 3h12v18l-3-2-3 2-3-2-3 2V3zM9 8h6M9 12h6',
+  categories:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  medical:'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
+  summary:'M3 17l6-6 4 4 8-8M15 7h6v6',
+  mileage:'M5 11l1.5-5h11L19 11M3 11h18v6H3zM7 17v2M17 17v2',
+  theme:'M12 3a9 9 0 100 18 9 9 0 000-18zM12 3v18',
+  settings:'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+  search:'M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.5-4.5',
+  download:'M12 4v11M7 10l5 5 5-5M5 20h14',
+  upload:'M12 16V5M7 10l5-5 5 5M5 20h14',
+  file:'M7 3h7l5 5v13H7zM14 3v5h5',
+  warn:'M12 4l9 16H3zM12 10v4M12 17.5v.01',
+  card:'M3 6h18v12H3zM3 10h18',
+  cash:'M3 7h18v10H3zM12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z',
+  repeat:'M4 12a8 8 0 0113.5-5.8L20 8M20 4v4h-4M20 12a8 8 0 01-13.5 5.8L4 16M4 20v-4h4',
+  user:'M12 4a4 4 0 100 8 4 4 0 000-8zM4 21c0-4 4-6 8-6s8 2 8 6',
+  camera:'M4 8h3l2-3h6l2 3h3v12H4zM12 11a3.5 3.5 0 100 7 3.5 3.5 0 000-7z',
+  plus:'M12 5v14M5 12h14',
+  check:'M5 12l5 5 9-10',
+  trash:'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
+  select:'M4 4h16v16H4zM8 12l3 3 5-6',
+  left:'M15 5l-7 7 7 7',
+  right:'M9 5l7 7-7 7',
+  x:'M6 6l12 12M18 6L6 18',
+  receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2V3zM9 8h6M9 12h6',
+  print:'M7 9V3h10v6M7 17H4v-6h16v6h-3M7 14h10v7H7z',
+  tag:'M3 12V4h8l10 10-8 8z',
+};
+function Ic({n, s=18, c='currentColor', w=1.6}) {
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:'-3px',flexShrink:0}} aria-hidden="true"><path d={IC[n]||''}/></svg>;
+}
+function kbwDownload(name, mime, text) {
+  try {
+    const url = URL.createObjectURL(new Blob([text], {type: mime}));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  } catch(e) { alert('Could not download: ' + e.message); }
+}
+function kbwEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
 function SettingsModal({cards, setCards, clients, setClients, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
@@ -3237,11 +3525,11 @@ function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup
           <div className="frow" style={{marginBottom:12}}>
             <div>
               <label className="fl">Total Cost ($)</label>
-              <input type="number" step="0.01" placeholder="0.00" style={inp} value={total} onChange={e=>setTotal(e.target.value)}/>
+              <input type="number" inputMode="decimal" step="0.01" placeholder="0.00" style={inp} value={total} onChange={e=>setTotal(e.target.value)}/>
             </div>
             <div>
               <label className="fl">Insurance / Provider Paid ($)</label>
-              <input type="number" step="0.01" placeholder="0.00" style={inp} value={providerPaid} onChange={e=>setProviderPaid(e.target.value)}/>
+              <input type="number" inputMode="decimal" step="0.01" placeholder="0.00" style={inp} value={providerPaid} onChange={e=>setProviderPaid(e.target.value)}/>
             </div>
           </div>
           {totalN>0&&(
@@ -3302,18 +3590,43 @@ function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup
 }
 
 // ─── RECEIPT LIGHTBOX ─────────────────────────────────────────────────────────
-function ReceiptLightbox({src, onClose}) {
+function LightboxOne({src, onClose, onPrev, onNext, idx, total}) {
   const isPdf = src && src.startsWith('__PDF__:');
   const isDriveUrl = src && src.startsWith('https://');
   const isPlaceholder = !src || src.startsWith('[') || src === 'null';
   const raw = isPdf ? src.slice(8) : src;
   const [blobUrl, setBlobUrl] = useState(null);
+  const [z, setZ] = useState({s:1,x:0,y:0});
+  const g = useRef({});
+  const dist = t => Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  const ts = e => {
+    if (e.touches.length===2) g.current = {mode:'pinch', d:dist(e.touches), s0:z.s};
+    else if (e.touches.length===1) g.current = {mode:'pan', x0:e.touches[0].clientX, y0:e.touches[0].clientY, zx:z.x, zy:z.y};
+  };
+  const tm = e => {
+    const G = g.current;
+    if (G.mode==='pinch' && e.touches.length===2) { const sc = Math.min(5, Math.max(1, G.s0*dist(e.touches)/G.d)); setZ(p=>({...p, s:sc})); }
+    else if (G.mode==='pan' && e.touches.length===1 && z.s>1) setZ(p=>({...p, x:G.zx+e.touches[0].clientX-G.x0, y:G.zy+e.touches[0].clientY-G.y0}));
+  };
+  const te = e => {
+    const G = g.current;
+    if (G.mode==='pan' && z.s<=1 && e.changedTouches.length) {
+      const dx = e.changedTouches[0].clientX-G.x0, dy = e.changedTouches[0].clientY-G.y0;
+      if (Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5) { if (dx<0) { onNext && onNext(); } else { onPrev && onPrev(); } }
+    }
+    if (z.s<1.05) setZ({s:1,x:0,y:0});
+    g.current = {};
+  };
 
   useEffect(()=>{
-    const handler = e => { if(e.key==='Escape') onClose(); };
+    const handler = e => {
+      if (e.key==='Escape') onClose();
+      else if (e.key==='ArrowRight' && onNext) onNext();
+      else if (e.key==='ArrowLeft' && onPrev) onPrev();
+    };
     window.addEventListener('keydown', handler);
     return ()=>window.removeEventListener('keydown', handler);
-  },[onClose]);
+  },[onClose, onPrev, onNext]);
 
   // For data URLs: convert to blob for reliable display
   useEffect(()=>{
@@ -3362,32 +3675,43 @@ function ReceiptLightbox({src, onClose}) {
 
   // Drive URL — load directly from Google Drive
   const displayUrl = isDriveUrl ? viewSrc(raw) : blobUrl;
-
+  const barBtn = {background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'};
   return (
-    <div className="rfs" onClick={onClose} style={{cursor:'zoom-out'}}>
+    <div className="rfs" onClick={onClose} style={{cursor:'zoom-out'}} onTouchStart={ts} onTouchMove={tm} onTouchEnd={te}>
       <div className="rfs-bar">
         <span style={{color:'rgba(255,255,255,.7)',fontSize:13,pointerEvents:'none'}}>
-          🖼 Receipt — click outside or Esc to close
+          {total>1 ? `Receipt ${idx+1} of ${total}` : 'Receipt'} · {z.s>1?'pinch or double-tap to reset':'Esc to close'}
         </span>
         <div style={{display:'flex',gap:8,pointerEvents:'all'}}>
           {isDriveUrl
-            ? <a href={drivePage(raw)} target="_blank" rel="noreferrer"
-                style={{background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'}}
-                onClick={e=>e.stopPropagation()}>Open in Drive ↗</a>
-            : displayUrl&&<a href={displayUrl} download="receipt.jpg" target="_blank" rel="noreferrer"
-                style={{background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'}}
-                onClick={e=>e.stopPropagation()}>⬇ Download</a>}
-          <button className="rfs-close" onClick={onClose}>✕</button>
+            ? <a href={drivePage(raw)} target="_blank" rel="noreferrer" style={barBtn} onClick={e=>e.stopPropagation()}>Open in Drive ↗</a>
+            : displayUrl&&<a href={displayUrl} download="receipt.jpg" target="_blank" rel="noreferrer" style={barBtn} onClick={e=>e.stopPropagation()}>Download</a>}
+          <button className="rfs-close" onClick={onClose}><Ic n="x" s={18} c="#fff"/></button>
         </div>
       </div>
+      {onPrev && <button className="rfs-nav l" aria-label="Previous receipt" onClick={e=>{e.stopPropagation();onPrev();}}><Ic n="left" s={22} c="#fff"/></button>}
+      {onNext && <button className="rfs-nav r" aria-label="Next receipt" onClick={e=>{e.stopPropagation();onNext();}}><Ic n="right" s={22} c="#fff"/></button>}
       {displayUrl
-        ? <img src={displayUrl} alt="Receipt" onError={e=>{ if(isDriveUrl){ const n=+e.target.dataset.fb||0; e.target.dataset.fb=String(n+1); const id=driveId(raw); if(n===0&&id) e.target.src=`https://lh3.googleusercontent.com/d/${id}=w1600`; else if(n===1) e.target.src=raw; } }} referrerPolicy="no-referrer"
-            style={{maxWidth:'90vw',maxHeight:'86vh',objectFit:'contain',borderRadius:12,boxShadow:'0 0 80px rgba(0,0,0,.9)',cursor:'default',display:'block'}}
+        ? <img src={displayUrl} alt="Receipt" onError={e=>{ if(isDriveUrl){ const n=+e.target.dataset.fb||0; e.target.dataset.fb=String(n+1); const id=driveId(raw); if(n===0&&id) e.target.src=`https://lh3.googleusercontent.com/d/${id}=w1600`; else if(n===1) e.target.src=raw; } }} referrerPolicy="no-referrer" draggable={false}
+            onDoubleClick={e=>{ e.stopPropagation(); setZ(p=>p.s>1?{s:1,x:0,y:0}:{s:2.5,x:0,y:0}); }}
+            onWheel={e=>{ const f=e.deltaY<0?1.12:0.89; setZ(p=>{ const sc=Math.min(5,Math.max(1,p.s*f)); return sc<=1?{s:1,x:0,y:0}:{...p,s:sc}; }); }}
+            style={{maxWidth:'90vw',maxHeight:'86vh',objectFit:'contain',borderRadius:12,boxShadow:'0 0 80px rgba(0,0,0,.9)',cursor:z.s>1?'grab':'default',display:'block',touchAction:'none',transform:`translate(${z.x}px,${z.y}px) scale(${z.s})`,transition:g.current.mode?'none':'transform .15s'}}
             onClick={e=>e.stopPropagation()}/>
         : <div style={{color:'rgba(255,255,255,.5)',fontSize:14}}>Loading…</div>
       }
+      {total>1 && <div className="rfs-cnt">{idx+1} / {total}</div>}
     </div>
   );
+}
+
+// Wrapper: lets you step through every receipt in the current list
+function ReceiptLightbox({src, list, onClose}) {
+  const nav = useMemo(()=>(list||[]).filter(r=>typeof r==='string' && r && !r.startsWith('__PDF__:') && !r.startsWith('[') && r!=='null'),[list]);
+  const [cur, setCur] = useState(src);
+  const i = nav.indexOf(cur);
+  const go = d => { if (i<0 || nav.length<2) return; setCur(nav[(i+d+nav.length)%nav.length]); };
+  const many = i>=0 && nav.length>1;
+  return <LightboxOne key={cur} src={cur} onClose={onClose} onPrev={many?()=>go(-1):null} onNext={many?()=>go(1):null} idx={i} total={many?nav.length:0}/>;
 }
 
 
@@ -3614,7 +3938,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24q</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24r</div>
       </div>
     </div>
   );
