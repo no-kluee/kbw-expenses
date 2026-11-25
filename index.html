@@ -548,6 +548,9 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
 .dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
 
+/* all tabs except Expenses (which has the side pane) stretch to the screen */
+.main.fluid,.phead.fluid{max-width:none!important}
+@media(min-width:1500px){.main.fluid{padding-left:48px;padding-right:48px}.phead.fluid{padding-left:48px;padding-right:48px}}
 /* ---- v2026.11.25i wide screens: use the space ---- */
 @media(min-width:1500px){.main,.phead,.fbar{max-width:1400px}.dpane{width:520px}}
 @media(min-width:2000px){.main,.phead,.fbar{max-width:1700px}.dpane{width:620px}}
@@ -1808,7 +1811,7 @@ function App() {
       <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(f){ setStartFile(f); setEditId(null); setModal('expense'); } }}/>
 
       {/* Page title + actions */}
-      <div className="phead">
+      <div className={"phead"+(tab!=='expenses'?" fluid":"")}>
         <div style={{minWidth:0}}>
           <h1 className="ptitle">{TITLES[tab]}</h1>
           {hasFilters && <div className="psub">{filter.year==='all'?'All years':filter.year}{filter.cat!=='all'?' · '+getCat(filter.cat).label:''} · {filtered.length} expense{filtered.length!==1?'s':''}</div>}
@@ -1857,7 +1860,7 @@ function App() {
 
       {/* Main */}
       <div className="bodyrow">
-      <div className="main">
+      <div className={"main"+(tab!=='expenses'?" fluid":"")}>
         {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
         {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onReview={()=>setReviewOpen(true)} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
@@ -4825,7 +4828,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26g</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26h</div>
       </div>
     </div>
   );
