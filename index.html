@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25f polish ---- */
+/* ---- v2026.11.25g polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25f ---- */
+/* ---- v2026.11.25g ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -541,18 +541,18 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
 
-/* ---- v2026.11.25f compact receipt row ---- */
+/* ---- v2026.11.25g compact receipt row ---- */
 .rrow{display:flex;align-items:center;gap:12px;padding:10px 14px!important;cursor:pointer}
 .rrthumb{width:56px;height:56px;border-radius:10px;flex-shrink:0;display:block}
 
 .dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
 .dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
 
-/* ---- v2026.11.25f wide screens: use the space ---- */
+/* ---- v2026.11.25g wide screens: use the space ---- */
 @media(min-width:1500px){.main,.phead,.fbar{max-width:1400px}.dpane{width:520px}}
 @media(min-width:2000px){.main,.phead,.fbar{max-width:1700px}.dpane{width:620px}}
 
-/* ---- v2026.11.25f frequent vendors ---- */
+/* ---- v2026.11.25g frequent vendors ---- */
 .vchips{display:flex;gap:8px;overflow-x:auto;padding:8px 0 2px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .vchips::-webkit-scrollbar{display:none}
 .vchip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;border:none;background:rgba(128,128,128,.18);color:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
@@ -1430,14 +1430,15 @@ function App() {
       const add = [];
       const upd = list.map(r=>{
         let nx = r.next, n = 0;
-        while (nx && nx <= today && n < 24) {
+        while (nx && nx <= today && (!r.end || nx <= r.end) && n < 60) {
           if (!latestExpenses.current.some(e=>e.recurId===r.id && e.date===nx)) add.push({ id: Date.now()+add.length, ...r.tpl, date: nx, recurId: r.id, receipt: null });
           nx = addMonth(nx, r.day); n++;
         }
         return nx !== r.next ? { ...r, next: nx } : r;
       });
       if (add.length) setExpenses(p=>[...p, ...add]);
-      if (upd.some((r,i)=>r!==list[i])) setRecurring(upd);
+      const live = upd.filter(r=>!(r.end && r.next && r.next > r.end));   // finished series drop off the list (their expenses stay)
+      if (live.length !== upd.length || upd.some((r,i)=>r!==list[i])) setRecurring(live);
     }
     const t1 = setTimeout(tick, 5000), t2 = setInterval(tick, 60000);
     return ()=>{ clearTimeout(t1); clearInterval(t2); };
@@ -1833,7 +1834,8 @@ function App() {
         else setExpenses(p=>[...p,{id:rid,...data}]);
         if(!editId && opts && opts.repeat){
           const day = +data.date.slice(8,10);
-          setRecurring(r=>[...r,{id:Date.now(), day, next:addMonth(data.date, day), tpl:{...data, receipt:null}}]);
+          const nxt = addMonth(data.date, day), end = (opts.repeatEnd||'') || undefined;
+          if (!end || nxt <= end) setRecurring(r=>[...r,{id:Date.now(), day, next:nxt, ...(end?{end}:{}), tpl:{...data, receipt:null, orderNo:''}}]);
         }
         closeModal();
         // Auto-backup to Drive after save
@@ -2283,6 +2285,7 @@ function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clien
   const [scanErr, setScanErr] = useState('');
   const [clientSel, setClientSel] = useState(expense?.clients || []);
   const [repeat,  setRepeat]  = useState(false);
+  const [repeatEnd,setRepeatEnd]= useState('');
   const [memoMsg, setMemoMsg] = useState('');
   // Payment method
   const [payType,  setPayType]  = useState(expense?.payment?.type  ||'Credit Card');
@@ -2505,7 +2508,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
     const savedTax={gst:parseFloat(gst)||0,pst:parseFloat(pst)||0,hasPst,tip:parseFloat(tip)||0,liquor:parseFloat(liquor)||0,other:0,gasMode:isGas,gasTotal:parseFloat(gasTotal)||0};
     const payment={type:payType,last4:payLast4.trim(),name:payName.trim()};
     const pct = Math.min(100, Math.max(0, parseFloat(bizPct)||100));
-    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),orderNo:orderNo.trim(),receipt,tax:savedTax,payment,bizPct:pct,clients:clientSel}, {repeat});
+    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),orderNo:orderNo.trim(),receipt,tax:savedTax,payment,bizPct:pct,clients:clientSel}, {repeat, repeatEnd});
   }
 
   const inp={background:T.bg4,borderColor:T.border,color:T.text};
@@ -2728,6 +2731,13 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
             <input type="checkbox" checked={repeat} onChange={e=>setRepeat(e.target.checked)} style={{width:18,height:18,flexShrink:0}}/>
             <span>🔁 Repeat monthly <span style={{opacity:.5}}>(adds this expense on the same day each month)</span></span>
           </label>
+        )}
+        {!editId && repeat && (
+          <div className="fg" style={{margin:'-6px 0 14px'}}>
+            <label className="fl">Stop repeating after <span style={{opacity:.4,fontWeight:400}}>optional · leave empty to keep going</span></label>
+            <input type="date" style={inp} value={repeatEnd} min={date} onChange={e=>setRepeatEnd(e.target.value)}/>
+            <div style={{fontSize:11,opacity:.5,marginTop:5}}>The date above can be in the past, e.g. Jan 19. Every month from then up to today (or your stop date) is added automatically.</div>
+          </div>
         )}
 
         {/* Note */}
@@ -3149,7 +3159,8 @@ function RecurringEditor({recurring, setRecurring, T}) {
       {recurring.map((r,i)=>(
         <div key={r.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:`1px solid ${T.border}`,fontSize:13}}>
           <span>🔁</span>
-          <span style={{flex:1}}>{r.tpl.vendor} · {cad(r.tpl.amount)}<span style={{opacity:.5}}> · day {r.day} · next {r.next}</span></span>
+          <span style={{flex:1}}>{r.tpl.vendor} · {cad(r.tpl.amount)}<span style={{opacity:.5}}> · day {r.day} · next {r.next}{r.end?` · ends ${r.end}`:''}</span></span>
+          <input type="date" title="Stop repeating after" aria-label="Stop repeating after" value={r.end||''} onChange={e=>{const v=e.target.value; setRecurring(recurring.map((x,j)=>j===i?{...x,end:v||undefined}:x));}} style={{width:128,fontSize:12,padding:'4px 6px',borderRadius:8,border:`1px solid ${T.border}`,background:T.bg4,color:T.text}}/>
           <button type="button" style={{background:'none',border:'none',color:T.red,fontSize:13}} onClick={()=>setRecurring(recurring.filter((_,j)=>j!==i))}>Remove</button>
         </div>
       ))}
@@ -4188,7 +4199,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25f</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25g</div>
       </div>
     </div>
   );
