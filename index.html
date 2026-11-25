@@ -67,6 +67,8 @@ button{cursor:pointer;font-size:14px;border-radius:8px;border:none;transition:al
 .erow{content-visibility:auto;contain-intrinsic-size:auto 66px}
 .r-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1px solid;cursor:zoom-in;display:block}
 .r-thumb:hover{filter:brightness(1.15)}
+.r-wrap{position:relative;width:40px;height:40px;flex-shrink:0}
+.r-tick{position:absolute;right:-5px;bottom:-5px;width:17px;height:17px;border-radius:50%;background:#22a45d;color:#fff;font-size:11px;font-weight:700;line-height:17px;text-align:center;border:2px solid var(--bg,#111);box-sizing:content-box;text-decoration:none;cursor:pointer}
 .r-icon{width:40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid}
 .vname{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .vnote{font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:1px;opacity:.4}
@@ -451,7 +453,10 @@ function App() {
       const content = btoa(unescape(encodeURIComponent(JSON.stringify({
         expenses: exp.map(e=>({...e, receipt: syncReceipt(e.receipt)})),
         medical:  med.map(m=>({...m, receipt: syncReceipt(m.receipt)})),
-        settings: settingsDirty.current ? latestSettings.current : existing?.data?.settings
+        settings: {
+          ...(settingsDirty.current ? latestSettings.current : (existing?.data?.settings || {})),
+          pinHash: existing?.data?.settings?.pinHash || (()=>{ try { return localStorage.getItem('cra_tracker_v1_pinHash')||undefined; } catch { return undefined; } })()
+        }
       }, null, 2))));
       const body = {
         message: `Update expenses ${new Date().toISOString().slice(0,10)}`,
@@ -892,6 +897,8 @@ function App() {
       }
       // Settings (logo, theme, categories, etc.): saved copy wins once one exists
       const st = parsed?.settings;
+      if (st?.pinHash && typeof st.pinHash === 'string') { try { localStorage.setItem('cra_tracker_v1_pinHash', st.pinHash); } catch {} }
+      else { try { if (localStorage.getItem('cra_tracker_v1_pinHash')) extra++; } catch {} }
       if (st && typeof st === 'object') {
         if (st.theme && typeof st.theme === 'object') setTheme(st.theme);
         if (st.logo && typeof st.logo === 'object') setLogo(st.logo);
@@ -1330,11 +1337,14 @@ function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDele
                 onMouseLeave={ev=>ev.currentTarget.style.background='transparent'}
                 onClick={()=>onDetail(e)}>
                 {/* Thumbnail — always shown */}
+                <div className="r-wrap">
                 {receipt
                   ? isPdfReceipt
                     ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in',fontSize:20}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}>📄</div>
                     : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
                   : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
+                {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(receipt,'_blank','noopener'); else onZoom(receipt);}}>✓</span>}
+                </div>
 
                 {/* Desktop: date column */}
                 <div className="hcol" style={{fontSize:12,opacity:.55}}>{e.date}</div>
@@ -2452,12 +2462,15 @@ function MedicalTab({medical, setMedical, T, onZoom, onDriveBackup, gClientId}) 
                 onMouseLeave={e=>e.currentTarget.style.background='transparent'}
                 onClick={()=>{setEditId(m.id);setShowAdd(true);}}>
                 {/* Thumbnail */}
+                <div className="r-wrap">
                 {m.receipt
                   ? m.receipt.startsWith('__PDF__:')
                     ? <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}>📄</div>
-                    : <img src={m.receipt} style={{width:40,height:40,borderRadius:7,objectFit:'cover',border:`1px solid ${T.border}`,cursor:'zoom-in'}} alt="" onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}/>
+                    : <img src={thumbSrc(m.receipt)} loading="lazy" style={{width:40,height:40,borderRadius:7,objectFit:'cover',border:`1px solid ${T.border}`,cursor:'zoom-in'}} alt="" onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}/>
                   : <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🧾</div>
                 }
+                {m.receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(m.receipt)) window.open(m.receipt,'_blank','noopener'); else onZoom(m.receipt);}}>✓</span>}
+                </div>
                 {/* Description + mobile amounts */}
                 <div style={{minWidth:0}}>
                   <div style={{fontWeight:500,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{m.description}</div>
@@ -2996,7 +3009,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · PIN resets when you close the app</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices</div>
       </div>
     </div>
   );
