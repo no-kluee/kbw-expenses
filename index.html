@@ -3667,6 +3667,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const [edit,setEdit]=useState(null);          // invoice being edited
   const [showSet,setShowSet]=useState(false);
   const [showCl,setShowCl]=useState(false);
+  const [prv,setPrv]=useState(null);   // PDF preview
   const [cmp,setCmp]=useState(null);   // email compose sheet
   const [qc,setQc]=useState(null);   // quick-add client inside the invoice editor
   const [busy,setBusy]=useState('');
@@ -3743,6 +3744,13 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const markPaid = i=>{ const d=window.prompt('Date paid (YYYY-MM-DD)',localToday()); if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) upd(i.id,{paid:d,sent:true,method:i.method||'e-transfer'}); };
   async function pdfOf(i){ setBusy(i.id); setMsg(''); try{ return await makeInvoicePdf(i,P,logoImg); } catch(e){ setMsg(e.message||'PDF failed'); return null; } finally{ setBusy(''); } }
   function saveBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500); }
+  async function preview(i0){
+    const i={...i0,items:(i0.items||[]).filter(x=>x.desc||+x.amount).map(x=>({desc:x.desc,amount:+x.amount||0}))};
+    if(!i.items.length){ setMsg('Add at least one line item to preview.'); return; }
+    const b=await pdfOf(i); if(!b) return;
+    setPrv(o=>{ if(o) URL.revokeObjectURL(o.url); return {url:URL.createObjectURL(b),b,i}; });
+  }
+  function closePrv(){ setPrv(o=>{ if(o) URL.revokeObjectURL(o.url); return null; }); }
   async function download(i){ const b=await pdfOf(i); if(b) saveBlob(b,invFile(i)); }
   async function send(i){
     const b=await pdfOf(i); if(!b) return;
@@ -3905,6 +3913,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                 {i.imported && <div style={{marginTop:8}}><button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button></div>}
                 {!i.imported && <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
                   <button style={bs} disabled={busy===i.id} onClick={()=>send(i)}>{busy===i.id?'Working…':(i.sent?'Send again':'Send')}</button>
+                  <button style={bs} onClick={()=>preview(i)}>Preview</button>
                   <button style={bs} onClick={()=>download(i)}>PDF</button>
                   <button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>
                   {!i.paid && <button style={{...bs,color:T.green}} onClick={()=>markPaid(i)}>Mark paid</button>}
@@ -3912,6 +3921,18 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
               </div>);})}
           </div>}
 
+      {prv && (
+        <div className="ov" style={{zIndex:1200}} onClick={closePrv}>
+          <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text,maxWidth:760,width:'96vw',height:'92vh',display:'flex',flexDirection:'column'}} onClick={e=>e.stopPropagation()}>
+            <div className="mhdr"><div className="mttl">Preview, invoice {prv.i.num}</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={closePrv}>✕</button></div>
+            <iframe title="Invoice preview" src={prv.url+'#toolbar=0&navpanes=0&view=FitH'} style={{flex:1,width:'100%',border:'1px solid '+T.border,borderRadius:10,background:'#fff',minHeight:300}}/>
+            <div style={{display:'flex',gap:8,marginTop:10,justifyContent:'flex-end'}}>
+              <button style={bs} onClick={()=>saveBlob(prv.b,invFile(prv.i))}>Download PDF</button>
+              <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={closePrv}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
       {cmp && (
         <div className="ov" onClick={()=>!cmp.busy&&setCmp(null)}>
           <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
@@ -3924,6 +3945,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             {cmp.err && <div style={{color:T.red,fontSize:12.5,marginBottom:10}}>{cmp.err}</div>}
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
               <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={doGmail}>{cmp.busy?'Sending…':'Send from my Gmail'}</button>
+              <button style={bs} disabled={cmp.busy} onClick={()=>preview(cmp.i)}>Preview PDF</button>
               <button style={bs} disabled={cmp.busy} onClick={shareIt}>Share / other app</button>
             </div>
           </div>
@@ -3970,7 +3992,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             {msg && <div style={{color:T.amber,fontSize:13,marginBottom:8}}>{msg}</div>}
             <div style={{display:'flex',gap:10,justifyContent:'space-between',marginTop:6}}>
               {!edit._new ? <div style={{display:'flex',gap:8}}><button style={{...bs,color:T.red}} onClick={()=>delInvoice(edit)}>Delete</button><button style={bs} onClick={()=>dupInvoice(edit)}>Duplicate</button></div> : <span/>}
-              <div style={{display:'flex',gap:10}}><button style={bs} onClick={()=>setEdit(null)}>Cancel</button><button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={saveEdit}>Save</button></div>
+              <div style={{display:'flex',gap:10}}><button style={bs} onClick={()=>preview(edit)}>Preview</button><button style={bs} onClick={()=>setEdit(null)}>Cancel</button><button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={saveEdit}>Save</button></div>
             </div>
           </div>
         </div>)}
@@ -4941,7 +4963,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26k</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26l</div>
       </div>
     </div>
   );
