@@ -407,13 +407,20 @@ function App() {
     } catch { return null; }
   }
 
+  // Keep Drive links (small) in synced data; strip big inline photos (they stay on the device that added them)
+  const syncReceipt = r => (typeof r === 'string' && /^https?:\/\//.test(r)) ? r : null;
+
   async function ghSave(exp, med) {
     const GH_TOKEN = lsLoad('ghToken','');
+    // Safety: never write until this device has successfully loaded the saved data
+    if (!GH_TOKEN || !window._ghReady) return;
     try {
       const existing = await ghLoad();
+      // Safety: never replace saved expenses with an empty list
+      if (exp.length === 0 && (existing?.data?.expenses?.length > 0)) return;
       const content = btoa(unescape(encodeURIComponent(JSON.stringify({
-        expenses: exp.map(e=>({...e, receipt:null})),
-        medical:  med.map(m=>({...m, receipt:null}))
+        expenses: exp.map(e=>({...e, receipt: syncReceipt(e.receipt)})),
+        medical:  med.map(m=>({...m, receipt: syncReceipt(m.receipt)}))
       }, null, 2))));
       const body = {
         message: `Update expenses ${new Date().toISOString().slice(0,10)}`,
@@ -755,8 +762,62 @@ function App() {
   useEffect(()=>{ latestExpenses.current = expenses; },[expenses]);
   useEffect(()=>{ latestMedical.current = medical; },[medical]);
 
+  // Load saved data from GitHub (startup, and right after a token is saved in Settings)
+  async function pullFromGitHub(token) {
+    if (!token) return { ok:false, reason:'no-token' };
+    window._ghLoading = true;
+    try {
+      const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.raw+json' },
+        cache: 'no-store'
+      });
+      if (!res.ok) return { ok:false, reason: res.status===401 ? 'bad-token' : (res.status===404 ? 'not-found' : 'error') };
+      const parsed = await res.json();
+      let n = 0, outExp = null, outMed = null, extra = 0;
+      // First sync on this device: MERGE so nothing stored only here is lost. After that, GitHub is the source of truth.
+      const firstSync = !lsLoad('ghSynced', false);
+      if (Array.isArray(parsed?.expenses)) {
+        const localExp = lsLoad('expenses', []);
+        const receiptById = {};
+        localExp.forEach(e => { if (e.receipt) receiptById[e.id] = e.receipt; });
+        let merged = parsed.expenses.map(e => ({ ...e, receipt: e.receipt || receiptById[e.id] || null }));
+        if (firstSync) {
+          const have = new Set(merged.map(e => e.id));
+          const onlyLocal = localExp.filter(e => !have.has(e.id));
+          extra += onlyLocal.length;
+          merged = [...merged, ...onlyLocal];
+        }
+        setExpenses(merged); lsSave('expenses', merged); n = merged.length; outExp = merged;
+      }
+      if (Array.isArray(parsed?.medical)) {
+        const localMed = lsLoad('medical', []);
+        const medReceipt = {};
+        localMed.forEach(m => { if (m.receipt) medReceipt[m.id] = m.receipt; });
+        let mergedMed = parsed.medical.map(m => ({ ...m, receipt: m.receipt || medReceipt[m.id] || null }));
+        if (firstSync) {
+          const haveM = new Set(mergedMed.map(m => m.id));
+          const onlyLocalM = localMed.filter(m => !haveM.has(m.id));
+          extra += onlyLocalM.length;
+          mergedMed = [...mergedMed, ...onlyLocalM];
+        }
+        setMedical(mergedMed); lsSave('medical', mergedMed); outMed = mergedMed;
+      }
+      window._ghReady = true;   // only now is it safe to save changes back
+      lsSave('ghSynced', true);
+      // If this device had entries GitHub didn't, push the combined list up once
+      if (extra > 0 && outExp) setTimeout(()=>ghSave(outExp, outMed || lsLoad('medical', [])), 1500);
+      return { ok:true, count:n, added:extra };
+    } catch (e) {
+      return { ok:false, reason:'error' };
+    } finally {
+      setTimeout(() => { window._ghLoading = false; }, 1000);
+    }
+  }
+
+  const firstGhSave = useRef(true);
   useEffect(()=>{
-    if (window._ghLoading) return;
+    if (firstGhSave.current) { firstGhSave.current = false; return; }   // ignore the initial render
+    if (window._ghLoading || !window._ghReady) return;
     clearTimeout(ghSaveTimer.current);
     ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
   },[expenses, medical]);
@@ -768,34 +829,10 @@ function App() {
       s.id='google-gsi'; s.src='https://accounts.google.com/gsi/client'; s.async=true;
       document.head.appendChild(s);
     }
-    const doLoad = (token, clientId) => {
-      if (clientId) { setGClientId(clientId); lsSave('gClientId', clientId); }
-      if (!token) return;
-      window._ghLoading = true;
-      fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`, {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-      })
-      .then(r => r.ok ? r.json() : null).catch(() => null)
-      .then(data => {
-        if (!data?.content) { window._ghLoading = false; return; }
-        const parsed = JSON.parse(atob(data.content.replace(/\n/g,'')));
-        if (parsed?.expenses?.length) {
-          const localExp = lsLoad('expenses', []);
-          const receiptById = {};
-          localExp.forEach(e => { if (e.receipt) receiptById[e.id] = e.receipt; });
-          const merged = parsed.expenses.map(e => ({ ...e, receipt: receiptById[e.id] || null }));
-          setExpenses(merged);
-          lsSave('expenses', merged);
-        }
-        if (parsed?.medical?.length) {
-          setMedical(parsed.medical);
-          lsSave('medical', parsed.medical);
-        }
-        setTimeout(() => { window._ghLoading = false; }, 1000);
-      });
-    };
     // Token and Google client ID come only from Settings (stored per device in localStorage)
-    doLoad(lsLoad('ghToken',''), lsLoad('gClientId',''));
+    const clientId = lsLoad('gClientId','');
+    if (clientId) setGClientId(clientId);
+    pullFromGitHub(lsLoad('ghToken',''));
   }, []);
 
   function flash(){ setSaveFlash(true); setTimeout(()=>setSaveFlash(false),1400); }
@@ -1070,7 +1107,18 @@ function App() {
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
       {modal==='theme'    && <ThemeModal  theme={T} onSave={t=>{setTheme(t);closeModal();}} onClose={closeModal} />}
       {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
-      {modal==='settings' && <SettingsModal apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{setApiKey(k);setGClientId(g);setGhToken(gh);closeModal();}} onClose={closeModal} onSync={gSyncFromDrive} />}
+      {modal==='settings' && <SettingsModal apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
+        const tokenChanged = gh && gh !== lsLoad('ghToken','');
+        setApiKey(k);setGClientId(g);setGhToken(gh);lsSave('ghToken', gh);closeModal();
+        if (gh && (tokenChanged || !window._ghReady)) {
+          pullFromGitHub(gh).then(r=>{
+            if (r.ok) alert(`Connected. Loaded ${r.count} expenses from GitHub.`);
+            else if (r.reason==='bad-token') alert('GitHub rejected that token. Check that you copied all of it.');
+            else if (r.reason==='not-found') alert('Token saved, but the data file was not found. Make sure the token has access to the data repo.');
+            else alert('Could not reach GitHub. Check your connection and try Save again.');
+          });
+        }
+      }} onClose={closeModal} onSync={gSyncFromDrive} />}
 
       {/* Lightbox receipt viewer */}
       {fullImg && <ReceiptLightbox src={fullImg} onClose={()=>setFullImg(null)} />}
