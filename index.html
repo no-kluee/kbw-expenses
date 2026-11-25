@@ -1582,19 +1582,17 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
         <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
         <span style={{fontSize:12,opacity:.5}}>Import:</span>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}>⬆ Import CSV</button>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}>📋 Download Template</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}>📋 Template</button>
         <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
-        <span style={{fontSize:12,opacity:.5}}>Receipts:</span>
         <select value={rcpt} onChange={e=>setRcpt(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
-          <option value="all" style={{color:'#000'}}>All</option>
+          <option value="all" style={{color:'#000'}}>All receipts</option>
           <option value="with" style={{color:'#000'}}>✓ Has receipt</option>
           <option value="missing" style={{color:'#000'}}>No receipt</option>
         </select>
         <button className="xbtn" style={{borderColor:rcpt==='missing'?T.amber:T.border,color:rcpt==='missing'?T.amber:T.text}} onClick={()=>setRcpt(rcpt==='missing'?'all':'missing')}>⚠ No receipt ({missingN})</button>
         {clientNames.length>0 && <span style={{display:'inline-flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
-          <span style={{fontSize:12,opacity:.5}}>Client:</span>
           <select value={cl} onChange={e=>setCl(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
-            <option value="all" style={{color:'#000'}}>All</option>
+            <option value="all" style={{color:'#000'}}>All clients</option>
             {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
           </select></span>}
         <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
@@ -3553,7 +3551,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24m</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24n</div>
       </div>
     </div>
   );
