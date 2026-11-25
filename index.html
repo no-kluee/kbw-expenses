@@ -311,6 +311,7 @@ select.xbtn{width:auto;padding:8px 30px 8px 12px}
 }
 
 /* ── MOBILE CLEAN-UP (iPhone) ── */
+.msave{display:none}
 .xtools,.xfilters{display:contents}
 .xmore,.fab,.xcount{display:none}
 @media(max-width:480px){
@@ -329,6 +330,9 @@ select.xbtn{width:auto;padding:8px 30px 8px 12px}
   .fbar-in .fcount,.fbar-in .addbtn{display:none!important}
   .fbar-in>button,.fbar-in>a{margin-left:0!important}
   .fab{display:flex;position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;background:#0a84ff;color:#fff;font-size:30px;line-height:1;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(10,132,255,.45);z-index:250;border:none;padding:0 0 3px}
+  .mhdr{position:sticky;top:-18px;margin-top:-18px;padding-top:18px;padding-bottom:10px;margin-bottom:10px!important;background:inherit;z-index:5;align-items:center!important;gap:8px}
+  .mhdr .mttl{flex:1}
+  .msave{display:inline-flex;align-items:center;justify-content:center;background:#0a84ff;color:#fff;font-weight:600;font-size:15px;padding:8px 18px;border-radius:999px;border:none}
   .xbar{gap:8px;margin-bottom:12px}
   .xmore{display:inline-flex}
   .xcount{display:inline}
@@ -509,7 +513,7 @@ function localToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
 function driveId(r){ const m = typeof r==='string' && r.match(/^https:\/\/drive\.google\.com\/(?:uc\?.*[?&]id=|file\/d\/)([\w-]+)/); return m?m[1]:null; }
 function viewSrc(r){ const id=driveId(r); return id?`https://drive.google.com/thumbnail?id=${id}&sz=w1600`:r; }
-function fbImg(r, sz){ return e=>{ const id=driveId(r); if(id && !e.target.dataset.fb){ e.target.dataset.fb='1'; e.target.src=`https://lh3.googleusercontent.com/d/${id}=w${sz}`; } }; }
+function fbImg(r, sz){ return e=>{ const id=driveId(r); if(!id) return; const n=+e.target.dataset.fb||0; e.target.dataset.fb=String(n+1); const list=[`https://lh3.googleusercontent.com/d/${id}=w${sz}`, `https://drive.google.com/uc?export=view&id=${id}`]; if(n<list.length) e.target.src=list[n]; }; }
 function drivePage(r){ const id=driveId(r); return id?`https://drive.google.com/file/d/${id}/view`:r; }
 // Small thumbnail for Drive-hosted receipts so lists never download full-size photos
 function thumbSrc(r) {
@@ -2104,6 +2108,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
       <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
         <div className="mhdr">
           <div className="mttl">{editId?'Edit Expense':'Add Expense'}</div>
+          <button type="button" className="msave" onClick={submit}>Save</button>
           <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
         </div>
 
@@ -2124,7 +2129,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
                     <div style={{fontSize:13,fontWeight:500}}>PDF Receipt</div>
                     <div style={{fontSize:11,opacity:.4,marginTop:3}}>Click to open full PDF</div>
                   </div>
-                : <img src={viewSrc(receipt)} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(receipt)}/>
+                : <img src={viewSrc(receipt)} onError={fbImg(receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(receipt)}/>
               }
               <button className="rp-rm" onClick={()=>{setReceipt(null);setScanErr('');}}>Remove</button>
             </div>
@@ -2356,7 +2361,7 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,onClose,onZoom}) {
                   <div style={{fontSize:36,marginBottom:6}}>📄</div>
                   <div style={{fontSize:13,fontWeight:500}}>PDF Receipt — click to open</div>
                 </div>
-              : <img src={viewSrc(e.receipt)} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
+              : <img src={viewSrc(e.receipt)} onError={fbImg(e.receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
             }
             {!isPdf&&<button className="rp-rm" style={{pointerEvents:'none',opacity:.6}}>🔍 click to expand</button>}
           </div>
@@ -3167,6 +3172,7 @@ function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup
       <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text,maxWidth:520}} onClick={e=>e.stopPropagation()}>
         <div className="mhdr">
           <div className="mttl">🏥 {editId?'Edit':'Add'} Medical Expense</div>
+          <button type="button" className="msave" style={{background:'rgba(236,72,153,.9)'}} onClick={submit}>Save</button>
           <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
         </div>
 
@@ -3179,7 +3185,7 @@ function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup
                   ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'16px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(receipt.slice(8))}>
                       <div style={{fontSize:32,marginBottom:6}}>📄</div><div style={{fontSize:13}}>PDF — click to view</div>
                     </div>
-                  : <img src={viewSrc(receipt)} style={{width:'100%',borderRadius:10,border:`1px solid ${T.border}`,maxHeight:180,objectFit:'cover',cursor:'zoom-in'}} alt="" onClick={()=>onZoom(receipt)}/>
+                  : <img src={viewSrc(receipt)} onError={fbImg(receipt,1600)} referrerPolicy="no-referrer" style={{width:'100%',borderRadius:10,border:`1px solid ${T.border}`,maxHeight:180,objectFit:'cover',cursor:'zoom-in'}} alt="" onClick={()=>onZoom(receipt)}/>
                 }
                 <button className="rp-rm" onClick={()=>setReceipt(null)}>Remove</button>
               </div>
@@ -3608,7 +3614,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24p</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24q</div>
       </div>
     </div>
   );
