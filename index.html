@@ -1297,11 +1297,23 @@ function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,on
 }
 
 // ─── EXPENSES ─────────────────────────────────────────────────────────────────
-function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
+function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
   const fileRef = useRef();
   const PAGE = 60;
   const [limit, setLimit] = useState(PAGE);
+  const [rcpt, setRcpt] = useState('all');   // all | with | missing
+  const filtered = rcpt==='all' ? filteredAll : filteredAll.filter(e => rcpt==='with' ? !!e.receipt : !e.receipt);
   const shown = filtered.slice(0, limit);
+  // Load more rows automatically as you scroll to the bottom
+  const sentinelRef = useRef(null);
+  useEffect(()=>{
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(es=>{ if (es[0].isIntersecting) setLimit(l=>l+PAGE); }, {rootMargin:'400px'});
+    io.observe(el);
+    return ()=>io.disconnect();
+  },[limit, filtered.length]);
+  useEffect(()=>{ setLimit(PAGE); },[rcpt]);
   return(
     <div>
       <div className="xbar">
@@ -1312,6 +1324,13 @@ function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDele
         <span style={{fontSize:12,opacity:.5}}>Import:</span>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}>⬆ Import CSV</button>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}>📋 Download Template</button>
+        <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
+        <span style={{fontSize:12,opacity:.5}}>Receipts:</span>
+        <select value={rcpt} onChange={e=>setRcpt(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
+          <option value="all" style={{color:'#000'}}>All</option>
+          <option value="with" style={{color:'#000'}}>✓ Has receipt</option>
+          <option value="missing" style={{color:'#000'}}>No receipt</option>
+        </select>
         <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       </div>
       {filtered.length===0
@@ -1387,6 +1406,7 @@ function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDele
               </div>
             );
           })}
+          {filtered.length > limit && <div ref={sentinelRef} style={{height:1}}/>}
           {filtered.length > limit && (
             <button onClick={()=>setLimit(l=>l+PAGE)}
               style={{width:'100%',padding:'14px',background:'transparent',border:'none',borderTop:`1px solid ${T.border}`,color:T.text,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
