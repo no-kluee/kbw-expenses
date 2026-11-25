@@ -3797,16 +3797,18 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
       upd(i.id,{sent:true}); setCmp(null);
     }catch(e){ if(e&&e.name!=='AbortError') setCmp(x=>({...x,err:'Could not open the share sheet. Use PDF download instead.'})); }
   }
-  function doGmail(){
+  function doGmail(test){
     const accts=(P.mail&&P.mail.accounts)||[]; const ac=accts.find(a=>a.email===cmp.from); const cid=(ac&&ac.clientId)||gClientId;
     if(!cid){ setCmp(x=>({...x,err:'Add your Google Client ID in Settings first.'})); return; }
-    if(!cmp.to.trim()){ setCmp(x=>({...x,err:'Add who it is going to.'})); return; }
+    if(test&&!cmp.from){ setCmp(x=>({...x,err:'Add your email under Email accounts in Invoice details to send a test.'})); return; }
+    if(!test&&!cmp.to.trim()){ setCmp(x=>({...x,err:'Add who it is going to.'})); return; }
     if(!cmp.pdf64){ setCmp(x=>({...x,err:'The PDF is not ready. Close this and try again.'})); return; }
-    const m=cmp; setCmp(x=>({...x,busy:1,err:''}));
+    const m=test?{...cmp,to:cmp.from,cc:'',subject:'[TEST] '+cmp.subject}:cmp; setCmp(x=>({...x,busy:1,err:''}));
     const hint=m.from||undefined, tokKey=cid+'|'+(hint||'');
     gmailToken(cid,hint).then(async tok=>{
       const sigHtml=m.sig!==false?await gmailSignature(tok,m.from):'';
       await gmailSendMail(tok,{to:m.to.trim(),cc:m.cc.trim(),subject:m.subject,body:m.body,fname:m.fname,pdf64:m.pdf64,tokKey,sigHtml});
+      if(test){ setCmp(x=>x&&({...x,busy:0,err:'',ok:'Test sent to '+m.to+'. Check your inbox. The invoice was not marked as sent.'})); return; }
       upd(m.i.id,{sent:true,emailedTo:m.to.trim(),emailedFrom:m.from||'',emailedAt:localToday()}); setCmp(null); setMsg('Sent to '+m.to.trim()+(m.from?' from '+m.from:'')+'.');
     }).catch(e=>setCmp(x=>x&&({...x,busy:0,err:(e&&e.message)||'Could not send.'})));
   }
@@ -3984,9 +3986,11 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="fg"><label className="fl">Message</label><textarea style={{...inp,minHeight:140,fontFamily:'inherit'}} value={cmp.body} onChange={e=>setCmp(x=>({...x,body:e.target.value}))}/></div>
             <div style={{fontSize:12,opacity:.6,margin:'2px 0 6px'}}>Attached: {cmp.fname}</div>
             <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,margin:'0 0 10px',cursor:'pointer'}}><input type="checkbox" checked={cmp.sig!==false} onChange={e=>setCmp(x=>({...x,sig:e.target.checked}))}/> Add my Gmail signature when sent</label>
+            {cmp.ok && <div style={{color:T.green,fontSize:12.5,marginBottom:10}}>{cmp.ok}</div>}
             {cmp.err && <div style={{color:T.red,fontSize:12.5,marginBottom:10}}>{cmp.err}</div>}
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-              <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={doGmail}>{cmp.busy?'Sending…':(cmp.from?'Send from '+cmp.from.split('@')[0]:'Send from my Gmail')}</button>
+              <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={()=>doGmail(false)}>{cmp.busy?'Sending…':(cmp.from?'Send from '+cmp.from.split('@')[0]:'Send from my Gmail')}</button>
+              <button style={bs} disabled={cmp.busy} onClick={()=>doGmail(true)}>Send test to me</button>
               <button style={bs} disabled={cmp.busy} onClick={()=>preview(cmp.i)}>Preview PDF</button>
               <button style={bs} disabled={cmp.busy} onClick={shareIt}>Share / other app</button>
             </div>
@@ -5005,7 +5009,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26q</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26r</div>
       </div>
     </div>
   );
