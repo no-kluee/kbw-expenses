@@ -569,14 +569,16 @@ function App() {
 
   async function ghLoad() {
     const GH_TOKEN = lsLoad('ghToken','');
+    const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`;
     try {
-      const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`, {
-        headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json' }
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const content = JSON.parse(atob(data.content.replace(/\n/g,'')));
-      return { data: content, sha: data.sha };
+      // Step 1: the file's version id (works for files of any size)
+      const meta = await fetch(url, { headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json' }, cache: 'no-store' });
+      if (!meta.ok) return null;
+      const m = await meta.json();
+      // Step 2: the content itself, as raw text (GitHub only inlines files under 1 MB)
+      const rawRes = await fetch(url, { headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' });
+      if (!rawRes.ok) return null;
+      return { data: await rawRes.json(), sha: m.sha };
     } catch { return null; }
   }
 
@@ -3539,7 +3541,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24j</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24k</div>
       </div>
     </div>
   );
