@@ -557,6 +557,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .vchips::-webkit-scrollbar{display:none}
 .vchip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;border:none;background:rgba(128,128,128,.18);color:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
 .vchip:active{opacity:.6}
+.rtot{font-size:11px;opacity:.55;margin-top:1px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -2147,6 +2148,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
                       </div>
                       <div className="rright">
                         <div className="ramt">{cad(e.amount)}</div>
+                        <div className="rtot" title="Total paid including taxes and tip">Total {cad(A.bd.total)}</div>
                         <div className="rnote" title={!receipt&&e.noReceipt?e.noReceipt:undefined} style={receipt?undefined:(e.noReceipt?{opacity:.55}:{color:T.amber,opacity:1})}>{receipt ? `ITC ${cad(A.itc)}` : (e.noReceipt ? 'No receipt needed' : 'No receipt')}</div>
                       </div>
                       <div className="rac" onClick={ev=>ev.stopPropagation()}>
@@ -4422,7 +4424,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25i</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25j</div>
       </div>
     </div>
   );
