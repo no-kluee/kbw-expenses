@@ -3512,7 +3512,7 @@ function loadJsPdf(){
   return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=JSPDF_URL; s.onload=()=>res(window.jspdf); s.onerror=()=>rej(new Error('Could not load the PDF tool. Check your connection.')); document.head.appendChild(s); });
 }
 const invSub = i => (i.items||[]).reduce((s,x)=>s+(+x.amount||0),0);
-const invGst = i => +(invSub(i)*((+i.gstRate||0)/100)).toFixed(2);
+const invGst = i => (i.gst!=null && !isNaN(+i.gst)) ? +(+i.gst).toFixed(2) : +(invSub(i)*((+i.gstRate||0)/100)).toFixed(2);
 const invTot = i => +(invSub(i)+invGst(i)).toFixed(2);
 const invStatus = i => i.paid ? 'Paid' : (!i.sent ? 'Draft' : ((i.due||i.date) < localToday() ? 'Overdue' : 'Unpaid'));
 const longDate = d => { try { const [y,m,dd]=d.split('-').map(Number); return new Date(y,m-1,dd).toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}); } catch { return d||''; } };
@@ -3613,7 +3613,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     const i={...edit,items:edit.items.filter(x=>x.desc||+x.amount).map(x=>({desc:x.desc,amount:+x.amount||0}))};
     if(!i.items.length){ setMsg('Add at least one line item.'); return; }
     if(invoices.some(x=>x.num===i.num && x.id!==i.id)){ setMsg('Invoice number '+i.num+' is already used.'); return; }
-    delete i._new; setInvoices(p=>p.some(x=>x.id===i.id)?p.map(x=>x.id===i.id?i:x):[...p,i]); setEdit(null); setMsg('');
+    delete i._new; delete i.gst; setInvoices(p=>p.some(x=>x.id===i.id)?p.map(x=>x.id===i.id?i:x):[...p,i]); setEdit(null); setMsg('');
   }
   function delInvoice(i){
     if(!window.confirm('Delete invoice '+i.num+'? This cannot be undone here.')) return;
@@ -3655,10 +3655,10 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
         lines.slice(1).forEach((l,k)=>{
           const c=parse(l); const nm=c[iN]; const dt=(c[iD]||'').slice(0,10); const tot=parseFloat((c[iT]||'').replace(/[^0-9.\-]/g,''));
           if(!nm||have.has(nm)||!/^\d{4}-\d{2}-\d{2}$/.test(dt)||isNaN(tot)) return;
-          let sub,gr; const sv=iS>=0?parseFloat((c[iS]||'').replace(/[^0-9.\-]/g,'')):NaN, tx=iX>=0?parseFloat((c[iX]||'').replace(/[^0-9.\-]/g,'')):NaN;
-          if(!isNaN(sv)&&!isNaN(tx)){ sub=sv; gr=sv?+(tx/sv*100).toFixed(2):0; }
-          else if(impGst==='incl'){ sub=+(tot/(1+rate/100)).toFixed(2); gr=rate; } else { sub=tot; gr=0; }
-          out.push({id:Date.now()+k,num:nm,date:dt,due:dt,customer:(iC>=0&&c[iC])||(P.customers[0]&&P.customers[0].name)||'',items:[{desc:'Imported from Wave',amount:sub}],gstRate:gr,notes:'',sent:true,paid:dt,method:'e-transfer',imported:true});
+          let sub,gr,gx; const sv=iS>=0?parseFloat((c[iS]||'').replace(/[^0-9.\-]/g,'')):NaN, tx=iX>=0?parseFloat((c[iX]||'').replace(/[^0-9.\-]/g,'')):NaN;
+          if(!isNaN(sv)&&!isNaN(tx)){ sub=sv; gx=tx; gr=sv?+(tx/sv*100).toFixed(2):0; }
+          else if(impGst==='incl'){ sub=+(tot/(1+rate/100)).toFixed(2); gx=+(tot-sub).toFixed(2); gr=rate; } else { sub=tot; gr=0; }
+          out.push({id:Date.now()+k,num:nm,date:dt,due:dt,customer:(iC>=0&&c[iC])||(P.customers[0]&&P.customers[0].name)||'',items:[{desc:'Imported from Wave',amount:sub}],gstRate:gr,gst:gx,notes:'',sent:true,paid:dt,method:'e-transfer',imported:true});
         });
         if(!out.length) throw new Error('No new invoices found in that file.');
         setInvoices(p=>[...p,...out]); setMsg('Imported '+out.length+' invoices.');
@@ -4767,7 +4767,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26a</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26b</div>
       </div>
     </div>
   );
