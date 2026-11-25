@@ -1865,7 +1865,7 @@ function App() {
         {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onReview={()=>setReviewOpen(true)} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
-        {tab==='income'     && <Income logoImg={logo.logoImg} invoices={invoices} setInvoices={setInvoices} prof={invProf} setProf={setInvProf} expenses={expenses} province={province} cats={cats} T={T} dl={dl} />}
+        {tab==='income'     && <Income gClientId={gClientId} logoImg={logo.logoImg} invoices={invoices} setInvoices={setInvoices} prof={invProf} setProf={setInvProf} expenses={expenses} province={province} cats={cats} T={T} dl={dl} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
@@ -3638,7 +3638,28 @@ async function makeInvoicePdfClassic(inv, prof, logoImg) {
   return d.output('blob');
 }
 
-function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl, logoImg}) {
+// ─── Send invoices by email through the user's own Gmail (gmail.send scope only) ───
+let _gmTok={t:'',exp:0};
+function gmailToken(clientId){ // call straight from a tap so Safari allows the Google popup
+  return new Promise((res,rej)=>{
+    if(_gmTok.t && Date.now()<_gmTok.exp) return res(_gmTok.t);
+    if(!window.google?.accounts?.oauth2) return rej(new Error('Google sign-in did not load. Check your connection and try again.'));
+    const c=window.google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/gmail.send',
+      callback:r=>{ if(r.error) return rej(new Error(r.error==='access_denied'?'Gmail access was not allowed.':String(r.error))); _gmTok={t:r.access_token,exp:Date.now()+((+r.expires_in||3600)-120)*1000}; res(r.access_token); },
+      error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'The Google window was closed.':'Could not open Google sign-in.'))});
+    c.requestAccessToken();
+  });
+}
+const blobB64 = b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(b); });
+async function gmailSendMail(token,{to,cc,subject,body,fname,pdf64}){
+  const u8=x=>btoa(unescape(encodeURIComponent(x))), wrap=x=>x.replace(/(.{76})/g,'$1\r\n'), bd='kbw'+Date.now().toString(36);
+  const mime=`To: ${to}\r\n`+(cc?`Cc: ${cc}\r\n`:'')+`Subject: =?UTF-8?B?${u8(subject)}?=\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="${bd}"\r\n\r\n--${bd}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(u8(body))}\r\n--${bd}\r\nContent-Type: application/pdf; name="${fname}"\r\nContent-Disposition: attachment; filename="${fname}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(pdf64)}\r\n--${bd}--`;
+  const raw=btoa(mime).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({raw})});
+  if(!r.ok){ if(r.status===401) _gmTok={t:'',exp:0}; let m=''; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(r.status===403?'Gmail is not switched on for this app yet. '+m:'Gmail said no ('+r.status+'). '+m); }
+}
+
+function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl, logoImg, gClientId}) {
   const inp={background:T.bg4,borderColor:T.border,color:T.text};
   const thisYear=String(new Date().getFullYear());
   const [year,setYear]=useState(thisYear);
@@ -3646,6 +3667,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const [edit,setEdit]=useState(null);          // invoice being edited
   const [showSet,setShowSet]=useState(false);
   const [showCl,setShowCl]=useState(false);
+  const [cmp,setCmp]=useState(null);   // email compose sheet
   const [qc,setQc]=useState(null);   // quick-add client inside the invoice editor
   const [busy,setBusy]=useState('');
   const [msg,setMsg]=useState('');
@@ -3728,12 +3750,26 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     const subject=`Invoice ${i.num} from ${P.name||'me'}`;
     const first=(c.contact||'').split(' ')[0]||'there';
     const body=`Hi ${first},\n\nPlease find invoice ${i.num} attached for ${cad(invTot(i))}, due ${longDate(i.due||i.date)}.\n\n${(P.notes||'').split('\n')[0]}\n\nThanks,\n${P.name||''}`;
-    const file=new File([b],invFile(i),{type:'application/pdf'});
+    let pdf64=''; try{ pdf64=await blobB64(b); }catch(e){}
+    setCmp({i,b,to:c.email||'',cc:'',subject,body,fname:invFile(i),pdf64,busy:0,err:''});
+  }
+  async function shareIt(){
+    const {i,b,subject,body,to}=cmp; const file=new File([b],invFile(i),{type:'application/pdf'});
     try{
       if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:subject,text:body}); }
-      else { saveBlob(b,invFile(i)); window.location.href=`mailto:${encodeURIComponent(c.email||'')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; }
-      upd(i.id,{sent:true});
-    }catch(e){ if(e&&e.name!=='AbortError') setMsg('Could not open the share sheet. Use Download instead.'); }
+      else { saveBlob(b,invFile(i)); window.location.href=`mailto:${encodeURIComponent(to||'')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; }
+      upd(i.id,{sent:true}); setCmp(null);
+    }catch(e){ if(e&&e.name!=='AbortError') setCmp(x=>({...x,err:'Could not open the share sheet. Use PDF download instead.'})); }
+  }
+  function doGmail(){
+    if(!gClientId){ setCmp(x=>({...x,err:'Add your Google Client ID in Settings first.'})); return; }
+    if(!cmp.to.trim()){ setCmp(x=>({...x,err:'Add who it is going to.'})); return; }
+    if(!cmp.pdf64){ setCmp(x=>({...x,err:'The PDF is not ready. Close this and try again.'})); return; }
+    const m=cmp; setCmp(x=>({...x,busy:1,err:''}));
+    gmailToken(gClientId).then(async tok=>{
+      await gmailSendMail(tok,{to:m.to.trim(),cc:m.cc.trim(),subject:m.subject,body:m.body,fname:m.fname,pdf64:m.pdf64});
+      upd(m.i.id,{sent:true,emailedTo:m.to.trim(),emailedAt:localToday()}); setCmp(null); setMsg('Sent to '+m.to.trim()+' from your Gmail.');
+    }).catch(e=>setCmp(x=>x&&({...x,busy:0,err:(e&&e.message)||'Could not send.'})));
   }
   function exportCSV(){
     const rows=[['Number','Date','Due','Customer','Status','Subtotal','GST','Total','Paid date'],...yInv.slice().reverse().map(i=>[i.num,i.date,i.due||'',i.customer,invStatus(i),invSub(i).toFixed(2),invGst(i).toFixed(2),invTot(i).toFixed(2),i.paid||''])];
@@ -3876,6 +3912,23 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
               </div>);})}
           </div>}
 
+      {cmp && (
+        <div className="ov" onClick={()=>!cmp.busy&&setCmp(null)}>
+          <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+            <div className="mhdr"><div className="mttl">Email invoice {cmp.i.num}</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={()=>setCmp(null)}>✕</button></div>
+            <div className="fg"><label className="fl">To</label><input style={inp} type="email" value={cmp.to} onChange={e=>setCmp(x=>({...x,to:e.target.value}))} placeholder="client@email.com"/></div>
+            <div className="fg"><label className="fl">Cc (optional)</label><input style={inp} type="email" value={cmp.cc} onChange={e=>setCmp(x=>({...x,cc:e.target.value}))}/></div>
+            <div className="fg"><label className="fl">Subject</label><input style={inp} value={cmp.subject} onChange={e=>setCmp(x=>({...x,subject:e.target.value}))}/></div>
+            <div className="fg"><label className="fl">Message</label><textarea style={{...inp,minHeight:140,fontFamily:'inherit'}} value={cmp.body} onChange={e=>setCmp(x=>({...x,body:e.target.value}))}/></div>
+            <div style={{fontSize:12,opacity:.6,margin:'2px 0 10px'}}>Attached: {cmp.fname}</div>
+            {cmp.err && <div style={{color:T.red,fontSize:12.5,marginBottom:10}}>{cmp.err}</div>}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={doGmail}>{cmp.busy?'Sending…':'Send from my Gmail'}</button>
+              <button style={bs} disabled={cmp.busy} onClick={shareIt}>Share / other app</button>
+            </div>
+          </div>
+        </div>
+      )}
       {edit && (
         <div className="ov" onClick={()=>setEdit(null)}>
           <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text,maxWidth:520}} onClick={e=>e.stopPropagation()}>
@@ -4888,7 +4941,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26j</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26k</div>
       </div>
     </div>
   );
