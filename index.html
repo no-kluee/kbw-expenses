@@ -802,6 +802,8 @@ function App() {
   const [vendors,  setVendors]  = useState(()=>lsLoad('vendors', []));
   const [recurring,setRecurring]= useState(()=>lsLoad('recurring', []));
   const [mileage,  setMileage]  = useState(()=>lsLoad('mileage', []));
+  const [invoices, setInvoices] = useState(()=>lsLoad('invoices', []));
+  const [invProf,  setInvProf]  = useState(()=>({...INV_DEF,...lsLoad('invProfile', {})}));
   window.kbwClients = clients;
   const [expenses, setExpenses] = useState(()=>lsLoad('expenses', []));
   const [province, setProvince] = useState(()=>lsLoad('province', 'BC'));
@@ -1278,6 +1280,8 @@ function App() {
   useEffect(()=>{ lsSave('vendors',vendors); },[vendors]);
   useEffect(()=>{ lsSave('recurring',recurring); },[recurring]);
   useEffect(()=>{ lsSave('mileage',mileage); },[mileage]);
+  useEffect(()=>{ lsSave('invoices',invoices); },[invoices]);
+  useEffect(()=>{ lsSave('invProfile',invProf); },[invProf]);
   useEffect(()=>{ lsSave('gToken',   gToken);    },[gToken]);
   useEffect(()=>{ lsSave('medical', medical); },[medical]);
   useEffect(()=>{ sessionStorage.setItem('kbw_tab', tab); },[tab]);
@@ -1292,10 +1296,10 @@ function App() {
   useEffect(()=>{ latestMedical.current = medical; },[medical]);
   const firstSettings = useRef(true);
   useEffect(()=>{
-    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage };
+    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage, invoices, invProfile: invProf };
     if (firstSettings.current) { firstSettings.current = false; return; }
     if (window._ghReady && !window._ghLoading) settingsDirty.current = true;
-  },[theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage]);
+  },[theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage, invoices, invProf]);
 
   // Load saved data from GitHub (startup, and right after a token is saved in Settings)
   async function pullFromGitHub(token) {
@@ -1364,6 +1368,8 @@ function App() {
         if (Array.isArray(st.vendors)) { setVendors(st.vendors); lsSave('vendors', st.vendors); }
         if (Array.isArray(st.recurring)) { setRecurring(st.recurring); lsSave('recurring', st.recurring); }
         if (Array.isArray(st.mileage)) { setMileage(st.mileage); lsSave('mileage', st.mileage); }
+        if (Array.isArray(st.invoices)) { setInvoices(st.invoices); lsSave('invoices', st.invoices); }
+        if (st.invProfile && typeof st.invProfile==='object') { const ip={...INV_DEF,...st.invProfile}; setInvProf(ip); lsSave('invProfile', ip); }
         if (typeof st.gClientId === 'string' && st.gClientId) { setGClientId(st.gClientId); lsSave('gClientId', st.gClientId); }
       }
       // Re-attach receipts already in Google Drive (fills empty ones only)
@@ -1397,7 +1403,7 @@ function App() {
     window._ghDirty = true;
     clearTimeout(ghSaveTimer.current);
     ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
-  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage]);
+  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage, invoices, invProf]);
 
   // Pull the latest when you come back to the app (never while a local change is still waiting to save)
   const lastPullAt = useRef(Date.now());
@@ -1742,7 +1748,7 @@ function App() {
     return ()=>window.removeEventListener('keydown', h);
   },[modal, fullImg]);
   const dExp = detailExp ? (expenses.find(x=>x.id===detailExp.id) || null) : null;
-  const TITLES = {dashboard:'Dashboard',expenses:'Expenses',categories:'Categories',medical:'Medical',summary:'Summary',mileage:'Mileage'};
+  const TITLES = {dashboard:'Dashboard',expenses:'Expenses',categories:'Categories',medical:'Medical',summary:'Summary',mileage:'Mileage',income:'Income'};
   const hasFilters = ['dashboard','expenses','categories','summary'].includes(tab);
   const filtersActive = filter.cat!=='all' || !!filter.dateFrom || !!filter.dateTo || filter.sort!=='date';
   const syncLabel = syncSt.s==='ok' ? 'Synced' : syncSt.s==='syncing' ? 'Syncing…' : syncSt.s==='error' ? 'Sync failed' : 'Sync';
@@ -1767,7 +1773,7 @@ function App() {
             </div>
           </div>
           <div className="nav">
-            {['dashboard','expenses','categories','medical','summary','mileage'].map(t=>(
+            {['dashboard','expenses','categories','medical','summary','mileage','income'].map(t=>(
               <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text}} onClick={()=>setTab(t)}>
                 <span className="nb-i"><Ic n={t} s={21}/></span><span>{t[0].toUpperCase()+t.slice(1)}</span>
               </button>
@@ -1856,6 +1862,7 @@ function App() {
         {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onReview={()=>setReviewOpen(true)} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
+        {tab==='income'     && <Income invoices={invoices} setInvoices={setInvoices} prof={invProf} setProf={setInvProf} expenses={expenses} province={province} cats={cats} T={T} dl={dl} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
@@ -3496,6 +3503,307 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
   );
 }
 
+// ─── INCOME / INVOICES ────────────────────────────────────────────────────────
+const INV_DEF = {name:'',addr:'',phone:'',gstNo:'',gstRate:5,notes:'',startNum:1,customers:[],
+  recur:{on:false,customer:'',desc:'',amount:'',days:[1,15],since:'',skip:[]}};
+const JSPDF_URL='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+function loadJsPdf(){
+  if (window.jspdf) return Promise.resolve(window.jspdf);
+  return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=JSPDF_URL; s.onload=()=>res(window.jspdf); s.onerror=()=>rej(new Error('Could not load the PDF tool. Check your connection.')); document.head.appendChild(s); });
+}
+const invSub = i => (i.items||[]).reduce((s,x)=>s+(+x.amount||0),0);
+const invGst = i => +(invSub(i)*((+i.gstRate||0)/100)).toFixed(2);
+const invTot = i => +(invSub(i)+invGst(i)).toFixed(2);
+const invStatus = i => i.paid ? 'Paid' : (!i.sent ? 'Draft' : ((i.due||i.date) < localToday() ? 'Overdue' : 'Unpaid'));
+const longDate = d => { try { const [y,m,dd]=d.split('-').map(Number); return new Date(y,m-1,dd).toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}); } catch { return d||''; } };
+const invFile = i => `Invoice_${i.num}_${i.date}.pdf`;
+
+async function makeInvoicePdf(inv, prof) {
+  const {jsPDF} = await loadJsPdf();
+  const cust = (prof.customers||[]).find(c=>c.name===inv.customer) || {name:inv.customer};
+  const d = new jsPDF({unit:'pt',format:'letter'});
+  const L=48, R=564, W=612;
+  const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), due = inv.paid ? 0 : tot;
+  const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||10); d.setTextColor(o.g?110:20); d.text(String(t),x,y,{align:o.a||'left'}); };
+  let y=58;
+  txt(prof.name||'',L,y,{b:1,s:13}); y+=16;
+  String(prof.addr||'').split('\n').filter(Boolean).forEach(l=>{ txt(l,L,y,{g:1}); y+=13; });
+  txt('Contact Information',R,58,{a:'right',g:1}); txt(prof.phone||'',R,72,{a:'right'});
+  txt('Amount Due (CAD)',R,104,{a:'right',g:1}); txt(cad(due),R,126,{a:'right',b:1,s:18});
+  txt('INVOICE',W/2,176,{a:'center',b:1,s:26});
+  d.setDrawColor(210); d.line(L,192,R,192);
+  txt('BILL TO',L,214,{b:1,s:9,g:1});
+  let by=230; txt(cust.name||'',L,by,{b:1,s:11}); by+=14;
+  [cust.contact,...String(cust.addr||'').split('\n'),cust.phone,cust.email].filter(Boolean).forEach(l=>{ txt(l,L,by,{g:1}); by+=13; });
+  const meta=[['Invoice Number:',inv.num],['Invoice Date:',longDate(inv.date)],['Payment Due:',longDate(inv.due||inv.date)],['Amount Due (CAD):',cad(due)]];
+  let my=214; meta.forEach(([k,v])=>{ txt(k,400,my,{a:'right',g:1}); txt(v,R,my,{a:'right',b:k==='Amount Due (CAD):'}); my+=16; });
+  y=Math.max(by,my)+28;
+  d.setFillColor(245); d.rect(L,y-14,R-L,22,'F');
+  txt('SERVICES',L+8,y,{b:1,s:9,g:1}); txt('AMOUNT',R-8,y,{b:1,s:9,g:1,a:'right'}); y+=26;
+  (inv.items||[]).forEach(it=>{
+    const lines=d.splitTextToSize(String(it.desc||''),380);
+    lines.forEach((l,k)=>{ txt(l,L+8,y+k*13); });
+    txt(cad(it.amount),R-8,y,{a:'right'}); y+=Math.max(1,lines.length)*13+10;
+  });
+  d.line(L,y,R,y); y+=22;
+  const row=(k,v,b)=>{ txt(k,430,y,{a:'right',b,g:!b}); txt(v,R-8,y,{a:'right',b}); y+=18; };
+  row('Subtotal:',cad(sub));
+  if (+inv.gstRate>0) row(`GST ${inv.gstRate}%${prof.gstNo?' ('+prof.gstNo+')':''}:`,cad(gst));
+  row('Total:',cad(tot),1);
+  if (inv.paid) row(`Payment on ${longDate(inv.paid)} using ${inv.method||'e-transfer'}:`,cad(tot));
+  row('Amount Due (CAD):',cad(due),1);
+  if (inv.notes) {
+    y+=18; d.line(L,y,R,y); y+=20; txt('Notes / Terms',L,y,{b:1,s:10}); y+=15;
+    String(inv.notes).split('\n').forEach(p=>{ d.splitTextToSize(p,R-L).forEach(l=>{ txt(l,L,y,{g:1}); y+=13; }); });
+  }
+  return d.output('blob');
+}
+
+function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl}) {
+  const inp={background:T.bg4,borderColor:T.border,color:T.text};
+  const thisYear=String(new Date().getFullYear());
+  const [year,setYear]=useState(thisYear);
+  const [period,setPeriod]=useState('year');
+  const [edit,setEdit]=useState(null);          // invoice being edited
+  const [showSet,setShowSet]=useState(false);
+  const [busy,setBusy]=useState('');
+  const [msg,setMsg]=useState('');
+  const [impGst,setImpGst]=useState('incl');
+  const num={fontFamily:"-apple-system,BlinkMacSystemFont,SF Pro Display,SF Pro Text,Inter,system-ui,sans-serif"};
+  const P = {...INV_DEF,...prof,recur:{...INV_DEF.recur,...(prof.recur||{})}};
+
+  const nextNum = ()=>{ const ns=invoices.map(i=>parseInt(i.num,10)).filter(n=>!isNaN(n)); return String(ns.length?Math.max(...ns)+1:(+P.startNum||1)); };
+
+  // Monthly recurring: make drafts for the 1st / 15th (or your days) that have come due
+  useEffect(()=>{
+    const r=P.recur; if(!r.on||!r.since||!r.customer) return;
+    const today=localToday(), made=[]; let n=parseInt(nextNum(),10);
+    const [sy,sm]=r.since.split('-').map(Number); const now=new Date();
+    let y=sy, m=sm, guard=0;
+    while((y<now.getFullYear()||(y===now.getFullYear()&&m<=now.getMonth()+1)) && guard++<36){
+      (r.days||[1,15]).forEach(dd=>{
+        const dim=new Date(y,m,0).getDate(); const day=Math.min(+dd,dim);
+        const ds=`${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        if(ds>=r.since && ds<=today && !invoices.some(i=>i.rk===ds) && !(r.skip||[]).includes(ds)){
+          made.push({id:Date.now()+made.length,num:String(n++),date:ds,due:ds,customer:r.customer,items:[{desc:r.desc||'Services',amount:+r.amount||0}],gstRate:+P.gstRate||0,notes:P.notes||'',rk:ds});
+        }
+      });
+      m++; if(m>12){m=1;y++;}
+    }
+    if(made.length) setInvoices(p=>[...p,...made]);
+  },[JSON.stringify(P.recur),invoices.length,P.customers.length]);
+
+  const yInv = invoices.filter(i=>i.date.startsWith(year)).sort((a,b)=>b.date.localeCompare(a.date)||(parseInt(b.num)||0)-(parseInt(a.num)||0));
+  const years=[...new Set([thisYear,...invoices.map(i=>i.date.slice(0,4))])].sort().reverse();
+  const inPeriod = d => { if(!d.startsWith(year)) return false; if(period==='year') return true; const m=+d.slice(5,7); const q=Math.ceil(m/3); return period==='q'+q; };
+  const pInv = invoices.filter(i=>inPeriod(i.date) && (i.sent||i.paid));
+  const billed = pInv.reduce((s,i)=>s+invSub(i),0);
+  const gstC   = pInv.reduce((s,i)=>s+invGst(i),0);
+  const unpaid = invoices.filter(i=>!i.paid && i.sent).reduce((s,i)=>s+invTot(i),0);
+  const itc = useMemo(()=>expenses.filter(e=>inPeriod(e.date)).reduce((s,e)=>{ const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats); return s+bd.gstClaimable*((e.bizPct!=null?e.bizPct:100)/100); },0),[expenses,year,period,province,cats]);
+  const net = gstC-itc;
+  const drafts = yInv.filter(i=>invStatus(i)==='Draft').length;
+
+  const upd = (id,patch)=>setInvoices(p=>p.map(i=>i.id===id?{...i,...patch}:i));
+  const newInvoice = ()=>{
+    if(!P.customers.length){ setShowSet(true); setMsg('Add your details and a client first.'); return; }
+    setEdit({id:Date.now(),num:nextNum(),date:localToday(),due:localToday(),customer:P.customers[0].name,items:[{desc:'',amount:''}],gstRate:+P.gstRate||0,notes:P.notes||'',_new:true});
+  };
+  function saveEdit(){
+    const i={...edit,items:edit.items.filter(x=>x.desc||+x.amount).map(x=>({desc:x.desc,amount:+x.amount||0}))};
+    if(!i.items.length){ setMsg('Add at least one line item.'); return; }
+    if(invoices.some(x=>x.num===i.num && x.id!==i.id)){ setMsg('Invoice number '+i.num+' is already used.'); return; }
+    delete i._new; setInvoices(p=>p.some(x=>x.id===i.id)?p.map(x=>x.id===i.id?i:x):[...p,i]); setEdit(null); setMsg('');
+  }
+  function delInvoice(i){
+    if(!window.confirm('Delete invoice '+i.num+'? This cannot be undone here.')) return;
+    setInvoices(p=>p.filter(x=>x.id!==i.id));
+    if(i.rk) setProf({...P,recur:{...P.recur,skip:[...(P.recur.skip||[]),i.rk]}});
+    setEdit(null);
+  }
+  const markPaid = i=>{ const d=window.prompt('Date paid (YYYY-MM-DD)',localToday()); if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) upd(i.id,{paid:d,sent:true,method:i.method||'e-transfer'}); };
+  async function pdfOf(i){ setBusy(i.id); setMsg(''); try{ return await makeInvoicePdf(i,P); } catch(e){ setMsg(e.message||'PDF failed'); return null; } finally{ setBusy(''); } }
+  function saveBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500); }
+  async function download(i){ const b=await pdfOf(i); if(b) saveBlob(b,invFile(i)); }
+  async function send(i){
+    const b=await pdfOf(i); if(!b) return;
+    const c=P.customers.find(x=>x.name===i.customer)||{};
+    const subject=`Invoice ${i.num} from ${P.name||'me'}`;
+    const first=(c.contact||'').split(' ')[0]||'there';
+    const body=`Hi ${first},\n\nPlease find invoice ${i.num} attached for ${cad(invTot(i))}, due ${longDate(i.due||i.date)}.\n\n${(P.notes||'').split('\n')[0]}\n\nThanks,\n${P.name||''}`;
+    const file=new File([b],invFile(i),{type:'application/pdf'});
+    try{
+      if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:subject,text:body}); }
+      else { saveBlob(b,invFile(i)); window.location.href=`mailto:${encodeURIComponent(c.email||'')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`; }
+      upd(i.id,{sent:true});
+    }catch(e){ if(e&&e.name!=='AbortError') setMsg('Could not open the share sheet. Use Download instead.'); }
+  }
+  function exportCSV(){
+    const rows=[['Number','Date','Due','Customer','Status','Subtotal','GST','Total','Paid date'],...yInv.slice().reverse().map(i=>[i.num,i.date,i.due||'',i.customer,invStatus(i),invSub(i).toFixed(2),invGst(i).toFixed(2),invTot(i).toFixed(2),i.paid||''])];
+    dl('Invoices_'+year+'.csv','text/csv',rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'));
+  }
+  function importCSV(file){
+    const rd=new FileReader(); rd.onload=()=>{
+      try{
+        const lines=String(rd.result).replace(/\r/g,'').split('\n').filter(l=>l.trim());
+        const parse=l=>{ const o=[]; let c='',q=false; for(const ch of l){ if(ch==='"') q=!q; else if(ch===','&&!q){o.push(c);c='';} else c+=ch; } o.push(c); return o.map(s=>s.trim()); };
+        const h=parse(lines[0]).map(s=>s.toLowerCase());
+        const ix=(...k)=>h.findIndex(x=>k.some(y=>x.includes(y)));
+        const iN=ix('number','invoice #','invoice no'), iD=ix('invoice date','date'), iC=ix('customer','client','bill'), iT=ix('total','amount'), iS=ix('subtotal'), iX=ix('tax','gst');
+        if(iN<0||iD<0||iT<0) throw new Error('Need columns for invoice number, date and total.');
+        const have=new Set(invoices.map(i=>i.num)); const out=[]; const rate=+P.gstRate||5;
+        lines.slice(1).forEach((l,k)=>{
+          const c=parse(l); const nm=c[iN]; const dt=(c[iD]||'').slice(0,10); const tot=parseFloat((c[iT]||'').replace(/[^0-9.\-]/g,''));
+          if(!nm||have.has(nm)||!/^\d{4}-\d{2}-\d{2}$/.test(dt)||isNaN(tot)) return;
+          let sub,gr; const sv=iS>=0?parseFloat((c[iS]||'').replace(/[^0-9.\-]/g,'')):NaN, tx=iX>=0?parseFloat((c[iX]||'').replace(/[^0-9.\-]/g,'')):NaN;
+          if(!isNaN(sv)&&!isNaN(tx)){ sub=sv; gr=sv?+(tx/sv*100).toFixed(2):0; }
+          else if(impGst==='incl'){ sub=+(tot/(1+rate/100)).toFixed(2); gr=rate; } else { sub=tot; gr=0; }
+          out.push({id:Date.now()+k,num:nm,date:dt,due:dt,customer:(iC>=0&&c[iC])||(P.customers[0]&&P.customers[0].name)||'',items:[{desc:'Imported from Wave',amount:sub}],gstRate:gr,notes:'',sent:true,paid:dt,method:'e-transfer',imported:true});
+        });
+        if(!out.length) throw new Error('No new invoices found in that file.');
+        setInvoices(p=>[...p,...out]); setMsg('Imported '+out.length+' invoices.');
+      }catch(e){ setMsg(e.message||'Import failed'); }
+    }; rd.readAsText(file);
+  }
+  const chip=s=>({Paid:['rgba(46,204,138,.16)',T.green],Draft:['rgba(150,150,160,.2)',T.text],Unpaid:['rgba(10,132,255,.16)',T.blue],Overdue:['rgba(255,69,58,.16)','#ff453a']}[s]);
+  const setE=(k,v)=>setEdit(e=>({...e,[k]:v}));
+  const setItem=(n,k,v)=>setEdit(e=>({...e,items:e.items.map((x,j)=>j===n?{...x,[k]:v}:x)}));
+  const setP=(k,v)=>setProf({...P,[k]:v});
+  const setR=(k,v)=>setProf({...P,recur:{...P.recur,[k]:v}});
+  const bs={padding:'9px 14px',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',border:`1px solid ${T.border}`,background:T.bg4,color:T.text};
+
+  return (
+    <div>
+      <div className="sgrid" style={{marginBottom:14}}>
+        <div className="sc" style={{background:T.bg2,borderColor:T.border}}><div className="sc-bar" style={{background:T.blue}}/><div className="sc-lbl">Invoiced {year}</div><div className="sc-val" style={{color:T.blue,...num}}>{cad(invoices.filter(i=>i.date.startsWith(year)&&(i.sent||i.paid)).reduce((s,i)=>s+invSub(i),0))}</div><div className="sc-sub">before GST</div></div>
+        <div className="sc" style={{background:T.bg2,borderColor:T.border}}><div className="sc-bar" style={{background:unpaid>0?T.amber:T.green}}/><div className="sc-lbl">Waiting to be paid</div><div className="sc-val" style={{color:unpaid>0?T.amber:T.green,...num}}>{cad(unpaid)}</div><div className="sc-sub">{drafts?`${drafts} draft${drafts>1?'s':''} not sent`:'all sent'}</div></div>
+      </div>
+
+      <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+          <div style={{fontWeight:700,flex:1}}>GST to remit</div>
+          <select value={period} onChange={e=>setPeriod(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
+            <option style={{color:'#000'}} value="year">Whole year</option><option style={{color:'#000'}} value="q1">Jan to Mar</option><option style={{color:'#000'}} value="q2">Apr to Jun</option><option style={{color:'#000'}} value="q3">Jul to Sep</option><option style={{color:'#000'}} value="q4">Oct to Dec</option>
+          </select>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',rowGap:6,fontSize:14,...num}}>
+          <div style={{opacity:.7}}>GST charged on invoices sent</div><div style={{textAlign:'right'}}>{cad(gstC)}</div>
+          <div style={{opacity:.7}}>GST paid on expenses (ITCs)</div><div style={{textAlign:'right'}}>- {cad(itc)}</div>
+          <div style={{fontWeight:700,borderTop:`1px solid ${T.border}`,paddingTop:8}}>{net>=0?'You owe':'Refund'}</div><div style={{textAlign:'right',fontWeight:700,borderTop:`1px solid ${T.border}`,paddingTop:8,color:net>=0?T.amber:T.green}}>{cad(Math.abs(net))}</div>
+        </div>
+        <div style={{fontSize:11,opacity:.5,marginTop:8}}>Based on invoice dates. Check against your GST filing method before you file.</div>
+      </div>
+
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+        <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={newInvoice}>+ New invoice</button>
+        <button style={bs} onClick={()=>setShowSet(s=>!s)}>{showSet?'Close details':'Invoice details'}</button>
+        <select value={year} onChange={e=>setYear(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>{years.map(y=><option key={y} style={{color:'#000'}}>{y}</option>)}</select>
+        <button style={bs} onClick={exportCSV}>CSV</button>
+      </div>
+      {msg && <div style={{padding:'9px 12px',borderRadius:9,background:'rgba(255,159,10,.14)',color:T.amber,fontSize:13,marginBottom:12}}>{msg}</div>}
+
+      {showSet && (
+        <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
+          <div style={{fontWeight:700,marginBottom:10}}>Your details (shown on every invoice)</div>
+          <div className="fg"><label className="fl">Your name or business</label><input style={inp} value={P.name} onChange={e=>setP('name',e.target.value)}/></div>
+          <div className="fg"><label className="fl">Address (one line per row)</label><textarea style={{...inp,minHeight:64}} value={P.addr} onChange={e=>setP('addr',e.target.value)}/></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div className="fg"><label className="fl">Phone</label><input style={inp} value={P.phone} onChange={e=>setP('phone',e.target.value)}/></div>
+            <div className="fg"><label className="fl">GST number</label><input style={inp} value={P.gstNo} onChange={e=>setP('gstNo',e.target.value)}/></div>
+            <div className="fg"><label className="fl">GST rate %</label><input type="number" style={inp} value={P.gstRate} onChange={e=>setP('gstRate',e.target.value)}/></div>
+            <div className="fg"><label className="fl">Next invoice # (if none yet)</label><input type="number" style={inp} value={P.startNum} onChange={e=>setP('startNum',e.target.value)}/></div>
+          </div>
+          <div className="fg"><label className="fl">Notes / terms on each invoice</label><textarea style={{...inp,minHeight:64}} value={P.notes} onChange={e=>setP('notes',e.target.value)}/></div>
+
+          <div style={{fontWeight:700,margin:'14px 0 8px'}}>Clients</div>
+          {P.customers.map((c,n)=>(
+            <div key={n} style={{border:`1px solid ${T.border}`,borderRadius:10,padding:10,marginBottom:8}}>
+              <input style={{...inp,marginBottom:6}} placeholder="Company name" value={c.name} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,name:e.target.value}:x))}/>
+              <input style={{...inp,marginBottom:6}} placeholder="Contact person" value={c.contact||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,contact:e.target.value}:x))}/>
+              <textarea style={{...inp,marginBottom:6,minHeight:56}} placeholder="Address" value={c.addr||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,addr:e.target.value}:x))}/>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <input style={inp} placeholder="Phone" value={c.phone||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,phone:e.target.value}:x))}/>
+                <input style={inp} placeholder="Email (for sending)" value={c.email||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,email:e.target.value}:x))}/>
+              </div>
+              <button style={{background:'none',border:'none',color:T.red,fontSize:12,marginTop:6}} onClick={()=>{ if(window.confirm('Remove this client? Existing invoices keep their name.')) setP('customers',P.customers.filter((_,j)=>j!==n)); }}>Remove client</button>
+            </div>))}
+          <button style={bs} onClick={()=>setP('customers',[...P.customers,{name:'',contact:'',addr:'',phone:'',email:''}])}>+ Add client</button>
+
+          <div style={{fontWeight:700,margin:'16px 0 4px'}}>Repeat automatically</div>
+          <div style={{fontSize:12,opacity:.55,marginBottom:8}}>Makes a draft on the 1st and 15th. You open it, check it and send it.</div>
+          <label style={{display:'flex',alignItems:'center',gap:8,fontSize:14,marginBottom:8}}><input type="checkbox" checked={!!P.recur.on} onChange={e=>setProf({...P,recur:{...P.recur,on:e.target.checked,since:P.recur.since||localToday(),customer:P.recur.customer||(P.customers[0]&&P.customers[0].name)||''}})}/> Draft my recurring invoice</label>
+          {P.recur.on && <div>
+            <div className="fg"><label className="fl">Client</label><select style={inp} value={P.recur.customer} onChange={e=>setR('customer',e.target.value)}>{P.customers.map(c=><option key={c.name}>{c.name}</option>)}</select></div>
+            <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:10}}>
+              <div className="fg"><label className="fl">Description</label><input style={inp} value={P.recur.desc} onChange={e=>setR('desc',e.target.value)}/></div>
+              <div className="fg"><label className="fl">Amount (before GST)</label><input type="number" style={inp} value={P.recur.amount} onChange={e=>setR('amount',e.target.value)}/></div>
+            </div>
+            <div className="fg"><label className="fl">Days of the month</label><input style={inp} value={(P.recur.days||[]).join(', ')} onChange={e=>setR('days',e.target.value.split(/[ ,]+/).map(Number).filter(n=>n>=1&&n<=31))}/></div>
+            <div className="fg"><label className="fl">Start from</label><input type="date" style={{...inp,height:34}} value={P.recur.since} onChange={e=>setR('since',e.target.value)}/></div>
+          </div>}
+
+          <div style={{fontWeight:700,margin:'16px 0 4px'}}>Import from Wave</div>
+          <div style={{fontSize:12,opacity:.55,marginBottom:8}}>Pick a CSV with invoice number, date, customer and total. Existing numbers are skipped.</div>
+          <select style={{...inp,marginBottom:8}} value={impGst} onChange={e=>setImpGst(e.target.value)}><option value="incl">Totals include GST at my rate</option><option value="none">Totals have no GST</option></select>
+          <input type="file" accept=".csv,text/csv" onChange={e=>{ if(e.target.files[0]) importCSV(e.target.files[0]); e.target.value=''; }}/>
+        </div>)}
+
+      {yInv.length===0
+        ? <div className="empty"><div style={{fontSize:44,marginBottom:12}}>🧾</div><div>No invoices for {year}</div></div>
+        : <div className="etbl" style={{borderColor:T.border}}>
+            {yInv.map(i=>{ const s=invStatus(i), c=chip(s); return (
+              <div key={i.id} style={{padding:'12px 16px',borderBottom:`1px solid ${T.border}`,background:T.bg2,fontSize:13}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>setEdit({...i,items:i.items.map(x=>({...x}))})}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:600}}>#{i.num} · {i.customer}</div>
+                    <div style={{opacity:.55,fontSize:12}}>{longDate(i.date)}</div>
+                  </div>
+                  <span style={{padding:'3px 9px',borderRadius:20,fontSize:11,fontWeight:600,background:c[0],color:c[1]}}>{s}</span>
+                  <div style={{fontWeight:600,minWidth:84,textAlign:'right',...num}}>{cad(invTot(i))}</div>
+                </div>
+                {!i.imported && <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
+                  <button style={bs} disabled={busy===i.id} onClick={()=>send(i)}>{busy===i.id?'Working…':(i.sent?'Send again':'Send')}</button>
+                  <button style={bs} onClick={()=>download(i)}>PDF</button>
+                  {!i.paid && <button style={{...bs,color:T.green}} onClick={()=>markPaid(i)}>Mark paid</button>}
+                </div>}
+              </div>);})}
+          </div>}
+
+      {edit && (
+        <div className="ov" onClick={()=>setEdit(null)}>
+          <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text,maxWidth:520}} onClick={e=>e.stopPropagation()}>
+            <div className="mhdr"><div className="mttl">Invoice {edit.num}</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={()=>setEdit(null)}>✕</button></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div className="fg"><label className="fl">Number</label><input style={inp} value={edit.num} onChange={e=>setE('num',e.target.value)}/></div>
+              <div className="fg"><label className="fl">Client</label><select style={inp} value={edit.customer} onChange={e=>setE('customer',e.target.value)}>{[...new Set([edit.customer,...P.customers.map(c=>c.name)])].map(n=><option key={n}>{n}</option>)}</select></div>
+              <div className="fg"><label className="fl">Invoice date</label><input type="date" style={{...inp,height:34}} value={edit.date} onChange={e=>setEdit(x=>({...x,date:e.target.value,due:x.due===x.date?e.target.value:x.due}))}/></div>
+              <div className="fg"><label className="fl">Due</label><input type="date" style={{...inp,height:34}} value={edit.due||edit.date} onChange={e=>setE('due',e.target.value)}/></div>
+            </div>
+            <label className="fl">Items</label>
+            {edit.items.map((it,n)=>(
+              <div key={n} style={{display:'flex',gap:8,marginBottom:8}}>
+                <input style={{...inp,flex:1}} placeholder="Description" value={it.desc} onChange={e=>setItem(n,'desc',e.target.value)}/>
+                <input style={{...inp,width:100}} type="number" inputMode="decimal" placeholder="0.00" value={it.amount} onChange={e=>setItem(n,'amount',e.target.value)}/>
+                {edit.items.length>1 && <button style={{background:'none',border:'none',color:T.red}} onClick={()=>setEdit(e=>({...e,items:e.items.filter((_,j)=>j!==n)}))}>✕</button>}
+              </div>))}
+            <button style={{...bs,marginBottom:12}} onClick={()=>setEdit(e=>({...e,items:[...e.items,{desc:'',amount:''}]}))}>+ Add line</button>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div className="fg"><label className="fl">GST %</label><input type="number" style={inp} value={edit.gstRate} onChange={e=>setE('gstRate',e.target.value)}/></div>
+              <div style={{textAlign:'right',alignSelf:'end',paddingBottom:12,...num}}><div style={{fontSize:12,opacity:.55}}>Total</div><div style={{fontWeight:700,fontSize:18}}>{cad(invTot(edit))}</div></div>
+            </div>
+            <div className="fg"><label className="fl">Notes / terms</label><textarea style={{...inp,minHeight:64}} value={edit.notes||''} onChange={e=>setE('notes',e.target.value)}/></div>
+            {edit.paid && <div className="fg"><label className="fl">Paid on</label><input type="date" style={{...inp,height:34}} value={edit.paid} onChange={e=>setE('paid',e.target.value)}/> <button style={{background:'none',border:'none',color:T.red,fontSize:12}} onClick={()=>setEdit(e=>({...e,paid:null}))}>Clear payment</button></div>}
+            {msg && <div style={{color:T.amber,fontSize:13,marginBottom:8}}>{msg}</div>}
+            <div style={{display:'flex',gap:10,justifyContent:'space-between',marginTop:6}}>
+              {!edit._new ? <button style={{...bs,color:T.red}} onClick={()=>delInvoice(edit)}>Delete</button> : <span/>}
+              <div style={{display:'flex',gap:10}}><button style={bs} onClick={()=>setEdit(null)}>Cancel</button><button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={saveEdit}>Save</button></div>
+            </div>
+          </div>
+        </div>)}
+    </div>
+  );
+}
+
 const IC = {
   dashboard:'M4 20V11M10 20V4M16 20v-8M21 20H3',
   expenses:'M6 3h12v18l-3-2-3 2-3-2-3 2V3zM9 8h6M9 12h6',
@@ -3503,6 +3811,7 @@ const IC = {
   medical:'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
   summary:'M3 17l6-6 4 4 8-8M15 7h6v6',
   mileage:'M5 11l1.5-5h11L19 11M3 11h18v6H3zM7 17v2M17 17v2',
+  income:'M12 3v18M16.5 7.5C16.5 6 14.5 5 12 5S7.5 6.2 7.5 8s1.8 2.5 4.5 3 4.5 1.2 4.5 3-2 3-4.5 3-4.5-1-4.5-2.5',
   more:'M5 12h.01M12 12h.01M19 12h.01',
   theme:'M12 3a9 9 0 100 18 9 9 0 000-18zM12 3v18',
   settings:'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
@@ -4458,7 +4767,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25k</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26a</div>
       </div>
     </div>
   );
