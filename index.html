@@ -345,6 +345,9 @@ function relinkDriveReceipts(exps, meds) {
   });
   return { exps: e2, meds: m2, n };
 }
+const DEFAULT_LOGO = {icon:'🍁',title:'KBW Expense Tracker',sub:'Self-Employed / Contractor',iconBg:'#ffffff',logoImg:'data:image/png;base64,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'};
+// The old built-in maple leaf is replaced by the K. logo; any custom logo you set yourself is kept.
+function fixLogo(l) { return (!l || (!l.logoImg && l.icon === '🍁')) ? DEFAULT_LOGO : l; }
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
 // Small thumbnail for Drive-hosted receipts so lists never download full-size photos
 function thumbSrc(r) {
@@ -398,7 +401,7 @@ function App() {
   const [syncMsg,  setSyncMsg]  = useState('');
 
   const [theme,    setTheme]    = useState(()=>lsLoad('theme', DARK));
-  const [logo,     setLogo]     = useState(()=>lsLoad('logo',  {icon:'🍁',title:'KBW Expense Tracker',sub:'Self-Employed / Contractor',iconBg:'#e8412a'}));
+  const [logo,     setLogo]     = useState(()=>fixLogo(lsLoad('logo', DEFAULT_LOGO)));
   const [cats,     setCats]     = useState(()=>lsLoad('cats',  DEFAULT_CATS));
   const [expenses, setExpenses] = useState(()=>lsLoad('expenses', []));
   const [province, setProvince] = useState(()=>lsLoad('province', 'BC'));
@@ -901,7 +904,7 @@ function App() {
       else { try { if (localStorage.getItem('cra_tracker_v1_pinHash')) extra++; } catch {} }
       if (st && typeof st === 'object') {
         if (st.theme && typeof st.theme === 'object') setTheme(st.theme);
-        if (st.logo && typeof st.logo === 'object') setLogo(st.logo);
+        if (st.logo && typeof st.logo === 'object') setLogo(fixLogo(st.logo));
         if (Array.isArray(st.cats) && st.cats.length) setCats(st.cats);
         if (typeof st.province === 'string' && st.province) setProvince(st.province);
         if (Array.isArray(st.statCards) && st.statCards.length) setStatCards(st.statCards);
@@ -2947,7 +2950,7 @@ function AppWrapper() {
 }
 function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady, onBio}) {
   // Load logo from localStorage to show on PIN screen
-  const logo = (() => { try { const v=localStorage.getItem('cra_tracker_v1_logo'); return v?JSON.parse(v):null; } catch { return null; } })();
+  const logo = (() => { try { const v=localStorage.getItem('cra_tracker_v1_logo'); return fixLogo(v?JSON.parse(v):null); } catch { return DEFAULT_LOGO; } })();
   const icon  = logo?.logoImg || logo?.icon  || '🍁';
   const title = logo?.title || 'KBW Expense Tracker';
   const iconBg = logo?.iconBg || '#e8412a';
@@ -3029,7 +3032,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24c</div>
       </div>
     </div>
   );
