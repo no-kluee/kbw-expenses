@@ -1327,7 +1327,10 @@ function App() {
             <option value="amount_asc">Amount (lowest)</option>
           </select>
           <span style={{marginLeft:'auto',fontSize:11,opacity:.4,whiteSpace:'nowrap'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
-          <span style={{fontSize:11,opacity:.3,marginLeft:8,whiteSpace:'nowrap'}}>💾 {lsUsageMB()} MB</span>
+          <a href="https://drive.google.com/drive/folders/1Vs6c6Txnu5uKC8yS2BVigzya8yJ0h2w9" target="_blank" rel="noopener" title="Open receipts in Google Drive" aria-label="Open Google Drive folder"
+             style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:34,height:34,marginLeft:8,borderRadius:10,background:T.bg4,border:`1px solid ${T.border}`,flexShrink:0}}>
+            <svg width="20" height="20" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+          </a>
           <button className="addbtn" style={{background:T.accent,color:'#fff',marginLeft:12,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>{setEditId(null);setModal('expense');}}>+ Add Expense</button>
         </div>
       </div>
@@ -3223,7 +3226,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24g</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24h</div>
       </div>
     </div>
   );
