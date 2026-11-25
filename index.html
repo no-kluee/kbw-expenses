@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25d polish ---- */
+/* ---- v2026.11.25e polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25d ---- */
+/* ---- v2026.11.25e ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -541,12 +541,16 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
 
-/* ---- v2026.11.25d compact receipt row ---- */
+/* ---- v2026.11.25e compact receipt row ---- */
 .rrow{display:flex;align-items:center;gap:12px;padding:10px 14px!important;cursor:pointer}
 .rrthumb{width:56px;height:56px;border-radius:10px;flex-shrink:0;display:block}
 
 .dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
 .dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
+
+/* ---- v2026.11.25e wide screens: use the space ---- */
+@media(min-width:1500px){.main,.phead,.fbar{max-width:1400px}.dpane{width:520px}}
+@media(min-width:2000px){.main,.phead,.fbar{max-width:1700px}.dpane{width:620px}}
 </style>
 </head>
 <body>
@@ -4137,7 +4141,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25d</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25e</div>
       </div>
     </div>
   );
