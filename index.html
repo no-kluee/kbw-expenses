@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25h polish ---- */
+/* ---- v2026.11.25i polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25h ---- */
+/* ---- v2026.11.25i ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -541,18 +541,18 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
 
-/* ---- v2026.11.25h compact receipt row ---- */
+/* ---- v2026.11.25i compact receipt row ---- */
 .rrow{display:flex;align-items:center;gap:12px;padding:10px 14px!important;cursor:pointer}
 .rrthumb{width:56px;height:56px;border-radius:10px;flex-shrink:0;display:block}
 
 .dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
 .dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
 
-/* ---- v2026.11.25h wide screens: use the space ---- */
+/* ---- v2026.11.25i wide screens: use the space ---- */
 @media(min-width:1500px){.main,.phead,.fbar{max-width:1400px}.dpane{width:520px}}
 @media(min-width:2000px){.main,.phead,.fbar{max-width:1700px}.dpane{width:620px}}
 
-/* ---- v2026.11.25h frequent vendors ---- */
+/* ---- v2026.11.25i frequent vendors ---- */
 .vchips{display:flex;gap:8px;overflow-x:auto;padding:8px 0 2px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .vchips::-webkit-scrollbar{display:none}
 .vchip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;border:none;background:rgba(128,128,128,.18);color:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
@@ -1662,6 +1662,43 @@ function App() {
     undoRef.current = {items, t};
     setUndo({n: items.length, name: items.length===1 ? items[0].vendor : ''});
   }
+  // ---- Receipt catch-up + restore previous version ----
+  const [reviewOpen,setReviewOpen]=useState(false);
+  const [restoreOpen,setRestoreOpen]=useState(false);
+  const [snapUndo,setSnapUndo]=useState(null);
+  const snapRef=useRef(null);
+  function attachReceipt(id, receipt){
+    const ex = expenses.find(e=>e.id===id); if(!ex) return;
+    setExpenses(p=>p.map(e=>e.id===id?{...e,receipt,noReceipt:undefined}:e));
+    if (gClientId) setTimeout(()=>handleGDriveBackup({...ex,receipt}, null), 400);
+  }
+  function markNoReceipt(id, reason){ setExpenses(p=>p.map(e=>e.id===id?{...e,noReceipt:reason}:e)); }
+  const ghHdr = extra => ({Authorization:`token ${lsLoad('ghToken','')}`, Accept:'application/vnd.github.v3+json', ...(extra||{})});
+  async function listVersions(){
+    const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?sha=${GH_BRANCH}&path=${GH_FILE}&per_page=40`,{headers:ghHdr(),cache:'no-store'});
+    if(!r.ok) throw new Error(r.status===401?'GitHub rejected your token. Paste a new one in Settings.':'Could not load your history from GitHub.');
+    const j = await r.json();
+    return j.map(c=>({sha:c.sha, date:c.commit.committer.date, msg:c.commit.message||''}));
+  }
+  async function loadVersion(sha){
+    const r = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${sha}`,{headers:ghHdr({Accept:'application/vnd.github.raw+json'}),cache:'no-store'});
+    if(!r.ok) throw new Error('load');
+    let d = await r.json();
+    if(!d.expenses && d.content) d = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
+    return d;
+  }
+  function applyRestore(list, label){
+    const rc={}; expenses.forEach(e=>{ if(e.receipt) rc[e.id]=e.receipt; });
+    const next = list.map(e=>({...e, receipt: e.receipt || rc[e.id] || null}));
+    if (snapRef.current) clearTimeout(snapRef.current.t);
+    const prev = expenses;
+    setExpenses(next);
+    const t = setTimeout(()=>{ snapRef.current=null; setSnapUndo(null); }, 15000);
+    snapRef.current = {prev, t};
+    setSnapUndo({label});
+    setRestoreOpen(false);
+  }
+  function undoRestore(){ const u=snapRef.current; if(!u) return; clearTimeout(u.t); setExpenses(u.prev); snapRef.current=null; setSnapUndo(null); }
   // Bulk edits (category, client): ask first, then offer Undo for 12 seconds
   const [bulkUndo, setBulkUndo] = useState(null);
   const bulkRef = useRef(null);
@@ -1815,7 +1852,7 @@ function App() {
       <div className="bodyrow">
       <div className="main">
         {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
-        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
+        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onReview={()=>setReviewOpen(true)} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
@@ -1839,11 +1876,12 @@ function App() {
           </div>
         </div>
       )}
-      {(undo||syncFlash||bulkUndo) && (
+      {(undo||syncFlash||bulkUndo||snapUndo) && (
         <div className="toastwrap">
           {undo && <div className="toast"><span>{undo.n>1?`${undo.n} expenses deleted`:`Deleted${undo.name?' '+(undo.name.length>22?undo.name.slice(0,22)+'…':undo.name):''}`}</span><button onClick={undoDelete}>Undo</button></div>}
-          {bulkUndo && !undo && <div className="toast"><span>{bulkUndo.n} expenses updated</span><button onClick={undoBulk}>Undo</button></div>}
-          {syncFlash && !undo && !bulkUndo && <div className="toast pill"><Ic n="check" s={14}/> Synced</div>}
+          {snapUndo && !undo && <div className="toast"><span>Restored {snapUndo.label}</span><button onClick={undoRestore}>Undo</button></div>}
+          {bulkUndo && !undo && !snapUndo && <div className="toast"><span>{bulkUndo.n} expenses updated</span><button onClick={undoBulk}>Undo</button></div>}
+          {syncFlash && !undo && !bulkUndo && !snapUndo && <div className="toast pill"><Ic n="check" s={14}/> Synced</div>}
         </div>
       )}
       {/* Modals */}
@@ -1865,9 +1903,11 @@ function App() {
       {modal==='detail'   && dExp && <DetailModal  expense={dExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={zoomTo} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{setModal(null);setDetailExp(null);deleteExpenses([id]);}} />}
       {modal==='catEdit'  && editCat   && <CatEditModal cat={editCat} T={T} onSave={p=>{setCats(x=>x.map(c=>c.id===editCat.id?{...c,...p}:c));closeModal();}} onClose={closeModal} />}
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
+      {reviewOpen && <ReceiptReview expenses={expenses} getCat={getCat} T={T} onAttach={attachReceipt} onMark={markNoReceipt} onEdit={id=>{setReviewOpen(false);setEditId(id);setModal('expense');}} onClose={()=>setReviewOpen(false)} />}
+      {restoreOpen && <RestoreModal expenses={expenses} cats={cats} T={T} listVersions={listVersions} loadVersion={loadVersion} onApply={applyRestore} onClose={()=>setRestoreOpen(false)} />}
       {modal==='theme'    && <ThemeModal  theme={T} auto={autoTheme} onSave={(t,a)=>{setAutoTheme(!!a);lsSave('themeAuto',!!a);setTheme(t);closeModal();}} onClose={closeModal} />}
       {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
-      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} clients={clients} setClients={setClients} vendors={vendors} setVendors={setVendors} cats={cats} recurring={recurring} setRecurring={setRecurring} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
+      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} clients={clients} setClients={setClients} vendors={vendors} setVendors={setVendors} cats={cats} onOpenRestore={()=>{setModal(null);setRestoreOpen(true);}} recurring={recurring} setRecurring={setRecurring} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
         const tokenChanged = gh && gh !== lsLoad('ghToken','');
         setApiKey(k);setGClientId(g);setGhToken(gh);lsSave('ghToken', gh);closeModal();
         if (gh && (tokenChanged || !window._ghReady)) {
@@ -1943,7 +1983,7 @@ function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,on
 }
 
 // ─── EXPENSES ─────────────────────────────────────────────────────────────────
-function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,sortKey,selectedId,onAdd,onDetail,onEdit,onDelete,onBulkDelete,onBulk,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
+function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,sortKey,selectedId,onAdd,onDetail,onEdit,onDelete,onBulkDelete,onBulk,onReview,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
   const fileRef = useRef();
   const PAGE = 60;
   const [limit, setLimit] = useState(PAGE);
@@ -1963,10 +2003,10 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
   });
   const rows = rcpt==='all' ? filteredAll
     : rcpt==='with' ? filteredAll.filter(e=>!!e.receipt)
-    : rcpt==='missing30' ? filteredAll.filter(e=>!e.receipt && e.amount>=30)
+    : rcpt==='missing30' ? filteredAll.filter(e=>!e.receipt && !e.noReceipt && e.amount>=30)
     : filteredAll.filter(e=>!e.receipt);
   const missingN = filteredAll.filter(e=>!e.receipt).length;
-  const miss30 = filteredAll.filter(e=>!e.receipt && e.amount>=30).length;
+  const miss30 = filteredAll.filter(e=>!e.receipt && !e.noReceipt && e.amount>=30).length;
   const adj = e => {
     const bd = calcBD(e.amount,e.province||province,e.category,e.tax,cats);
     const pct = (e.bizPct!=null?e.bizPct:100)/100;
@@ -2060,7 +2100,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
       </div>}
       <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       {rcpt==='all' && miss30>0 && (
-        <div className="chipw"><button type="button" style={{border:`1px solid ${T.amber}`,color:T.amber}} onClick={()=>setRcpt('missing30')}><Ic n="warn" s={14}/> {miss30} expense{miss30!==1?'s':''} over $30 {miss30!==1?'have':'has'} no receipt. Review</button></div>
+        <div className="chipw"><button type="button" style={{border:`1px solid ${T.amber}`,color:T.amber}} onClick={()=>onReview?onReview():setRcpt('missing30')}><Ic n="warn" s={14}/> {miss30} expense{miss30!==1?'s':''} over $30 {miss30!==1?'have':'has'} no receipt. Review</button></div>
       )}
       {rows.length===0
         ?<div className="empty"><div style={{marginBottom:12,opacity:.8,display:'flex',justifyContent:'center'}}><Ic n="receipt" s={44} w={1.2}/></div>
@@ -2107,7 +2147,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
                       </div>
                       <div className="rright">
                         <div className="ramt">{cad(e.amount)}</div>
-                        <div className="rnote" style={receipt?undefined:{color:T.amber,opacity:1}}>{receipt ? `ITC ${cad(A.itc)}` : 'No receipt'}</div>
+                        <div className="rnote" title={!receipt&&e.noReceipt?e.noReceipt:undefined} style={receipt?undefined:(e.noReceipt?{opacity:.55}:{color:T.amber,opacity:1})}>{receipt ? `ITC ${cad(A.itc)}` : (e.noReceipt ? 'No receipt needed' : 'No receipt')}</div>
                       </div>
                       <div className="rac" onClick={ev=>ev.stopPropagation()}>
                         <button className="bsm" onClick={()=>onEdit(e.id)}>Edit</button>
@@ -2834,6 +2874,7 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,inline,onClose,onZoo
         {e.clients&&e.clients.length>0 && R('Clients', e.clients.join(', '))}
         {e.recurId && R('Repeats', 'Every month')}
       </div>
+      {!e.receipt&&e.noReceipt&&<div className="grp" style={{background:card,padding:'10px 16px',fontSize:14}}><span style={{fontSize:12,opacity:.55,display:'block',marginBottom:2}}>Receipt not available</span>{e.noReceipt}</div>}
       {e.orderNo&&<div className="grp" style={{background:card,padding:'10px 16px',fontSize:14}}><span style={{fontSize:12,opacity:.55,display:'block',marginBottom:2}}>Order / reference #</span>{e.orderNo}</div>}
       {e.note&&<div className="grp" style={{background:card,padding:'10px 16px',fontSize:14}}><span style={{fontSize:12,opacity:.55,display:'block',marginBottom:2}}>Business purpose</span>{e.note}</div>}
       {(onEdit||onDelete) && <div className="dact">
@@ -3121,6 +3162,161 @@ function SavedCardsEditor({cards, setCards, T, inp}) {
   );
 }
 
+function fileToReceipt(file){
+  return new Promise((res,rej)=>{
+    if (file.type==='application/pdf') { const r=new FileReader(); r.onload=e=>res('__PDF__:'+e.target.result); r.onerror=rej; r.readAsDataURL(file); return; }
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{ URL.revokeObjectURL(url); const MAX=1200; let w=img.width,h=img.height; if(w>MAX){h=Math.round(h*MAX/w);w=MAX;} if(h>MAX){w=Math.round(w*MAX/h);h=MAX;} const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); res(c.toDataURL('image/jpeg',0.75)); };
+    img.onerror=()=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); };
+    img.src=url;
+  });
+}
+
+// ─── RECEIPT CATCH-UP QUEUE ───────────────────────────────────────────────────
+function ReceiptReview({expenses, getCat, T, onAttach, onMark, onEdit, onClose}) {
+  const [over30,setOver30]=useState(true);
+  const [skipped,setSkipped]=useState([]);
+  const [marking,setMarking]=useState(false);
+  const [reason,setReason]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState('');
+  const fileRef=useRef();
+  const pending = expenses.filter(e=>!e.receipt && !e.noReceipt && (!over30 || e.amount>=30)).sort((a,b)=>b.date.localeCompare(a.date));
+  const order = [...pending.filter(e=>!skipped.includes(e.id)), ...pending.filter(e=>skipped.includes(e.id))];
+  const cur = order[0];
+  useEffect(()=>{ setMarking(false); setReason(''); setErr(''); },[cur&&cur.id]);
+  const c = cur ? getCat(cur.category) : null;
+  const pay = cur && cur.payment && cur.payment.type ? [cur.payment.name||cur.payment.type, cur.payment.last4?`···· ${cur.payment.last4}`:''].filter(Boolean).join(' ') : '';
+  const reasons = ['Card statement is the record','Vendor cannot provide one','Lost or not available'];
+  async function pick(e){
+    const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f||!cur) return;
+    setBusy(true); setErr('');
+    try { const r=await fileToReceipt(f); onAttach(cur.id, r); } catch { setErr('Could not read that file. Try another.'); }
+    setBusy(false);
+  }
+  const btn = {height:46,borderRadius:12,border:'none',fontSize:16,fontWeight:600,cursor:'pointer',width:'100%'};
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr"><div className="mttl">Receipt catch-up</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button></div>
+        <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{display:'none'}} onChange={pick}/>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',fontSize:13,marginBottom:12}}>
+          <span style={{opacity:.65}}>{pending.length} left</span>
+          <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',opacity:.8}}><input type="checkbox" checked={over30} onChange={e=>setOver30(e.target.checked)} style={{width:16,height:16}}/> Only over $30</label>
+        </div>
+        {!cur ? (
+          <div style={{textAlign:'center',padding:'36px 8px'}}>
+            <div style={{fontSize:40,marginBottom:8}}>✅</div>
+            <div style={{fontSize:17,fontWeight:600,marginBottom:4}}>All caught up</div>
+            <div style={{fontSize:13,opacity:.6}}>{over30?'Every expense over $30 has a receipt or a reason.':'Every expense has a receipt or a reason.'}</div>
+            <button style={{...btn,marginTop:20,background:T.accent,color:'#fff'}} onClick={onClose}>Done</button>
+          </div>
+        ) : (<>
+          <div style={{background:T.bg3,borderRadius:14,padding:'16px 18px',marginBottom:14}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:10}}>
+              <div style={{fontSize:20,fontWeight:700,minWidth:0,overflow:'hidden',textOverflow:'ellipsis'}}>{cur.vendor}</div>
+              <div style={{fontSize:20,fontWeight:700}}>{cad(cur.amount)}</div>
+            </div>
+            <div style={{fontSize:13,opacity:.65,marginTop:4}}>{cur.date} · {c.label}{pay?` · ${pay}`:''}</div>
+            {cur.note && <div style={{fontSize:13,opacity:.55,marginTop:6}}>{cur.note}</div>}
+            {cur.orderNo && <div style={{fontSize:12,opacity:.55,marginTop:4}}>Order # {cur.orderNo}</div>}
+          </div>
+          {err && <div style={{color:T.red,fontSize:13,marginBottom:8}}>{err}</div>}
+          {!marking ? (
+            <div style={{display:'grid',gap:10}}>
+              <button style={{...btn,background:T.accent,color:'#fff',opacity:busy?.6:1}} disabled={busy} onClick={()=>fileRef.current&&fileRef.current.click()}>{busy?'Adding…':'Attach receipt (photo or PDF)'}</button>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <button style={{...btn,height:42,fontSize:14,background:T.bg4,color:T.text}} onClick={()=>setSkipped(sk=>[...sk.filter(x=>x!==cur.id),cur.id])}>Skip for now</button>
+                <button style={{...btn,height:42,fontSize:14,background:T.bg4,color:T.text}} onClick={()=>setMarking(true)}>No receipt available</button>
+              </div>
+              <button style={{background:'none',border:'none',color:T.accent,fontSize:13,cursor:'pointer',padding:4}} onClick={()=>onEdit(cur.id)}>Edit this expense</button>
+            </div>
+          ) : (
+            <div>
+              <div style={{fontSize:13,opacity:.65,marginBottom:8}}>Why is there no receipt? This is saved on the expense so you can explain it later.</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:10}}>
+                {reasons.map(r=><button key={r} type="button" className="vchip" style={reason===r?{background:T.accent,color:'#fff'}:undefined} onClick={()=>setReason(r)}>{r}</button>)}
+              </div>
+              <input type="text" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:10,padding:'10px 12px',fontSize:15,width:'100%',marginBottom:10}} placeholder="Or type a reason" value={reason} onChange={e=>setReason(e.target.value)}/>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <button style={{...btn,height:42,fontSize:14,background:T.bg4,color:T.text}} onClick={()=>setMarking(false)}>Back</button>
+                <button style={{...btn,height:42,fontSize:14,background:T.accent,color:'#fff',opacity:reason.trim()?1:.5}} disabled={!reason.trim()} onClick={()=>onMark(cur.id, reason.trim())}>Save reason</button>
+              </div>
+            </div>
+          )}
+        </>)}
+      </div>
+    </div>
+  );
+}
+
+// ─── RESTORE A PREVIOUS VERSION ───────────────────────────────────────────────
+function RestoreModal({expenses, cats, T, listVersions, loadVersion, onApply, onClose}) {
+  const [versions,setVersions]=useState(null);
+  const [err,setErr]=useState('');
+  const [sel,setSel]=useState(null);
+  const [prev,setPrev]=useState(null);
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{ listVersions().then(setVersions).catch(e=>setErr(e.message||'Could not load history')); },[]);
+  const catLabel = id => (cats.find(c=>c.id===id)||{}).label || id;
+  const fmt = d => new Date(d).toLocaleString('en-CA',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  async function choose(v){
+    setSel(v.sha); setPrev(null); setErr(''); setBusy(true);
+    try {
+      const d = await loadVersion(v.sha);
+      const vex = Array.isArray(d.expenses) ? d.expenses : [];
+      const cur = new Map(expenses.map(e=>[e.id,e])), vm = new Map(vex.map(e=>[e.id,e]));
+      const added = vex.filter(e=>!cur.has(e.id));
+      const removed = expenses.filter(e=>!vm.has(e.id));
+      const changed = [], fieldN = {};
+      vex.forEach(e=>{ const c=cur.get(e.id); if(!c) return;
+        const ks=new Set([...Object.keys(e),...Object.keys(c)]); ks.delete('receipt');
+        const f=[...ks].filter(k=>JSON.stringify(e[k])!==JSON.stringify(c[k]));
+        if(f.length){ changed.push({e,c,f}); f.forEach(k=>fieldN[k]=(fieldN[k]||0)+1); } });
+      setPrev({list:vex, date:v.date, added, removed, changed, fieldN});
+    } catch { setErr('Could not load that version.'); }
+    setBusy(false);
+  }
+  const noDiff = prev && !prev.added.length && !prev.removed.length && !prev.changed.length;
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr"><div className="mttl">Restore a previous version</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button></div>
+        <div style={{fontSize:13,opacity:.6,marginBottom:12}}>Every save is kept. Pick a moment, check what would change, then restore. Your current version stays in history too.</div>
+        {err && <div style={{color:T.red,fontSize:13,marginBottom:10}}>{err}</div>}
+        {!versions && !err && <div style={{opacity:.6,fontSize:14,padding:'12px 0'}}>Loading history…</div>}
+        {versions && (
+          <div style={{maxHeight:220,overflowY:'auto',background:T.bg3,borderRadius:12,marginBottom:14}}>
+            {versions.map((v,i)=>(
+              <button key={v.sha} type="button" onClick={()=>choose(v)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'100%',textAlign:'left',padding:'11px 14px',background:sel===v.sha?T.accent+'33':'transparent',border:'none',borderBottom:`.5px solid ${T.border}`,color:T.text,fontSize:14,cursor:'pointer'}}>
+                <span>{fmt(v.date)}</span>
+                <span style={{fontSize:12,opacity:.55,marginLeft:10,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i===0?'Current':(/^Update expenses/.test(v.msg)?'':v.msg)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {busy && <div style={{opacity:.6,fontSize:14,marginBottom:10}}>Comparing…</div>}
+        {prev && !busy && (
+          <div style={{background:T.bg3,borderRadius:12,padding:'14px 16px',marginBottom:14,fontSize:14}}>
+            <div style={{fontWeight:600,marginBottom:8}}>{noDiff?'Same as your current version':`Restoring ${fmt(prev.date)} would:`}</div>
+            {prev.changed.length>0 && <div style={{marginBottom:6}}>Change {prev.changed.length} expense{prev.changed.length!==1?'s':''} ({Object.entries(prev.fieldN).map(([k,n])=>`${k} ×${n}`).join(', ')})</div>}
+            {prev.added.length>0 && <div style={{marginBottom:6}}>Bring back {prev.added.length} deleted expense{prev.added.length!==1?'s':''}</div>}
+            {prev.removed.length>0 && <div style={{marginBottom:6,color:T.amber}}>Remove {prev.removed.length} expense{prev.removed.length!==1?'s':''} added since then</div>}
+            {prev.changed.slice(0,5).map(({e,c,f})=>(
+              <div key={e.id} style={{fontSize:12,opacity:.65,marginTop:4}}>{e.vendor}: {f.slice(0,2).map(k=>k==='category'?`category ${catLabel(c[k])} to ${catLabel(e[k])}`:`${k} ${JSON.stringify(c[k]??'')} to ${JSON.stringify(e[k]??'')}`).join(', ')}</div>
+            ))}
+            {prev.changed.length>5 && <div style={{fontSize:12,opacity:.5,marginTop:4}}>and {prev.changed.length-5} more</div>}
+          </div>
+        )}
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 17px',borderRadius:9}} onClick={onClose}>Cancel</button>
+          <button disabled={!prev||busy||noDiff} style={{background:T.accent,color:'#fff',padding:'9px 19px',borderRadius:9,fontWeight:600,opacity:(!prev||busy||noDiff)?.45:1}} onClick={()=>onApply(prev.list, fmt(prev.date))}>Restore this version</button>
+        </div>
+        <div style={{fontSize:11,opacity:.45,marginTop:10}}>Restores expenses only. Medical, mileage and settings are not changed.</div>
+      </div>
+    </div>
+  );
+}
 function VendorsEditor({vendors, setVendors, cats, T, inp}) {
   const [name,setName]=useState(''), [cat,setCat]=useState('');
   const ok = name.trim() && !vendors.some(v=>v.name.toLowerCase()===name.trim().toLowerCase());
@@ -3381,7 +3577,7 @@ function PdfPreview({src, width, className, style, fallback, onClick, alt}){
 function kbwEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
-function SettingsModal({cards, setCards, clients, setClients, vendors, setVendors, cats, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
+function SettingsModal({cards, setCards, clients, setClients, vendors, setVendors, cats, onOpenRestore, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
   const [gId,     setGId]     = useState(gClientId||'');
@@ -3420,6 +3616,12 @@ function SettingsModal({cards, setCards, clients, setClients, vendors, setVendor
 
         {/* ── SAVED CARDS ── */}
         <SavedCardsEditor cards={cards||[]} setCards={setCards} T={T} inp={inp} />
+        <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
+          <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Version history</div>
+          <div style={{fontSize:11,opacity:.5,marginBottom:12}}>Every save is kept on GitHub. If something gets changed by accident, you can put your expenses back to an earlier moment.</div>
+          <button type="button" style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 16px',borderRadius:9,fontSize:14,cursor:'pointer'}} onClick={()=>onOpenRestore&&onOpenRestore()} disabled={!ghTok}>Restore a previous version…</button>
+          {!ghTok && <div style={{fontSize:11,opacity:.5,marginTop:8}}>Add your GitHub token above first.</div>}
+        </div>
         <ClientsEditor clients={clients||[]} setClients={setClients} T={T} inp={inp} />
         <VendorsEditor vendors={vendors||[]} setVendors={setVendors} cats={cats||[]} T={T} inp={inp} />
         <RecurringEditor recurring={recurring||[]} setRecurring={setRecurring} T={T} />
@@ -4220,7 +4422,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25h</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25i</div>
       </div>
     </div>
   );
