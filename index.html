@@ -3517,16 +3517,20 @@ function loadJsPdf(){
 const invSub = i => (i.items||[]).reduce((s,x)=>s+(+x.amount||0),0);
 const invGst = i => (i.gst!=null && !isNaN(+i.gst)) ? +(+i.gst).toFixed(2) : +(invSub(i)*((+i.gstRate||0)/100)).toFixed(2);
 const invTot = i => +(invSub(i)+invGst(i)).toFixed(2);
-const invStatus = i => i.paid ? 'Paid' : (!i.sent ? 'Draft' : ((i.due||i.date) < localToday() ? 'Overdue' : 'Unpaid'));
+const invStatus = i => i.void ? 'Void' : i.paid ? 'Paid' : (!i.sent ? 'Draft' : ((i.due||i.date) < localToday() ? 'Overdue' : 'Unpaid'));
 const longDate = d => { try { const [y,m,dd]=d.split('-').map(Number); return new Date(y,m-1,dd).toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}); } catch { return d||''; } };
 const invFile = i => `Invoice_${i.num}_${i.date}.pdf`;
 
+function drawVoidMark(d){
+  try{ d.saveGraphicsState(); d.setGState(new d.GState({opacity:.16})); d.setFont('helvetica','bold'); d.setFontSize(150); d.setTextColor(255,59,48);
+    const w=d.getTextWidth('VOID'), a=35*Math.PI/180; d.text('VOID',306-(w/2)*Math.cos(a),420+(w/2)*Math.sin(a),{angle:35}); d.restoreGraphicsState(); }catch(e){}
+}
 async function makeInvoicePdfClean(inv, prof, logoImg) {
   const {jsPDF} = await loadJsPdf();
   const cust = (prof.customers||[]).find(c=>c.name===inv.customer) || {name:inv.customer};
   const d = new jsPDF({unit:'pt',format:'letter'});
   const W=612, H=792, M=56, R=556;
-  const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), paid=!!inv.paid, due=paid?0:tot;
+  const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), vd=!!inv.void, paid=!!inv.paid&&!vd, due=(paid||vd)?0:tot;
   const INK=[29,29,31], GRY=[134,134,139], LINE=[229,229,234], ACC=[5,150,136], GRN=[36,138,61];
   const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||10); d.setTextColor(...(o.c||INK)); d.text(String(t),x,y,{align:o.a||'left',charSpace:o.cs||0}); };
   const hr=(y,x1=M,x2=R,c=LINE)=>{ d.setDrawColor(...c); d.setLineWidth(.6); d.line(x1,y,x2,y); };
@@ -3535,10 +3539,10 @@ async function makeInvoicePdfClean(inv, prof, logoImg) {
   txt('Invoice No. '+inv.num,R,M+19,{s:10.5,a:'right',c:GRY});
   // title + hero amount
   txt('Invoice',M,150,{b:1,s:34});
-  const label=paid?'Paid in full':'Amount due';
-  txt(label,M,200,{s:10,c:paid?GRN:GRY});
-  txt(cad(paid?tot:due),M,238,{b:1,s:40,c:paid?GRN:ACC});
-  txt(paid?('Paid '+longDate(inv.paid)):('Due '+longDate(inv.due||inv.date)),M,260,{s:10.5,c:GRY});
+  const label=vd?'Void':(paid?'Paid in full':'Amount due');
+  txt(label,M,200,{s:10,c:vd?[255,59,48]:(paid?GRN:GRY)});
+  txt(cad(vd?tot:(paid?tot:due)),M,238,{b:1,s:40,c:vd?[174,174,178]:(paid?GRN:ACC)});
+  txt(vd?('Voided '+longDate(inv.void)+'. No payment is due.'):(paid?('Paid '+longDate(inv.paid)):('Due '+longDate(inv.due||inv.date))),M,260,{s:10.5,c:GRY});
   // info row
   let y=318; hr(y-26);
   txt('Billed to',M,y,{s:8.5,c:GRY}); txt('Issued',360,y,{s:8.5,c:GRY}); txt('Due',460,y,{s:8.5,c:GRY});
@@ -3566,7 +3570,7 @@ async function makeInvoicePdfClean(inv, prof, logoImg) {
   row('Total',cad(tot),{b:1,s:12,kc:INK});
   if(paid) row('Paid '+sd(inv.paid),'-'+cad(tot),{kc:GRN,vc:GRN});
   hr(y-12,lx,R); y+=8;
-  row('Amount due',cad(due),{b:1,s:13,kc:INK,vc:paid?INK:ACC});
+  row('Amount due',cad(due),{b:1,s:13,kc:INK,vc:(paid||vd)?INK:ACC});
   // notes
   if(inv.notes){ y+=18; txt('Notes',M,y,{s:8.5,c:GRY}); y+=15; String(inv.notes).split('\n').forEach(p=>d.splitTextToSize(p,R-M).forEach(l=>{ txt(l,M,y,{s:9.5,c:[80,80,85]}); y+=13.5; })); }
   // footer
@@ -3576,6 +3580,7 @@ async function makeInvoicePdfClean(inv, prof, logoImg) {
   txt([...pa].join(', '),M,fx+13,{s:9,c:GRY});
   txt(prof.phone||'',R,fx,{s:9,a:'right',c:GRY});
   if(prof.gstNo) txt('GST/HST '+prof.gstNo,R,fx+13,{s:9,a:'right',c:GRY});
+  if(vd) drawVoidMark(d);
   return d.output('blob');
 }
 
@@ -3585,7 +3590,7 @@ async function makeInvoicePdfClassic(inv, prof, logoImg) {
   const cust = (prof.customers||[]).find(c=>c.name===inv.customer) || {name:inv.customer};
   const d = new jsPDF({unit:'pt',format:'letter'});
   const W=612, H=792, L=22, R=590;
-  const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), due = inv.paid ? 0 : tot;
+  const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), due = (inv.paid||inv.void) ? 0 : tot;
   const col=(r,g,b)=>d.setTextColor(r,g,b);
   const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||9.5); if(o.c) col(...o.c); else col(40,40,40); d.text(String(t),x,y,{align:o.a||'left'}); };
   const GR=[120,120,120], MUTE=[130,130,130];
@@ -3635,6 +3640,7 @@ async function makeInvoicePdfClassic(inv, prof, logoImg) {
   String(prof.addr||'').split('\n').filter(Boolean).forEach(l=>{ txt(l,216,fyy,{s:9.5}); fyy+=12.5; });
   txt('Contact Information',R,fy+36,{b:1,s:9.5,a:'right'}); txt(prof.phone||'',R,fy+48.5,{s:9.5,a:'right'});
   d.line(0,fy+104,W,fy+104);
+  if(inv.void) drawVoidMark(d);
   return d.output('blob');
 }
 
@@ -3701,10 +3707,10 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const yInv = invoices.filter(i=>i.date.startsWith(year)).sort((a,b)=>b.date.localeCompare(a.date)||(parseInt(b.num)||0)-(parseInt(a.num)||0));
   const years=[...new Set([thisYear,...invoices.map(i=>i.date.slice(0,4))])].sort().reverse();
   const inPeriod = d => { if(!d.startsWith(year)) return false; if(period==='year') return true; const m=+d.slice(5,7); const q=Math.ceil(m/3); return period==='q'+q; };
-  const pInv = invoices.filter(i=>inPeriod(i.date) && (i.sent||i.paid));
+  const pInv = invoices.filter(i=>inPeriod(i.date) && (i.sent||i.paid) && !i.void);
   const billed = pInv.reduce((s,i)=>s+invSub(i),0);
   const gstC   = pInv.reduce((s,i)=>s+invGst(i),0);
-  const unpaid = invoices.filter(i=>!i.paid && i.sent).reduce((s,i)=>s+invTot(i),0);
+  const unpaid = invoices.filter(i=>!i.paid && i.sent && !i.void).reduce((s,i)=>s+invTot(i),0);
   const itc = useMemo(()=>expenses.filter(e=>inPeriod(e.date)).reduce((s,e)=>{ const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats); return s+bd.gstClaimable*((e.bizPct!=null?e.bizPct:100)/100); },0),[expenses,year,period,province,cats]);
   const net = gstC-itc;
   const drafts = yInv.filter(i=>invStatus(i)==='Draft').length;
@@ -3713,7 +3719,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   // Next billing date for a client: the next 1st / 15th (your days) after their latest invoice
   const nextDue = cust=>{
     const days=((P.recur.days&&P.recur.days.length)?[...P.recur.days]:[1,15]).map(Number).sort((a,b)=>a-b);
-    const last=invoices.filter(i=>i.customer===cust).map(i=>i.date).sort().pop();
+    const last=invoices.filter(i=>i.customer===cust&&!i.void).map(i=>i.date).sort().pop();
     if(!last) return localToday();
     let [y,m,d]=last.split('-').map(Number);
     const nd=days.find(x=>x>d);
@@ -3752,13 +3758,20 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     setPrv(o=>{ if(o) URL.revokeObjectURL(o.url); return {url:URL.createObjectURL(b),b,i}; });
   }
   function closePrv(){ setPrv(o=>{ if(o) URL.revokeObjectURL(o.url); return null; }); }
+  async function voidInv(i){
+    const emailIt=!i.imported && (i.sent||i.paid);
+    if(!window.confirm('Void invoice '+i.num+'? It will be stamped VOID and left out of your GST totals.'+(emailIt?' Next you can email the voided copy to the client.':''))) return;
+    const v={...i,void:localToday()}; upd(i.id,{void:v.void}); setEdit(null);
+    if(emailIt) await send(v,true);
+  }
+  const unvoid=i=>{ if(window.confirm('Restore invoice '+i.num+'? It will count again.')) upd(i.id,{void:''}); };
   async function download(i){ const b=await pdfOf(i); if(b) saveBlob(b,invFile(i)); }
-  async function send(i){
+  async function send(i,isVoid){
     const b=await pdfOf(i); if(!b) return;
     const c=P.customers.find(x=>x.name===i.customer)||{};
-    const subject=`Invoice ${i.num} from ${P.name||'me'}`;
+    const subject=isVoid?`Invoice ${i.num} has been voided`:`Invoice ${i.num} from ${P.name||'me'}`;
     const first=(c.contact||'').split(' ')[0]||'there';
-    const body=`Hi ${first},\n\nPlease find invoice ${i.num} attached for ${cad(invTot(i))}, due ${longDate(i.due||i.date)}.\n\n${(P.notes||'').split('\n')[0]}\n\nThanks,\n${P.name||''}`;
+    const body=isVoid?`Hi ${first},\n\nInvoice ${i.num} dated ${longDate(i.date)} for ${cad(invTot(i))} has been voided, so no payment is needed for it. The voided copy is attached for your records.\n\nThanks,\n${P.name||''}`:`Hi ${first},\n\nPlease find invoice ${i.num} attached for ${cad(invTot(i))}, due ${longDate(i.due||i.date)}.\n\n${(P.notes||'').split('\n')[0]}\n\nThanks,\n${P.name||''}`;
     let pdf64=''; try{ pdf64=await blobB64(b); }catch(e){}
     const accts=(P.mail&&P.mail.accounts)||[]; const ac=accts.find(a=>a.email&&a.email===c.from)||accts.find(a=>a.email)||null;
     setCmp({i,b,to:c.email||'',cc:'',subject,body,fname:invFile(i),pdf64,from:ac?ac.email:'',busy:0,err:''});
@@ -3810,7 +3823,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
       }catch(e){ setMsg(e.message||'Import failed'); }
     }; rd.readAsText(file);
   }
-  const chip=s=>({Paid:['rgba(46,204,138,.16)',T.green],Draft:['rgba(150,150,160,.2)',T.text],Unpaid:['rgba(10,132,255,.16)',T.blue],Overdue:['rgba(255,69,58,.16)','#ff453a']}[s]);
+  const chip=s=>({Paid:['rgba(46,204,138,.16)',T.green],Draft:['rgba(150,150,160,.2)',T.text],Unpaid:['rgba(10,132,255,.16)',T.blue],Overdue:['rgba(255,69,58,.16)','#ff453a'],Void:['rgba(150,150,160,.18)',T.text]}[s]);
   const setE=(k,v)=>setEdit(e=>({...e,[k]:v}));
   const setItem=(n,k,v)=>setEdit(e=>({...e,items:e.items.map((x,j)=>j===n?{...x,[k]:v}:x)}));
   const setP=(k,v)=>setProf({...P,[k]:v});
@@ -3922,13 +3935,14 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                   <div style={{fontWeight:600,minWidth:84,textAlign:'right',...num}}>{cad(invTot(i))}</div>
                 </div>
                 {i.imported && /^https:\/\/next\.waveapps\.com\//.test(i.waveUrl||'') && <div style={{marginTop:6}}><a href={i.waveUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12}} onClick={e=>e.stopPropagation()}>View in Wave</a>{/^https:\/\/drive\.google\.com\//.test(i.pdfUrl||'') && <a href={i.pdfUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12,marginLeft:14}} onClick={e=>e.stopPropagation()}>Wave PDF (Drive)</a>}</div>}
-                {i.imported && <div style={{marginTop:8}}><button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button></div>}
+                {i.imported && <div style={{display:'flex',gap:8,marginTop:8}}><button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>{i.void?<button style={bs} onClick={()=>unvoid(i)}>Restore</button>:<button style={{...bs,color:T.red}} onClick={()=>voidInv(i)}>Void</button>}</div>}
                 {!i.imported && <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
-                  <button style={bs} disabled={busy===i.id} onClick={()=>send(i)}>{busy===i.id?'Working…':(i.sent?'Send again':'Send')}</button>
+                  {!i.void && <button style={bs} disabled={busy===i.id} onClick={()=>send(i)}>{busy===i.id?'Working…':(i.sent?'Send again':'Send')}</button>}
                   <button style={bs} onClick={()=>preview(i)}>Preview</button>
                   <button style={bs} onClick={()=>download(i)}>PDF</button>
                   <button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>
-                  {!i.paid && <button style={{...bs,color:T.green}} onClick={()=>markPaid(i)}>Mark paid</button>}
+                  {!i.paid && !i.void && <button style={{...bs,color:T.green}} onClick={()=>markPaid(i)}>Mark paid</button>}
+                  {i.void?<button style={bs} onClick={()=>unvoid(i)}>Restore</button>:<button style={{...bs,color:T.red}} onClick={()=>voidInv(i)}>Void</button>}
                 </div>}
               </div>);})}
           </div>}
@@ -4976,7 +4990,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26m</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26n</div>
       </div>
     </div>
   );
