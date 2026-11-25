@@ -438,6 +438,8 @@ function App() {
   // Keep Drive links (small) in synced data; strip big inline photos (they stay on the device that added them)
   const syncReceipt = r => (typeof r === 'string' && /^https?:\/\//.test(r)) ? r : null;
 
+  const latestSettings = useRef({});
+  const settingsDirty = useRef(false);   // true only when YOU changed settings on this device
   async function ghSave(exp, med) {
     const GH_TOKEN = lsLoad('ghToken','');
     // Safety: never write until this device has successfully loaded the saved data
@@ -448,18 +450,20 @@ function App() {
       if (exp.length === 0 && (existing?.data?.expenses?.length > 0)) return;
       const content = btoa(unescape(encodeURIComponent(JSON.stringify({
         expenses: exp.map(e=>({...e, receipt: syncReceipt(e.receipt)})),
-        medical:  med.map(m=>({...m, receipt: syncReceipt(m.receipt)}))
+        medical:  med.map(m=>({...m, receipt: syncReceipt(m.receipt)})),
+        settings: settingsDirty.current ? latestSettings.current : existing?.data?.settings
       }, null, 2))));
       const body = {
         message: `Update expenses ${new Date().toISOString().slice(0,10)}`,
         content,
         ...(existing?.sha ? { sha: existing.sha } : {})
       };
-      await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`, {
+      const putRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`, {
         method: 'PUT',
         headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
         body: JSON.stringify({...body, branch: GH_BRANCH})
       });
+      if (putRes.ok) settingsDirty.current = false;
     } catch(e) { console.error('GitHub save error:', e); }
   }
   const [gToken,    setGToken]   = useState(()=>lsLoad('gToken',''));
@@ -839,6 +843,12 @@ function App() {
   const latestMedical = useRef(medical);
   useEffect(()=>{ latestExpenses.current = expenses; },[expenses]);
   useEffect(()=>{ latestMedical.current = medical; },[medical]);
+  const firstSettings = useRef(true);
+  useEffect(()=>{
+    latestSettings.current = { theme, logo, cats, province, statCards, gClientId };
+    if (firstSettings.current) { firstSettings.current = false; return; }
+    if (window._ghReady && !window._ghLoading) settingsDirty.current = true;
+  },[theme, logo, cats, province, statCards, gClientId]);
 
   // Load saved data from GitHub (startup, and right after a token is saved in Settings)
   async function pullFromGitHub(token) {
@@ -880,6 +890,16 @@ function App() {
         }
         setMedical(mergedMed); lsSave('medical', mergedMed); outMed = mergedMed;
       }
+      // Settings (logo, theme, categories, etc.): saved copy wins once one exists
+      const st = parsed?.settings;
+      if (st && typeof st === 'object') {
+        if (st.theme && typeof st.theme === 'object') setTheme(st.theme);
+        if (st.logo && typeof st.logo === 'object') setLogo(st.logo);
+        if (Array.isArray(st.cats) && st.cats.length) setCats(st.cats);
+        if (typeof st.province === 'string' && st.province) setProvince(st.province);
+        if (Array.isArray(st.statCards) && st.statCards.length) setStatCards(st.statCards);
+        if (typeof st.gClientId === 'string' && st.gClientId) { setGClientId(st.gClientId); lsSave('gClientId', st.gClientId); }
+      }
       // Re-attach receipts already in Google Drive (fills empty ones only)
       {
         const rl = relinkDriveReceipts(outExp || lsLoad('expenses', []), outMed || lsLoad('medical', []));
@@ -907,7 +927,7 @@ function App() {
     if (window._ghLoading || !window._ghReady) return;
     clearTimeout(ghSaveTimer.current);
     ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
-  },[expenses, medical]);
+  },[expenses, medical, theme, logo, cats, province, statCards, gClientId]);
 
   // Load config + GitHub data on startup
   useEffect(()=>{
