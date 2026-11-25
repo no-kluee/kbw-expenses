@@ -3781,7 +3781,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   async function send(i,isVoid){
     const b=await pdfOf(i); if(!b) return;
     const c=P.customers.find(x=>x.name===i.customer)||{};
-    const subject=isVoid?`Invoice #${i.num} has been voided`:`Invoice #${i.num} from ${P.name||'me'}`;
+    const subject=isVoid?`Invoice #${i.num} has been voided`:`Invoice #${i.num} from ${P.mailName||P.name||'me'}`;
     const first=(c.contact||'').split(' ')[0]||'there';
     const ordDate=d=>{ try{ const [y,m,dd]=d.split('-').map(Number); const mo=new Date(y,m-1,dd).toLocaleDateString('en-CA',{month:'long'}); const v=dd%100, suf=(v>=11&&v<=13)?'th':({1:'st',2:'nd',3:'rd'}[dd%10]||'th'); return mo+' '+dd+suf; }catch(e){ return d; } };
     const body=isVoid?`Hi ${first},\n\nInvoice #${i.num} dated ${ordDate(i.date)} has been voided, so no payment is needed for it. The voided copy is attached for your records.\n\nThanks!`:`Hi ${first},\n\nPlease see the attached for your latest invoice dated ${ordDate(i.date)}.\n\nThanks!`;
@@ -3914,6 +3914,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                 <button style={{background:'none',border:'none',color:T.red,fontSize:16}} onClick={()=>setP('mail',{accounts:P.mail.accounts.filter((_,j)=>j!==n)})}>✕</button></div>))}
               <button style={bs} onClick={()=>setP('mail',{accounts:[...(((P.mail&&P.mail.accounts)||[])),{email:'',clientId:''}]})}>+ Add email account</button>
             </div>
+            <div className="fg"><label className="fl">Name in email subject</label><input style={inp} placeholder={P.name||'Your name'} value={P.mailName||''} onChange={e=>setP('mailName',e.target.value)}/></div>
             <div className="fg"><label className="fl">PDF style</label><select style={inp} value={P.invStyle==='classic'?'classic':'clean'} onChange={e=>setP('invStyle',e.target.value)}><option value="clean">Clean (new)</option><option value="classic">Classic (like Wave)</option></select></div>
           </div>
           <div className="fg"><label className="fl">Notes / terms on each invoice</label><textarea style={{...inp,minHeight:64}} value={P.notes} onChange={e=>setP('notes',e.target.value)}/></div>
@@ -5009,7 +5010,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26r</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26s</div>
       </div>
     </div>
   );
