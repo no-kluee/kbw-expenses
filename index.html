@@ -3583,6 +3583,8 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const [period,setPeriod]=useState('year');
   const [edit,setEdit]=useState(null);          // invoice being edited
   const [showSet,setShowSet]=useState(false);
+  const [showCl,setShowCl]=useState(false);
+  const [qc,setQc]=useState(null);   // quick-add client inside the invoice editor
   const [busy,setBusy]=useState('');
   const [msg,setMsg]=useState('');
   const [impGst,setImpGst]=useState('incl');
@@ -3625,6 +3627,11 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const newInvoice = ()=>{
     if(!P.customers.length){ setShowSet(true); setMsg('Add your details and a client first.'); return; }
     setEdit({id:Date.now(),num:nextNum(),date:localToday(),due:localToday(),customer:P.customers[0].name,items:[{desc:'',amount:''}],gstRate:+P.gstRate||0,notes:P.notes||'',_new:true});
+  };
+  const dupInvoice = i=>{
+    const items=(i.items||[]).map(x=>({desc:i.imported?(P.recur.desc||'Monthly Marketing Services'):x.desc,amount:x.amount}));
+    setEdit({id:Date.now(),num:nextNum(),date:localToday(),due:localToday(),customer:i.customer,items,gstRate:i.gstRate!=null?i.gstRate:(+P.gstRate||0),notes:i.notes||P.notes||'',_new:true});
+    setMsg('');
   };
   function saveEdit(){
     const i={...edit,items:edit.items.filter(x=>x.desc||+x.amount).map(x=>({desc:x.desc,amount:+x.amount||0}))};
@@ -3713,11 +3720,31 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
         <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={newInvoice}>+ New invoice</button>
+        <button style={bs} onClick={()=>setShowCl(s=>!s)}>{showCl?'Close clients':`Clients (${P.customers.length})`}</button>
         <button style={bs} onClick={()=>setShowSet(s=>!s)}>{showSet?'Close details':'Invoice details'}</button>
         <select value={year} onChange={e=>setYear(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>{years.map(y=><option key={y} style={{color:'#000'}}>{y}</option>)}</select>
         <button style={bs} onClick={exportCSV}>CSV</button>
       </div>
       {msg && <div style={{padding:'9px 12px',borderRadius:9,background:'rgba(255,159,10,.14)',color:T.amber,fontSize:13,marginBottom:12}}>{msg}</div>}
+
+      {showCl && (
+        <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
+          <div style={{fontWeight:700,marginBottom:4}}>Clients</div>
+          <div style={{fontSize:12,opacity:.55,marginBottom:10}}>Their details print on the invoice, and the email is used when you send it.</div>
+                    {P.customers.map((c,n)=>(
+            <div key={n} style={{border:`1px solid ${T.border}`,borderRadius:10,padding:10,marginBottom:8}}>
+              <input style={{...inp,marginBottom:6}} placeholder="Company name" value={c.name} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,name:e.target.value}:x))}/>
+              <input style={{...inp,marginBottom:6}} placeholder="Contact person" value={c.contact||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,contact:e.target.value}:x))}/>
+              <textarea style={{...inp,marginBottom:6,minHeight:56}} placeholder="Address" value={c.addr||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,addr:e.target.value}:x))}/>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <input style={inp} placeholder="Phone" value={c.phone||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,phone:e.target.value}:x))}/>
+                <input style={inp} placeholder="Email (for sending)" value={c.email||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,email:e.target.value}:x))}/>
+              </div>
+              <button style={{background:'none',border:'none',color:T.red,fontSize:12,marginTop:6}} onClick={()=>{ if(window.confirm('Remove this client? Existing invoices keep their name.')) setP('customers',P.customers.filter((_,j)=>j!==n)); }}>Remove client</button>
+            </div>))}
+          <button style={bs} onClick={()=>setP('customers',[...P.customers,{name:'',contact:'',addr:'',phone:'',email:''}])}>+ Add client</button>
+
+        </div>)}
 
       {showSet && (
         <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
@@ -3731,20 +3758,6 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="fg"><label className="fl">Next invoice # (if none yet)</label><input type="number" style={inp} value={P.startNum} onChange={e=>setP('startNum',e.target.value)}/></div>
           </div>
           <div className="fg"><label className="fl">Notes / terms on each invoice</label><textarea style={{...inp,minHeight:64}} value={P.notes} onChange={e=>setP('notes',e.target.value)}/></div>
-
-          <div style={{fontWeight:700,margin:'14px 0 8px'}}>Clients</div>
-          {P.customers.map((c,n)=>(
-            <div key={n} style={{border:`1px solid ${T.border}`,borderRadius:10,padding:10,marginBottom:8}}>
-              <input style={{...inp,marginBottom:6}} placeholder="Company name" value={c.name} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,name:e.target.value}:x))}/>
-              <input style={{...inp,marginBottom:6}} placeholder="Contact person" value={c.contact||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,contact:e.target.value}:x))}/>
-              <textarea style={{...inp,marginBottom:6,minHeight:56}} placeholder="Address" value={c.addr||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,addr:e.target.value}:x))}/>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                <input style={inp} placeholder="Phone" value={c.phone||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,phone:e.target.value}:x))}/>
-                <input style={inp} placeholder="Email (for sending)" value={c.email||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,email:e.target.value}:x))}/>
-              </div>
-              <button style={{background:'none',border:'none',color:T.red,fontSize:12,marginTop:6}} onClick={()=>{ if(window.confirm('Remove this client? Existing invoices keep their name.')) setP('customers',P.customers.filter((_,j)=>j!==n)); }}>Remove client</button>
-            </div>))}
-          <button style={bs} onClick={()=>setP('customers',[...P.customers,{name:'',contact:'',addr:'',phone:'',email:''}])}>+ Add client</button>
 
           <div style={{fontWeight:700,margin:'16px 0 4px'}}>Repeat automatically</div>
           <div style={{fontSize:12,opacity:.55,marginBottom:8}}>Makes a draft on the 1st and 15th. You open it, check it and send it.</div>
@@ -3779,9 +3792,11 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                   <div style={{fontWeight:600,minWidth:84,textAlign:'right',...num}}>{cad(invTot(i))}</div>
                 </div>
                 {i.imported && /^https:\/\/next\.waveapps\.com\//.test(i.waveUrl||'') && <div style={{marginTop:6}}><a href={i.waveUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12}} onClick={e=>e.stopPropagation()}>View in Wave</a>{/^https:\/\/drive\.google\.com\//.test(i.pdfUrl||'') && <a href={i.pdfUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12,marginLeft:14}} onClick={e=>e.stopPropagation()}>Wave PDF (Drive)</a>}</div>}
+                {i.imported && <div style={{marginTop:8}}><button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button></div>}
                 {!i.imported && <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
                   <button style={bs} disabled={busy===i.id} onClick={()=>send(i)}>{busy===i.id?'Working…':(i.sent?'Send again':'Send')}</button>
                   <button style={bs} onClick={()=>download(i)}>PDF</button>
+                  <button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>
                   {!i.paid && <button style={{...bs,color:T.green}} onClick={()=>markPaid(i)}>Mark paid</button>}
                 </div>}
               </div>);})}
@@ -3793,10 +3808,24 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="mhdr"><div className="mttl">Invoice {edit.num}</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={()=>setEdit(null)}>✕</button></div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <div className="fg"><label className="fl">Number</label><input style={inp} value={edit.num} onChange={e=>setE('num',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Client</label><select style={inp} value={edit.customer} onChange={e=>setE('customer',e.target.value)}>{[...new Set([edit.customer,...P.customers.map(c=>c.name)])].map(n=><option key={n}>{n}</option>)}</select></div>
+              <div className="fg"><label className="fl">Client</label><select style={inp} value={edit.customer} onChange={e=>{ if(e.target.value==='__new'){ setQc({name:'',contact:'',addr:'',phone:'',email:''}); } else setE('customer',e.target.value); }}>{[...new Set([edit.customer,...P.customers.map(c=>c.name)])].filter(Boolean).map(n=><option key={n}>{n}</option>)}<option value="__new">+ New client…</option></select></div>
               <div className="fg"><label className="fl">Invoice date</label><input type="date" style={{...inp,height:34}} value={edit.date} onChange={e=>setEdit(x=>({...x,date:e.target.value,due:x.due===x.date?e.target.value:x.due}))}/></div>
               <div className="fg"><label className="fl">Due</label><input type="date" style={{...inp,height:34}} value={edit.due||edit.date} onChange={e=>setE('due',e.target.value)}/></div>
             </div>
+            {qc && <div style={{border:`1px solid ${T.border}`,borderRadius:10,padding:10,marginBottom:12}}>
+              <div style={{fontWeight:600,fontSize:13,marginBottom:8}}>New client</div>
+              <input style={{...inp,marginBottom:6}} placeholder="Company name" value={qc.name} onChange={e=>setQc({...qc,name:e.target.value})}/>
+              <input style={{...inp,marginBottom:6}} placeholder="Contact person" value={qc.contact} onChange={e=>setQc({...qc,contact:e.target.value})}/>
+              <textarea style={{...inp,marginBottom:6,minHeight:56}} placeholder="Address" value={qc.addr} onChange={e=>setQc({...qc,addr:e.target.value})}/>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+                <input style={inp} placeholder="Phone" value={qc.phone} onChange={e=>setQc({...qc,phone:e.target.value})}/>
+                <input style={inp} placeholder="Email" value={qc.email} onChange={e=>setQc({...qc,email:e.target.value})}/>
+              </div>
+              <div style={{display:'flex',gap:8}}>
+                <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={()=>{ const n=qc.name.trim(); if(!n){ setMsg('Enter a company name.'); return; } if(P.customers.some(c=>c.name===n)){ setMsg('That client already exists.'); return; } setP('customers',[...P.customers,{...qc,name:n}]); setE('customer',n); setQc(null); setMsg(''); }}>Save client</button>
+                <button style={bs} onClick={()=>setQc(null)}>Cancel</button>
+              </div>
+            </div>}
             <label className="fl">Items</label>
             {edit.items.map((it,n)=>(
               <div key={n} style={{display:'flex',gap:8,marginBottom:8}}>
@@ -3813,7 +3842,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             {edit.paid && <div className="fg"><label className="fl">Paid on</label><input type="date" style={{...inp,height:34}} value={edit.paid} onChange={e=>setE('paid',e.target.value)}/> <button style={{background:'none',border:'none',color:T.red,fontSize:12}} onClick={()=>setEdit(e=>({...e,paid:null}))}>Clear payment</button></div>}
             {msg && <div style={{color:T.amber,fontSize:13,marginBottom:8}}>{msg}</div>}
             <div style={{display:'flex',gap:10,justifyContent:'space-between',marginTop:6}}>
-              {!edit._new ? <button style={{...bs,color:T.red}} onClick={()=>delInvoice(edit)}>Delete</button> : <span/>}
+              {!edit._new ? <div style={{display:'flex',gap:8}}><button style={{...bs,color:T.red}} onClick={()=>delInvoice(edit)}>Delete</button><button style={bs} onClick={()=>dupInvoice(edit)}>Duplicate</button></div> : <span/>}
               <div style={{display:'flex',gap:10}}><button style={bs} onClick={()=>setEdit(null)}>Cancel</button><button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={saveEdit}>Save</button></div>
             </div>
           </div>
@@ -4785,7 +4814,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26e</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26f</div>
       </div>
     </div>
   );
