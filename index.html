@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="KBW Expenses">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <title>KBW Expense Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -277,6 +283,27 @@ select.xbtn{width:auto;padding:8px 30px 8px 12px}
   .logo-title{font-size:12px}
   .xbtn{padding:7px 10px;font-size:12px}
 }
+
+.nb-i{display:none}
+.nb>span:last-child{display:inline}
+@media(max-width:480px){
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  .hdr{padding-top:env(safe-area-inset-top);-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:#1c1c1e!important}
+  body[data-mode=light] .hdr{background:#fff!important}
+  .nav{position:fixed;left:0;right:0;bottom:0;top:auto;order:0;width:auto;margin:0;border-radius:0;padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:rgba(28,28,30,.82);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);border-top:.5px solid rgba(255,255,255,.14);display:flex;justify-content:space-around;z-index:300;overflow:visible;gap:0}
+  body[data-mode=light] .nav{background:rgba(255,255,255,.85);border-top-color:rgba(0,0,0,.1)}
+  .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;font-size:10px;font-weight:500;background:transparent!important;box-shadow:none!important;border-radius:8px;opacity:.55}
+  .nb-i{display:block;font-size:21px;line-height:1.1}
+  .nb.on,body[data-mode=light] .nb.on{opacity:1;color:#0a84ff!important;background:transparent!important;box-shadow:none!important}
+  input,select,textarea{font-size:16px}
+  input[type="date"]{font-size:16px;height:40px}
+  .fsel,.psel{font-size:14px}
+  .bsm{padding:7px 14px;font-size:13px}
+  .xbtn,select.xbtn{font-size:13px}
+  .tbtn{font-size:12px;padding:6px 10px}
+  .mclose{width:34px;height:34px}
+  button,.nb,.erow{-webkit-tap-highlight-color:transparent}
+}
 </style>
 </head>
 <body>
@@ -409,6 +436,33 @@ function relinkDriveReceipts(exps, meds) {
 const DEFAULT_LOGO = {icon:'🍁',title:'KBW Expense Tracker',sub:'Self-Employed / Contractor',iconBg:'#ffffff',logoImg:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIgAAACICAYAAAA8uqNSAAAONElEQVR42u2da4ydR3nH/88z8152N26CzZooTZoWnLTFkksrKlMJ2roqtxb1pnhRA17HaYIj27trx01wQuHs22AS52bvem3YkIvtzUXaFaIEqhAqSiUqIRWhhg9W0lIXlToJIRdjE/u8l5l5+uE9x103F5c9ry/nPfOTjlbaD+e8Z+Z/nvnPM8/MAB6Px+PxeDwej8fj8Xg8Ho/H4/F4PB6Px+PxeDwej8fj8Xg8Ho/H4/F4PB6Px+PxeDwej8fj6Rg6558v5827nJtPKntAvBS7HRHyEeRs0mgwli/XeP75zp9hxSsWqxJzRsVBJGg0NH4ZGscWV/OLf+UVwSWXaLzlLRmGhuz5KBB9ToSRJC64YnCFpC/egiU6hogDiBbScyAO6fDglwrgwZMdWfXzEjn96NRKQG2FsxEWY4HPe8qjO1q8tN+R+Z5N088BOH5Gnr/rBDIOIAGcxSWk+SqKI4a1C9YH4gju6NH/LN97nCodz8sOcziwd6k4TPCi/pXIMoC4s5jtBAgCSJo2keUTuGb4eFuIPoK0YTKAHEeeD8BaAS3oF+lAxACyMzKsjI8TvtVQ+lm5neJoJX72ql3gc54qamIRZ5wrzGZ3zegTJ4Xoh5j5XesIrBgAt371C2147rjTXo+5OUaSWF625wYK9TXIC9d61s4+i8giCpQ0m593a166H4cafL4NK6c2ruf1fcfQkNX7J36PFd8GgGEdVRA9LOJISZp/w544/jegRDA+LufzNFd7NbyB79j3+V+EdrsoDBYjzRyYuFNTiihUkmU/MGTGsH7b0fPVd/gIcrppf6OhlXJ3UhS/C2nW9jmdiEOgFIkxx8SZMXxs9Jn2bO58bxAvkFOypA0CkehlS0c51Fcjz13HnkNEwCxgBopi3H589AnMrlbdIA4/xJzqOwiUOHVg9/uh+DMQKY10p76DSBCG7JrpF+2hl3efzzMWL5DT+Y4H91xGindSEFyILK9iaHHoi9k102/bE81bkSSmFbW7RiB+iGnnO6an+3WIeykKlyPPHajDthE4hAFLlv/IOjuC9X/9Urf4Di+Q+YyPE5LE6YHiRgqDq5BnruN2EREoJrH2hJhiDMOj3+8m3+GHmDarVyskiVX7Jj8MFXwS1gmcUKfLLGAWKGZk+XY7PPp3kAaDEtuNTcQ9nQybm7Ph/ruvpEBPkuILYJ10ngyDRRSyZPmjZom9pywTGO/aeg/dw7UdguWDF7gM91AULqso3+EQx8o103+xBlvxR2MZZJTO51S6jyCvl+8YHycQiUrlZuqLP1LRjEUQBCxF/pwl2oB1m37cypR2dbUY92S+I0mc2jdxFQX6JhSFdFwtVibDAOcyV9ib8bEN3+vGGYsXSLvTHp1aTmF4Nykdw4lUkgwLNBlT3OWGNz3S+pxa1JnqnkuG3b9jkTa4lwbCy9FMK0uGSTP9svwk/9xJf1MTgXBP+Q4RCqILEuqPP1CdKY3YZdlTxhabsXVrs+1v6tJwvRFBpFxn4WWDf4lAb4QxrhVROnlXhyBg5PkrVOQjWLv5R3XxHb0VQRoNBiUueHjqXaz4TjCHMA4d+Q5p+RbnDIy52azd/M+tpJurW/PpnvAds/csRkYTFEaXIq3AdxAJwoDdiXTSDo8+UMfIUf8IIiBgnNBocJDHCfri30WW2Qp8h0UUsTSzr1u6MGn5G6nr7rj6CmS85TvePniNaH0DisJBpApTqiRL/81IOoI1a46VdSRU262Tus75Dn1gaiVpdTuINIyRjn2H1iTGvCxEGzC89T/qPLTUVyDtTjuwdykxJhCGSzue0goErAQQQlEkds3IP2J2Vp2v2yX9EPNGLF9+suhYw21HHK1ElnVe/EMQhJpdYaZN9La9rW0RDj1AvQQyeJCQJI7fseQGioLrKio6tohjljT7po2CbRgasnU2pfUWyKrE6P1T7+Ug/AwAgXPUkUAEDmGoJE0PkZExDK0/WocV2h4USMtf3DdxKRRNUqAHUVRgShWzGHNcrGwprtl0sK7JsPoLRMQAgO5Td1Nf/JuVrLOUZYMCaxM7vPGrmJ1VmJuz6DG4JktxGc/svY6i6KPIKvAdgEUYsMvyfeZEsKuXTGm9prkERlE4gD7MhIsr2ezUSoa5Zvodm5pbsH5TARGqy/J9bwlEAECIFf8WAKAo0LE4woAlz59lwgZ7/eYXumGDtRfI6eKIk9bqS6emVJE4aYqxW8zwyFO9kgzrlWlup2WDgGJCXuywwyNz7TNC0OP4nXVoFf9EIUmRz5kj9o7Wdkx/dqkXyP85O0xoCd4aL+qlRJgXyP+3HbJcqL/vD5Qr7sC3Grp1YiL5hvH8L2nmOAzX8eG3bUKSOMzOshdIXerHOl08K2tMCeJYKb5NHZj6EIaGLKTBXiDdjuIyOSYdWgcigrEOgbqAFE+EMzt/FZQ4NHpXJNz1E1siJ4V9BiJHoLVApNNIwsgKR3F0paNwAjMTv4Ckd0XCXT45FQSaxcnj4tztCDSBuYLhBow0s9QXf1AJ/e08cZAXSJedSwgQwICJlt4rJ9InEYXccRQpXU0ZSYJwRC8bvB5J4nrxSpCaLPcjwtCQZYctkmaHEIYM6fCgOALBWSIihla36cf2vg9EPTfUcE2+hQVA+dqNT4uxm8XaV6GYKvAjBGMcheEgHKbw2J7Les2PcK22SjUa2q4d+RqK/G4o1d6v0rlpbaaOomiFdrIL09P9GB+XXhlu6lbVLhAhc9miHTbLvoQ4qsaPEDGyzFEY/YXqz28BkfRKprVeAjl4sOy4VetSl2GrpPnBlkhcJft8jRXS4VbeP/nR0rQ2vEC6jrZHuG7Tf4k1W5AXR6F1RX7Egpj6WAe79IO7frsXkmj1/HItkdjhkX8QYz4LQjs/0uktWYSicBQFF0sYTOLA3qV1n/7WePN2Img02DTDCcnNTCs/YqvxI7njOHqPZncnpqeD9ulF8CWH6K4kmowDRIWZue9WnaYrKI5+o6Kjpxh54SgI1+q+7GmTJDvmXa3mI0j3iIQEjQZjzScOI7MjkhcvI9BcgR8pq+edEwr0p9XM7j+pa36k/gmfcrbB5trRb8PYTwvBglkgFZQHWCtQeoBY3Yv9O3+9jiLpjYwgtf1IcD/S/EGEQTXDAREjzx1F0Tu0DvbgoZ0X1c209krKuLxdcv36whTuU0iz76AvriY/0k6iRfEqFejtmJ1VdUqi9c7CU9uP/NXYiyIYkzx7vhI/0k6iFYVjHa7n7Mfry3LF1ewF0qX5EbNm43cpM5+CwEApqSSJZh0BUKyD7ZjZ+fsYmrN18CO9VyWVlH6kWLtpn8uLPQiDas77aK/86uAizeGe6JF7314H09qLZXSlHyESG7/akGb6T4iizutH5iXRKIrfaW04ift3LOr2ld/eLMZt+5GhbUfJmhslyw4j0NXcRklgZJml/viPVd/A/JVfL5Bu9CPF2rF/dc5tFWcLMFFFppVhjGPWNwUHJofbuZiF5YOF0GjwuYpCvb0xqOVH3JpNs2LsTmhN4Ir8iHUAkxYd3KVn9r4H9HOIpC2K8sQCQZI4EMm8/8OvxZw9PwKMj5P9ygOfpVezFRTHH6rkPHeAURhHcbTUZfluPLr7T0Ejz5328N3yfHlpVciF0S9deKmwDvPm8RdAdKQ8tVXO2unOfutl2yP82XU/M9aNSZ7/sFz5rc60chS+WwvfhdnZ8E1Nq6Ds+C/es1jPTN6qf+3ir9v+/q+6KHxcLV78hHp4zwNlHUrLQ3mBnOUio7Uj/y7WbIaxxyspem77iDx3FIRX6+yFbSASzM3xazKtIgSC4MDUMjXQ/xXq699OYbiKtH4naXUFB3ol98XXIo7+nmcmP362UvpeIPP9yOxqZdeMPC6FuavczslS0QlI7YW9T6qZ3X+OoSGLxrxyxfaQ8dBDsSaa5L74vchyi2ZqkeUOReHQTB3SzFAQDDLrXfrA1MqzEUm8QOYH+KE5BxEydmCHpMWXEVdWZFSWBmjdT0rvDPbtWXFKEq01DVZB8w9Jq/cjzcqbKYhU6xhxbnkijSwz1N+/RJT+hB9izo1pJaxblxrYrS7NnkYUqUoW9YDWym94udOYwvTdb33NMOHs74BZw9o3O6mR4Zwwy5WYvuPCMz3UeIG8kR8ZHv0hjN0ipjgGraiy7RNpZjmO3qf74ztOliu2LyFgDkAkp52hiCMAATiOfQQ5VyKZnVV27ciTsG47WFWzKfyUcsXgWo7zjUgSh4MHqbUz/CflGSVvUirQuppEwMdw+MjRcpMo1VQggvZKavl3oS+S6nMCq1eXfiQc3CVZ/gjCoKwf6eQ521HIOQAQDoOG2jfxASSJAQAu7Nfg3MsINMG9jvcpz48XiCM4+00kSdoyu1I/gRARiAJoTVCKoTX93C+lVLnnhfQZy48MDeUGZptk+VMY6FNQihb0rKe+GCJMUXgRBcEXgn1TywEgXzf6jDhsByCIQ/UacTET+vs0ms1vGOC+effloT6Z1PF2B0gqwLPIiwFA7IIqsAQCSSMI/fSM+pE1Y4dlZvcWNLNpOHcRQAbo0BgSgBNNJ0SLhekmTE9vwPr1J0y4ZJLzF5qs1I0UBleUF1lIuSyT58fx6vHHDEsDV284cjYyqudulfHJAwN47qeXwQlD64V/Scl4oOCXjl+/+YUzfL2q4OGpy+HMonLqG1b29gGRKo4UP8DYWHbyn/dN/ooa0O8m4AqB9Anov9m675tDL3735MzFH9d5vl2zirN3797pBNsVx1d3+tmNijY/twqAznnHdTqcvd5nld8NJ9uqvHXCRw6Px+PxeDwej8fj8Xg8Ho/H4/F4PB6Px+PxeDwej8fj8Xg8Ho/H4/F4PB6P5034H/0RkUy/C0lrAAAAAElFTkSuQmCC'};
 // The old built-in maple leaf is replaced by the K. logo; any custom logo you set yourself is kept.
 function fixLogo(l) { return (!l || (!l.logoImg && l.icon === '🍁')) ? DEFAULT_LOGO : l; }
+// Repairs text that was double-encoded by an old bug (e.g. "ÃÂÃÂ…" runs) and caps runaway text
+function fixText(v, max) {
+  if (typeof v !== 'string') return v;
+  let cur = v;
+  if (/[\u0080-\u00ff]/.test(cur)) {
+    for (let i = 0; i < 60; i++) {
+      let nxt; try { nxt = decodeURIComponent(escape(cur)); } catch (e) { break; }
+      if (nxt === cur) break;
+      cur = nxt;
+    }
+  }
+  return cur.length > max ? cur.slice(0, max) : cur;
+}
+function cleanRecords(list, fields) {
+  let changed = 0;
+  const out = list.map(r => {
+    let o = r;
+    fields.forEach(f => {
+      if (typeof r[f] === 'string') {
+        const nv = fixText(r[f], f === 'note' || f === 'notes' ? 1000 : 200);
+        if (nv !== r[f]) { if (o === r) o = { ...r }; o[f] = nv; changed++; }
+      }
+    });
+    return o;
+  });
+  return { list: out, changed };
+}
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
 // Small thumbnail for Drive-hosted receipts so lists never download full-size photos
 function thumbSrc(r) {
@@ -948,6 +1002,8 @@ function App() {
           extra += onlyLocal.length;
           merged = [...merged, ...onlyLocal];
         }
+        const cl = cleanRecords(merged, ['vendor','note']);
+        merged = cl.list; extra += cl.changed;
         setExpenses(merged); lsSave('expenses', merged); n = merged.length; outExp = merged;
       }
       if (Array.isArray(parsed?.medical)) {
@@ -961,6 +1017,8 @@ function App() {
           extra += onlyLocalM.length;
           mergedMed = [...mergedMed, ...onlyLocalM];
         }
+        const clm = cleanRecords(mergedMed, ['description','provider','rxName','rxDoctor','notes']);
+        mergedMed = clm.list; extra += clm.changed;
         setMedical(mergedMed); lsSave('medical', mergedMed); outMed = mergedMed;
       }
       // Settings (logo, theme, categories, etc.): saved copy wins once one exists
@@ -1225,7 +1283,7 @@ function App() {
           <div className="nav">
             {['dashboard','expenses','categories','medical','summary'].map(t=>(
               <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text,background:t==='medical'&&tab==='medical'?'rgba(236,72,153,.12)':undefined}} onClick={()=>setTab(t)}>
-                {t==='medical'?'🏥 Medical':t[0].toUpperCase()+t.slice(1)}
+                <span className="nb-i">{({dashboard:'📊',expenses:'🧾',categories:'🗂️',medical:'🏥',summary:'📈'})[t]}</span><span>{t[0].toUpperCase()+t.slice(1)}</span>
               </button>
             ))}
           </div>
@@ -1441,7 +1499,7 @@ function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,o
                   {/* Mobile-only: date */}
                   <div className="mob-only" style={{fontSize:11,opacity:.45,marginBottom:2}}>{e.date}</div>
                   <div className="vname">{e.vendor}</div>
-                  {e.note&&<div className="vnote">{e.note}</div>}
+                  {e.note&&<div className="vnote">{e.note.length>300?e.note.slice(0,300)+'…':e.note}</div>}
                   {e.payment?.type&&<div style={{fontSize:12,opacity:.45,marginTop:2}}>
                     {payIcon}{' '}{e.payment.name||e.payment.type}{e.payment.last4?` ···· ${e.payment.last4}`:''}
                     {e.bizPct&&e.bizPct!==100?<span style={{marginLeft:6,color:T.green}}>{e.bizPct}% biz</span>:''}
@@ -2384,6 +2442,13 @@ function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrat
           </div>
           {gId&&<div style={{fontSize:11,opacity:.5,marginTop:6}}>⚠ Also add your current URL to Authorized JavaScript origins if not on localhost</div>}
 
+          {/* Using someone else's device? Remove everything from it */}
+          <div style={{marginBottom:14,padding:'12px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.bg3,fontSize:13}}>
+            <div style={{fontWeight:600,marginBottom:4}}>Sign out of this device</div>
+            <div style={{opacity:.65,marginBottom:10,lineHeight:1.45}}>Removes your expenses, receipts links, PIN and token from this browser. Your data stays safe in your private GitHub and Google Drive.</div>
+            <button style={{width:'100%',padding:'10px',borderRadius:9,background:'rgba(255,69,58,.15)',color:'#ff453a',fontWeight:600,fontSize:13,cursor:'pointer',border:'none'}}
+              onClick={()=>{ if(window.confirm('Sign out and remove all data from this device? Your synced data is not deleted.')){ try{ Object.keys(localStorage).filter(k=>k.startsWith('cra_tracker_v1_')).forEach(k=>localStorage.removeItem(k)); sessionStorage.clear(); }catch(e){} location.reload(); } }}>Sign out &amp; wipe this device</button>
+          </div>
           {/* Face ID / Touch ID for this device */}
           {window.kbwBio && (
             <div style={{marginBottom:14,padding:'12px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.bg3,fontSize:13}}>
@@ -2942,7 +3007,7 @@ function AppWrapper() {
     })();
   },[]);
 
-  async function unlockWithBio() {
+  async function unlockWithBio(auto) {
     try {
       const cred = await navigator.credentials.get({ publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -2952,7 +3017,7 @@ function AppWrapper() {
       }});
       if (cred) { sessionStorage.setItem('kbw_unlocked','1'); setUnlocked(true); setPinError(''); }
     } catch (e) {
-      setPinError('Face ID / Touch ID did not work. Use your PIN.');
+      if (auto !== true) setPinError('Face ID / Touch ID did not work. Use your PIN.');
     }
   }
 
@@ -2991,19 +3056,28 @@ function AppWrapper() {
   // Lets Settings show an "Enable Face ID / Touch ID" button any time
   window.kbwBio = { supported: bioSupported, enrolled: !!bioId, enable: enableBio };
 
+  // Prompt Face ID / Touch ID automatically when the lock screen opens
+  const autoBioTried = useRef(false);
+  useEffect(()=>{
+    if (!unlocked && hasPin && bioId && bioSupported && !autoBioTried.current) {
+      autoBioTried.current = true;
+      setTimeout(()=>{ unlockWithBio(true); }, 350);
+    }
+  },[unlocked, hasPin, bioId, bioSupported]);
+
   const prompt = hasPin ? 'Enter your PIN to continue' : (firstPin ? 'Confirm your new 6-digit PIN' : 'Choose a 6-digit PIN for this device');
   if (!unlocked) return <PinScreen pinInput={pinInput} setPinInput={setPinInput} pinError={pinError} onSubmit={verifyPin} prompt={prompt} bioReady={hasPin && !!bioId && bioSupported} onBio={unlockWithBio} />;
   return (
     <>
       <App />
       {(offerBio || bioMsg) && (
-        <div style={{position:'fixed',left:12,right:12,bottom:'calc(12px + env(safe-area-inset-bottom))',zIndex:9999,display:'flex',justifyContent:'center',pointerEvents:'none'}}>
-          <div style={{pointerEvents:'auto',maxWidth:420,width:'100%',background:'#1a1e2b',color:'#e8ecf8',border:'1px solid rgba(255,255,255,.15)',borderRadius:14,padding:'14px 16px',boxShadow:'0 8px 30px rgba(0,0,0,.4)',fontFamily:"-apple-system,BlinkMacSystemFont,SF Pro Display,SF Pro Text,Inter,system-ui,sans-serif",fontSize:14}}>
+        <div style={{position:'fixed',left:12,right:12,bottom:'calc(84px + env(safe-area-inset-bottom))',zIndex:9999,display:'flex',justifyContent:'center',pointerEvents:'none'}}>
+          <div style={{pointerEvents:'auto',maxWidth:420,width:'100%',background:'#1c1c1e',color:'#f5f5f7',border:'1px solid rgba(255,255,255,.12)',borderRadius:18,padding:'14px 16px',boxShadow:'0 8px 30px rgba(0,0,0,.4)',fontFamily:"-apple-system,BlinkMacSystemFont,SF Pro Display,SF Pro Text,Inter,system-ui,sans-serif",fontSize:14}}>
             {bioMsg ? bioMsg : (<>
               <div style={{fontWeight:600,marginBottom:4}}>Unlock with Face ID / Touch ID?</div>
               <div style={{opacity:.65,fontSize:12,marginBottom:12}}>Skip typing your PIN on this device. The PIN still works as a backup.</div>
               <div style={{display:'flex',gap:8}}>
-                <button onClick={enableBio} style={{flex:1,padding:'10px',borderRadius:10,border:'none',background:'#e8412a',color:'#fff',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>Turn on</button>
+                <button onClick={enableBio} style={{flex:1,padding:'10px',borderRadius:10,border:'none',background:'#0a84ff',color:'#fff',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>Turn on</button>
                 <button onClick={declineBio} style={{flex:1,padding:'10px',borderRadius:10,border:'1px solid rgba(255,255,255,.2)',background:'transparent',color:'#e8ecf8',fontFamily:'inherit',cursor:'pointer'}}>Not now</button>
               </div>
             </>)}
@@ -3097,7 +3171,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24d</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24e</div>
       </div>
     </div>
   );
