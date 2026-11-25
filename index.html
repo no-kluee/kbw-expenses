@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.24t polish ---- */
+/* ---- v2026.11.24u polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -525,6 +525,20 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mhdr .msave{min-width:64px;text-align:right;background:none!important;border:none!important;color:#4da3ff!important;font-size:17px;font-weight:600;padding:8px 0;box-shadow:none!important}
   body[data-mode=light] .mhdr .msave{color:#0066d6!important}
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
+}
+
+/* ---- v2026.11.24u ---- */
+.tmore{display:none!important}.morebg{display:none}
+@media(max-width:480px){
+  .rsub .rpay,.rsub .rcl{display:none}
+  .hdr-tools .psel,.hdr-tools .tdrive,.hdr-tools .ttheme{display:none!important}
+  .hdr-tools .tmore{display:inline-flex!important}
+  .logo-sub{display:none}
+  .morebg{display:block;position:fixed;inset:0;z-index:1500}
+  .morepop{position:absolute;top:58px;right:12px;min-width:210px;border:1px solid;border-radius:14px;padding:4px;box-shadow:0 12px 40px rgba(0,0,0,.45);background-clip:padding-box}
+  .mrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:46px;padding:0 12px;font-size:16px;background:none;border:none;text-decoration:none;cursor:pointer;border-radius:10px;box-sizing:border-box}
+  .mrow+.mrow{border-top:.5px solid rgba(128,128,128,.25)}
+  .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
 </style>
 </head>
@@ -853,6 +867,7 @@ function App() {
   const [medical,   setMedical]  = useState(()=>lsLoad('medical', []));
   const [fullImg,  setFullImg]  = useState(null);
   const [zoomList, setZoomList] = useState(null);
+  const [moreOpen,setMoreOpen]=useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [wide, setWide] = useState(()=>{ try { return window.matchMedia('(min-width:1180px)').matches; } catch { return false; } });
   useEffect(()=>{ try { const mq = window.matchMedia('(min-width:1180px)'); const h = e=>setWide(e.matches); if (mq.addEventListener) mq.addEventListener('change',h); else mq.addListener(h); return ()=>{ if (mq.removeEventListener) mq.removeEventListener('change',h); else mq.removeListener(h); }; } catch {} },[]);
@@ -1675,6 +1690,7 @@ function App() {
             ))}
           </div>
           <div className="hdr-tools">
+            <button type="button" className="tbtn tmore" aria-label="More" onClick={()=>setMoreOpen(o=>!o)} style={{borderColor:T.border,color:T.text}}><Ic n="more" s={18}/></button>
             <select className="psel" style={{borderColor:T.border,color:T.text}} value={province} onChange={e=>setProvince(e.target.value)} aria-label="Province">
               {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
             </select>
@@ -1686,13 +1702,18 @@ function App() {
               <svg width="17" height="17" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
               <span className="mob-hide tlbl"> Receipts folder</span>
             </a>
-            <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme"><Ic n="theme" s={16}/><span className="mob-hide tlbl"> Theme</span></button>
+            <button className="tbtn ttheme" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme"><Ic n="theme" s={16}/><span className="mob-hide tlbl"> Theme</span></button>
             <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')} aria-label="Settings"><Ic n="settings" s={16}/><span className="mob-hide tlbl"> Settings</span></button>
             {gStatus&&<span className="gstat" style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
           </div>
         </div>
       </div>
 
+      {moreOpen && <div className="morebg" onClick={()=>setMoreOpen(false)}><div className="morepop" style={{background:T.bg3||T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <label className="mrow"><span>Province</span><select value={province} onChange={e=>setProvince(e.target.value)} style={{color:T.text}}>{PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}</select></label>
+        <a className="mrow" href="https://drive.google.com/drive/folders/1Vs6c6Txnu5uKC8yS2BVigzya8yJ0h2w9" target="_blank" rel="noopener" style={{color:T.text}}><span>Receipts folder</span><span>↗</span></a>
+        <button type="button" className="mrow" style={{color:T.text}} onClick={()=>{setMoreOpen(false);setModal('theme');}}><span>Theme</span><span>›</span></button>
+      </div></div>}
       <div className="col">
       <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(f){ setStartFile(f); setEditId(null); setModal('expense'); } }}/>
 
@@ -2022,7 +2043,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
                           ? isPdfReceipt
                             ? <div className="r-icon" style={{background:T.bg4,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}><Ic n="file" s={20}/></div>
                             : <img className="r-thumb" src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt, rlist());}}/>
-                          : <div className="r-icon" style={{background:c.color+'26'}}>{c.icon}</div>}
+                          : <div className="r-icon" style={{background:T.bg4,color:T.amber}} title="No receipt"><Ic n="file" s={20}/></div>}
                         {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt, rlist());}}>✓</span>}
                       </div>
                       <div className="rmain">
@@ -2030,10 +2051,10 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
                         <div className="rsub">
                           <span>{dayLabel(e.date)}</span>
                           <span className="rdot">·</span><i className="cdot" style={{background:c.color}}/><span className="rcat">{c.label}</span>
-                          {pay?.type && <><span className="rdot">·</span><span className="rpay"><Ic n={pay.type==='Cash'?'cash':'card'} s={12}/> {pay.name||pay.type}{pay.last4?` ${pay.last4}`:''}</span></>}
+                          {pay?.type && <span className="rpay"><span className="rdot">·</span> <Ic n={pay.type==='Cash'?'cash':'card'} s={12}/> {pay.name||pay.type}{pay.last4?` ${pay.last4}`:''}</span>}
                           {e.bizPct&&e.bizPct!==100 ? <><span className="rdot">·</span><span style={{color:T.green}}>{e.bizPct}% biz</span></> : null}
                           {e.recurId && <span className="rtag" title="Monthly"><Ic n="repeat" s={12}/></span>}
-                          {e.clients&&e.clients.length>0 && <span className="rtag" title={e.clients.join(', ')}><Ic n="user" s={12}/><span className="rtn"> {e.clients.length>1?e.clients.length:e.clients[0]}</span></span>}
+                          {e.clients&&e.clients.length>0 && <span className="rtag rcl" title={e.clients.join(', ')}><Ic n="user" s={12}/><span className="rtn"> {e.clients.length>1?e.clients.length:e.clients[0]}</span></span>}
                         </div>
                       </div>
                       <div className="rright">
@@ -3185,6 +3206,7 @@ const IC = {
   medical:'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
   summary:'M3 17l6-6 4 4 8-8M15 7h6v6',
   mileage:'M5 11l1.5-5h11L19 11M3 11h18v6H3zM7 17v2M17 17v2',
+  more:'M5 12h.01M12 12h.01M19 12h.01',
   theme:'M12 3a9 9 0 100 18 9 9 0 000-18zM12 3v18',
   settings:'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
   search:'M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.5-4.5',
@@ -4060,7 +4082,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24t</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24u</div>
       </div>
     </div>
   );
