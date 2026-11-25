@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25c polish ---- */
+/* ---- v2026.11.25d polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25c ---- */
+/* ---- v2026.11.25d ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -540,6 +540,13 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mrow+.mrow{border-top:.5px solid rgba(128,128,128,.25)}
   .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
+
+/* ---- v2026.11.25d compact receipt row ---- */
+.rrow{display:flex;align-items:center;gap:12px;padding:10px 14px!important;cursor:pointer}
+.rrthumb{width:56px;height:56px;border-radius:10px;flex-shrink:0;display:block}
+
+.dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
+.dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
 </style>
 </head>
 <body>
@@ -2742,17 +2749,18 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,inline,onClose,onZoo
         </div>
         <div className="damt">{cad(e.amount)}</div>
       </div>
-      {e.receipt&&(
-        <div className="rp">
-          {isPdf
-            ? <PdfPreview src={e.receipt.slice(8)} width={720} style={{width:'100%',height:300,objectFit:'cover',objectPosition:'top',borderRadius:12,background:'#fff',cursor:'pointer',display:'block'}} onClick={()=>onZoom(e.receipt.slice(8))} fallback={<div style={{background:T.bg4,borderRadius:12,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(e.receipt.slice(8))}>
-                <div style={{display:'flex',justifyContent:'center',marginBottom:6}}><Ic n="file" s={34}/></div>
-                <div style={{fontSize:13,fontWeight:500}}>PDF receipt, tap to open</div>
-              </div>}/>
-            : <img src={viewSrc(e.receipt)} onError={fbImg(e.receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
-          }
-        </div>
-      )}
+      {e.receipt&&(()=>{
+        const open=()=>onZoom(isPdf?e.receipt.slice(8):e.receipt);
+        const big=isPdf
+          ? <PdfPreview src={e.receipt.slice(8)} width={720} style={{width:'100%',height:190,objectFit:'cover',objectPosition:'top',borderRadius:12,background:'#fff',cursor:'pointer',display:'block'}} onClick={open} fallback={<div style={{background:T.bg4,borderRadius:12,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={open}><div style={{display:'flex',justifyContent:'center',marginBottom:6}}><Ic n="file" s={34}/></div><div style={{fontSize:13,fontWeight:500}}>PDF receipt, tap to open</div></div>}/>
+          : <img src={viewSrc(e.receipt)} onError={fbImg(e.receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border,width:'100%',height:190,objectFit:'cover',objectPosition:'top',borderRadius:12,cursor:'zoom-in',display:'block'}} onClick={open}/>;
+        const thumb=isPdf
+          ? <PdfPreview src={e.receipt.slice(8)} width={160} className="rrthumb" style={{objectFit:'cover',objectPosition:'top left',background:'#fff'}} fallback={<div className="rrthumb" style={{background:T.bg4,display:'flex',alignItems:'center',justifyContent:'center'}}><Ic n="file" s={22}/></div>}/>
+          : <img className="rrthumb" src={thumbSrc(e.receipt)} onError={fbImg(e.receipt,160)} referrerPolicy="no-referrer" alt="" style={{objectFit:'cover',objectPosition:'top'}}/>;
+        return inline
+          ? <div className="rp">{big}</div>
+          : <div className="grp rrow" style={{background:card}} onClick={open}>{thumb}<div style={{flex:1,minWidth:0}}><div style={{fontSize:16,fontWeight:500}}>Receipt</div><div style={{fontSize:13,opacity:.6}}>{isPdf?'PDF':'Photo'} · tap to view</div></div><span style={{opacity:.45,display:'flex'}}><Ic n="right" s={16}/></span></div>;
+      })()}
       <div className="grp" style={{background:card}}>
         {R('Pre-tax subtotal', cad(bd.sub))}
         {bd.tip>0 && R('Tip', cad(bd.tip))}
@@ -4129,7 +4137,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25c</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25d</div>
       </div>
     </div>
   );
