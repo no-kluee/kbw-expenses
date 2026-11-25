@@ -1862,7 +1862,7 @@ function App() {
         {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onReview={()=>setReviewOpen(true)} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
-        {tab==='income'     && <Income invoices={invoices} setInvoices={setInvoices} prof={invProf} setProf={setInvProf} expenses={expenses} province={province} cats={cats} T={T} dl={dl} />}
+        {tab==='income'     && <Income logoImg={logo.logoImg} invoices={invoices} setInvoices={setInvoices} prof={invProf} setProf={setInvProf} expenses={expenses} province={province} cats={cats} T={T} dl={dl} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
@@ -3518,48 +3518,65 @@ const invStatus = i => i.paid ? 'Paid' : (!i.sent ? 'Draft' : ((i.due||i.date) <
 const longDate = d => { try { const [y,m,dd]=d.split('-').map(Number); return new Date(y,m-1,dd).toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}); } catch { return d||''; } };
 const invFile = i => `Invoice_${i.num}_${i.date}.pdf`;
 
-async function makeInvoicePdf(inv, prof) {
+async function makeInvoicePdf(inv, prof, logoImg) {
   const {jsPDF} = await loadJsPdf();
   const cust = (prof.customers||[]).find(c=>c.name===inv.customer) || {name:inv.customer};
   const d = new jsPDF({unit:'pt',format:'letter'});
-  const L=48, R=564, W=612;
+  const W=612, H=792, L=22, R=590;
   const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), due = inv.paid ? 0 : tot;
-  const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||10); d.setTextColor(o.g?110:20); d.text(String(t),x,y,{align:o.a||'left'}); };
-  let y=58;
-  txt(prof.name||'',L,y,{b:1,s:13}); y+=16;
-  String(prof.addr||'').split('\n').filter(Boolean).forEach(l=>{ txt(l,L,y,{g:1}); y+=13; });
-  txt('Contact Information',R,58,{a:'right',g:1}); txt(prof.phone||'',R,72,{a:'right'});
-  txt('Amount Due (CAD)',R,104,{a:'right',g:1}); txt(cad(due),R,126,{a:'right',b:1,s:18});
-  txt('INVOICE',W/2,176,{a:'center',b:1,s:26});
-  d.setDrawColor(210); d.line(L,192,R,192);
-  txt('BILL TO',L,214,{b:1,s:9,g:1});
-  let by=230; txt(cust.name||'',L,by,{b:1,s:11}); by+=14;
-  [cust.contact,...String(cust.addr||'').split('\n'),cust.phone,cust.email].filter(Boolean).forEach(l=>{ txt(l,L,by,{g:1}); by+=13; });
-  const meta=[['Invoice Number:',inv.num],['Invoice Date:',longDate(inv.date)],['Payment Due:',longDate(inv.due||inv.date)],['Amount Due (CAD):',cad(due)]];
-  let my=214; meta.forEach(([k,v])=>{ txt(k,400,my,{a:'right',g:1}); txt(v,R,my,{a:'right',b:k==='Amount Due (CAD):'}); my+=16; });
-  y=Math.max(by,my)+28;
-  d.setFillColor(245); d.rect(L,y-14,R-L,22,'F');
-  txt('SERVICES',L+8,y,{b:1,s:9,g:1}); txt('AMOUNT',R-8,y,{b:1,s:9,g:1,a:'right'}); y+=26;
+  const col=(r,g,b)=>d.setTextColor(r,g,b);
+  const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||9.5); if(o.c) col(...o.c); else col(40,40,40); d.text(String(t),x,y,{align:o.a||'left'}); };
+  const GR=[120,120,120], MUTE=[130,130,130];
+  // header band
+  d.setFillColor(122,122,122); d.rect(0,0,400,124,'F');
+  d.setFillColor(96,96,96); d.rect(400,0,W-400,124,'F');
+  txt('INVOICE',L,70,{s:22,c:[255,255,255]});
+  txt('Amount Due (CAD)',506,54,{s:9.5,a:'center',c:[255,255,255]});
+  txt(cad(due),506,82,{s:22,a:'center',c:[255,255,255]});
+  // bill to
+  let y=160; txt('BILL TO',L,y,{s:8.5,c:MUTE}); y+=13;
+  txt(cust.name||'',L,y,{b:1}); y+=12.5;
+  const addr=String(cust.addr||'').split('\n').filter(Boolean);
+  [cust.contact,...addr].filter(Boolean).forEach(l=>{ txt(l,L,y); y+=12.5; });
+  if(cust.phone||cust.email){ y+=10; [cust.phone,cust.email].filter(Boolean).forEach(l=>{ txt(l,L,y); y+=12.5; }); }
+  // meta
+  const meta=[['Invoice Number:',String(inv.num),0],['Invoice Date:',longDate(inv.date),0],['Payment Due:',longDate(inv.due||inv.date),0],['Amount Due (CAD):',cad(due),1]];
+  let my=148; meta.forEach(([k,v,bv])=>{ txt(k,462,my,{a:'right',b:1}); txt(v,470,my,{b:bv}); my+=17; });
+  y=Math.max(y,my)+22;
+  // services header
+  txt('SERVICES',L,y,{s:8.5,c:MUTE}); txt('AMOUNT',R,y,{s:8.5,a:'right',c:MUTE}); y+=8;
+  d.setDrawColor(220,222,224); d.setLineWidth(.8); d.line(L,y,R,y); y+=2;
   (inv.items||[]).forEach(it=>{
-    const lines=d.splitTextToSize(String(it.desc||''),380);
-    lines.forEach((l,k)=>{ txt(l,L+8,y+k*13); });
-    txt(cad(it.amount),R-8,y,{a:'right'}); y+=Math.max(1,lines.length)*13+10;
+    const lines=d.splitTextToSize(String(it.desc||''),400); const h=Math.max(1,lines.length)*12.5+14;
+    d.setFillColor(243,245,245); d.rect(L-14,y,R-L+28,h,'F');
+    d.setDrawColor(200,206,210); d.setLineWidth(1); d.line(L-14,y,R+14,y); d.line(L-14,y+h,R+14,y+h);
+    lines.forEach((l,k)=>txt(l,L,y+16+k*12.5,{b:1})); txt(cad(it.amount),R,y+16,{a:'right'});
+    y+=h;
   });
-  d.line(L,y,R,y); y+=22;
-  const row=(k,v,b)=>{ txt(k,430,y,{a:'right',b,g:!b}); txt(v,R-8,y,{a:'right',b}); y+=18; };
-  row('Subtotal:',cad(sub));
+  y+=22;
+  const row=(k,v,b)=>{ txt(k,478,y,{a:'right',b}); txt(v,R,y,{a:'right',b:b&&k==='Amount Due (CAD):'}); y+=19; };
+  const rule=()=>{ d.setDrawColor(215,218,220); d.setLineWidth(1); d.line(232,y-8,R,y-8); y+=8; };
+  row('Subtotal:',cad(sub),1);
   if (+inv.gstRate>0) row(`GST ${inv.gstRate}%${prof.gstNo?' ('+prof.gstNo+')':''}:`,cad(gst));
-  row('Total:',cad(tot),1);
-  if (inv.paid) row(`Payment on ${longDate(inv.paid)} using ${inv.method||'e-transfer'}:`,cad(tot));
-  row('Amount Due (CAD):',cad(due),1);
+  rule(); row('Total:',cad(tot),1);
+  if (inv.paid) row(`Payment on ${longDate(inv.paid)} using ${inv.method==='e-transfer'||!inv.method?'a bank payment':inv.method}:`,cad(tot));
+  rule(); row('Amount Due (CAD):',cad(due),1);
+  // notes
   if (inv.notes) {
-    y+=18; d.line(L,y,R,y); y+=20; txt('Notes / Terms',L,y,{b:1,s:10}); y+=15;
-    String(inv.notes).split('\n').forEach(p=>{ d.splitTextToSize(p,R-L).forEach(l=>{ txt(l,L,y,{g:1}); y+=13; }); });
+    y+=26; txt('Notes / Terms',L,y,{b:1,s:9}); y+=14;
+    String(inv.notes).split('\n').forEach(p=>{ d.splitTextToSize(p,R-L).forEach(l=>{ txt(l,L,y,{s:9}); y+=12.5; }); });
   }
+  // footer
+  const fy=640; d.setDrawColor(225,227,229); d.setLineWidth(1); d.line(0,fy,W,fy);
+  if (logoImg) { try { const fmt=/^data:image\/(png|jpe?g)/i.exec(logoImg); d.addImage(logoImg,fmt?fmt[1].toUpperCase().replace('JPG','JPEG'):'PNG',46,fy+22,48,48); } catch(e){} }
+  let fyy=fy+36; txt(prof.name||'',216,fyy,{b:1,s:9.5}); fyy+=12.5;
+  String(prof.addr||'').split('\n').filter(Boolean).forEach(l=>{ txt(l,216,fyy,{s:9.5}); fyy+=12.5; });
+  txt('Contact Information',R,fy+36,{b:1,s:9.5,a:'right'}); txt(prof.phone||'',R,fy+48.5,{s:9.5,a:'right'});
+  d.line(0,fy+104,W,fy+104);
   return d.output('blob');
 }
 
-function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl}) {
+function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl, logoImg}) {
   const inp={background:T.bg4,borderColor:T.border,color:T.text};
   const thisYear=String(new Date().getFullYear());
   const [year,setYear]=useState(thisYear);
@@ -3622,7 +3639,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     setEdit(null);
   }
   const markPaid = i=>{ const d=window.prompt('Date paid (YYYY-MM-DD)',localToday()); if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) upd(i.id,{paid:d,sent:true,method:i.method||'e-transfer'}); };
-  async function pdfOf(i){ setBusy(i.id); setMsg(''); try{ return await makeInvoicePdf(i,P); } catch(e){ setMsg(e.message||'PDF failed'); return null; } finally{ setBusy(''); } }
+  async function pdfOf(i){ setBusy(i.id); setMsg(''); try{ return await makeInvoicePdf(i,P,logoImg); } catch(e){ setMsg(e.message||'PDF failed'); return null; } finally{ setBusy(''); } }
   function saveBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500); }
   async function download(i){ const b=await pdfOf(i); if(b) saveBlob(b,invFile(i)); }
   async function send(i){
@@ -4768,7 +4785,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26d</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26e</div>
       </div>
     </div>
   );
