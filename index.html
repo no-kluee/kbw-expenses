@@ -3579,6 +3579,20 @@ function PdfPreview({src, width, className, style, fallback, onClick, alt}){
 function kbwEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
+function Sect({title,icon,status,open,onToggle,T,children}) {
+  return (
+    <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,marginBottom:10,overflow:'hidden'}}>
+      <button type="button" onClick={onToggle} aria-expanded={open} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'13px 14px',background:'transparent',border:'none',color:T.text,cursor:'pointer',textAlign:'left',fontFamily:'inherit'}}>
+        <span style={{fontSize:18,width:24,textAlign:'center'}}>{icon}</span>
+        <span style={{flex:1,fontWeight:600,fontSize:14}}>{title}</span>
+        <span style={{fontSize:12,opacity:.55}}>{status}</span>
+        <span style={{fontSize:14,opacity:.5,transform:open?'rotate(90deg)':'none',transition:'transform .15s'}}>›</span>
+      </button>
+      <div style={{display:open?'block':'none',padding:'0 12px 4px'}}>{children}</div>
+    </div>
+  );
+}
+
 function SettingsModal({cards, setCards, clients, setClients, vendors, setVendors, cats, onOpenRestore, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
@@ -3588,6 +3602,8 @@ function SettingsModal({cards, setCards, clients, setClients, vendors, setVendor
   const [showGh,  setShowGh]  = useState(false);
   const [testing, setTesting] = useState(false);
   const [testMsg, setTestMsg] = useState('');
+  const [openS, setOpenS] = useState(null);
+  const tg = id => () => setOpenS(o=>o===id?null:id);
   const inp = {background:T.bg4,borderColor:T.border,color:T.text,borderRadius:8,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',fontFamily:'inherit'};
 
   async function testKey(k) {
@@ -3617,17 +3633,22 @@ function SettingsModal({cards, setCards, clients, setClients, vendors, setVendor
         </div>
 
         {/* ── SAVED CARDS ── */}
+        <div style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'.6px',opacity:.45,margin:'4px 4px 8px'}}>Lists</div>
+        <Sect T={T} icon="💳" title="Saved cards" status={(cards||[]).length?`${(cards||[]).length} saved`:'None'} open={openS==='cards'} onToggle={tg('cards')}>
         <SavedCardsEditor cards={cards||[]} setCards={setCards} T={T} inp={inp} />
-        <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
-          <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Version history</div>
-          <div style={{fontSize:11,opacity:.5,marginBottom:12}}>Every save is kept on GitHub. If something gets changed by accident, you can put your expenses back to an earlier moment.</div>
-          <button type="button" style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 16px',borderRadius:9,fontSize:14,cursor:'pointer'}} onClick={()=>onOpenRestore&&onOpenRestore()} disabled={!ghTok}>Restore a previous version…</button>
-          {!ghTok && <div style={{fontSize:11,opacity:.5,marginTop:8}}>Add your GitHub token above first.</div>}
-        </div>
+        </Sect>
+        <Sect T={T} icon="👥" title="Clients" status={(clients||[]).length?`${(clients||[]).length}`:'None'} open={openS==='clients'} onToggle={tg('clients')}>
         <ClientsEditor clients={clients||[]} setClients={setClients} T={T} inp={inp} />
+        </Sect>
+        <Sect T={T} icon="🏷️" title="Frequent vendors" status={(vendors||[]).length?`${(vendors||[]).length}`:'None'} open={openS==='vendors'} onToggle={tg('vendors')}>
         <VendorsEditor vendors={vendors||[]} setVendors={setVendors} cats={cats||[]} T={T} inp={inp} />
+        </Sect>
+        <Sect T={T} icon="🔁" title="Monthly recurring" status={(recurring||[]).length?`${(recurring||[]).length}`:'None'} open={openS==='recur'} onToggle={tg('recur')}>
         <RecurringEditor recurring={recurring||[]} setRecurring={setRecurring} T={T} />
+        </Sect>
+        <div style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'.6px',opacity:.45,margin:'16px 4px 8px'}}>Receipts</div>
 
+        <Sect T={T} icon="📁" title="Google Drive" status={gId?"Connected":"Not set up"} open={openS==="drive"} onToggle={tg("drive")}>
         {/* ── GOOGLE DRIVE SECTION ── */}
         <div style={{background:'rgba(66,133,244,.08)',border:'1px solid rgba(66,133,244,.25)',borderRadius:12,padding:'16px',marginBottom:18}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
@@ -3682,6 +3703,8 @@ function SettingsModal({cards, setCards, clients, setClients, vendors, setVendor
           <div style={{fontSize:11,opacity:.45,marginTop:8,lineHeight:1.6}}>New receipts upload to Drive automatically and only the link is kept. Use this once to move older photos stored on this device, so they show on every device and the app stays fast.</div>
         </div>
 
+        </Sect>
+        <Sect T={T} icon="🤖" title="AI receipt scan" status={key?"Key added":"Optional"} open={openS==="ai"} onToggle={tg("ai")}>
         {/* ── API KEY SECTION ── */}
         <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
@@ -3706,7 +3729,9 @@ function SettingsModal({cards, setCards, clients, setClients, vendors, setVendor
         </div>
 
         <div style={{fontSize:11,opacity:.35,marginBottom:14}}>🔒 All keys stored only in your browser's localStorage — never sent anywhere except their respective services.</div>
-
+        </Sect>
+        <div style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'.6px',opacity:.45,margin:'16px 4px 8px'}}>Sync and backup</div>
+        <Sect T={T} icon="🐙" title="GitHub sync" status={ghTok?"Connected":"Not set up"} open={openS==="gh"} onToggle={tg("gh")}>
         {/* GitHub Sync */}
         <div style={{background:'rgba(36,41,47,.4)',border:`1px solid ${T.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
@@ -3727,6 +3752,15 @@ function SettingsModal({cards, setCards, clients, setClients, vendors, setVendor
           </div>
         </div>
 
+        </Sect>
+        <Sect T={T} icon="🕘" title="Version history" status={ghTok?"On":"Needs token"} open={openS==="ver"} onToggle={tg("ver")}>
+        <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
+          <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Version history</div>
+          <div style={{fontSize:11,opacity:.5,marginBottom:12}}>Every save is kept on GitHub. If something gets changed by accident, you can put your expenses back to an earlier moment.</div>
+          <button type="button" style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 16px',borderRadius:9,fontSize:14,cursor:'pointer'}} onClick={()=>onOpenRestore&&onOpenRestore()} disabled={!ghTok}>Restore a previous version…</button>
+          {!ghTok && <div style={{fontSize:11,opacity:.5,marginTop:8}}>Add your GitHub token above first.</div>}
+        </div>
+        </Sect>
         <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
           <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'8px 16px',borderRadius:8}} onClick={onClose}>Cancel</button>
           <button style={{background:T.accent,color:'#fff',padding:'8px 20px',borderRadius:8,fontWeight:600}} onClick={()=>onSave(key.trim(), gId.trim(), ghTok.trim())}>Save Settings</button>
@@ -4424,7 +4458,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25j</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25k</div>
       </div>
     </div>
   );
