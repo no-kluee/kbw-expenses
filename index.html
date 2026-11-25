@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KBW Expense Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;font-size:14px;line-height:1.5;transition:background .25s,color .25s;font-family:'Poppins',sans-serif}
+input,select,textarea{border-radius:8px;padding:8px 10px;font-size:14px;width:100%;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+input[type="date"]{padding:4px 6px;font-size:13px;-webkit-appearance:none;appearance:none;height:34px;line-height:1.2}
+input[type=color]{padding:3px 5px;height:36px;cursor:pointer}
+textarea{resize:vertical}
+button{cursor:pointer;font-size:14px;border-radius:8px;border:none;transition:all .15s;font-weight:500;font-family:inherit}
+.shell{display:flex;flex-direction:column;min-height:100vh}
+.hdr{border-bottom:1px solid;padding:0 22px;position:sticky;top:0;z-index:100}
+.hdr-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px;height:60px;flex-wrap:wrap}
+.logo-area{display:flex;align-items:center;gap:9px;cursor:pointer;padding:4px 8px;border-radius:8px;flex-shrink:0}
+.logo-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo-title{font-size:15px;font-weight:700}
+.logo-sub{font-size:10px;font-family:'Poppins',sans-serif;margin-top:1px;opacity:.4}
+.nav{display:flex;gap:2px;margin-left:auto}
+.nb{background:transparent;border:1px solid transparent;padding:6px 13px;border-radius:8px;font-size:13px;opacity:.6}
+.nb:hover{opacity:1}
+.nb.on{opacity:1;border-color:rgba(128,128,128,.3)}
+.psel,.fsel{padding:6px 9px;font-size:12px;border-radius:7px;border:1px solid;background:transparent;font-family:inherit;cursor:pointer;width:auto}
+.psel{max-width:72px}
+.addbtn{padding:8px 17px;border-radius:9px;font-weight:600;font-size:13px}
+.addbtn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.tbtn{padding:7px 11px;border-radius:8px;font-size:12px;border:1px solid;background:transparent;opacity:.7}
+.tbtn:hover{opacity:1}
+.fbar{border-bottom:1px solid;padding:8px 22px;position:sticky;top:57px;z-index:90}
+.fbar-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto}
+.flbl{font-size:10px;font-family:'Poppins',sans-serif;letter-spacing:.3px;text-transform:uppercase;opacity:.4}
+.main{flex:1;padding:22px;max-width:1200px;margin:0 auto;width:100%}
+/* stat cards */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sc{border-radius:14px;padding:17px 19px;position:relative;overflow:hidden;cursor:pointer;transition:filter .15s;border:1px solid}
+.sc:hover{filter:brightness(1.06)}
+.sc-bar{position:absolute;top:0;left:0;right:0;height:2px}
+.sc-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px;font-family:'Poppins',sans-serif;opacity:.5}
+.sc-val{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.sc-sub{font-size:11px;margin-top:4px;opacity:.4}
+.sc-hint{position:absolute;top:8px;right:10px;font-size:10px;opacity:0;transition:opacity .15s;pointer-events:none}
+.sc:hover .sc-hint{opacity:.5}
+/* layout */
+.card{border-radius:14px;padding:19px;border:1px solid}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sec-ttl{font-size:15px;font-weight:700;margin-bottom:14px}
+/* cat bars */
+.cbar{margin-bottom:11px}
+.cbar-h{display:flex;justify-content:space-between;margin-bottom:4px}
+.cbar-name{font-size:13px;display:flex;align-items:center;gap:6px}
+.cbar-amt{font-size:13px;font-weight:600;font-family:'Poppins',sans-serif}
+.prog{height:4px;border-radius:3px;overflow:hidden;opacity:.25}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+/* expense table */
+.etbl{border-radius:14px;overflow:hidden;border:1px solid}
+.etbl-hd{padding:11px 17px;border-bottom:1px solid;display:grid;grid-template-columns:48px 100px 1fr 210px 90px 90px 90px 115px;gap:10px;align-items:center}
+.th{font-size:11px;font-family:'Poppins',sans-serif;text-transform:uppercase;letter-spacing:.3px;opacity:.4}
+.erow{padding:11px 17px;border-bottom:1px solid;display:grid;grid-template-columns:48px 100px 1fr 210px 90px 90px 90px 115px;gap:10px;align-items:center;cursor:pointer;transition:background .1s}
+.erow:last-child{border-bottom:none}
+.r-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1px solid;cursor:zoom-in;display:block}
+.r-thumb:hover{filter:brightness(1.15)}
+.r-icon{width:40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid}
+.vname{font-weight:500;font-size:15px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.vnote{font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:1px;opacity:.4}
+.mob-only{display:none}
+.mob-amounts{display:none;gap:12px;flex-wrap:wrap}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
+.lnbadge{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-family:'Poppins',sans-serif;opacity:.5;margin-left:4px}
+.ra{text-align:right}
+.mono{font-family:'Poppins',sans-serif}
+.rac{display:flex;gap:5px;justify-content:flex-end}
+.bsm{padding:4px 9px;border-radius:7px;font-size:12px;border:1px solid;background:transparent}
+.bsm:hover{filter:brightness(1.3)}
+/* overlay */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(6px)}
+.modal{border-radius:18px;padding:26px;width:100%;max-width:560px;max-height:93vh;overflow-y:auto;border:1px solid}
+.modal-sm{max-width:440px}
+.modal-lg{max-width:720px}
+.mhdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.mttl{font-size:18px;font-weight:700}
+.mclose{border:1px solid;width:30px;height:30px;border-radius:7px;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;background:transparent;cursor:pointer}
+.fg{margin-bottom:14px}
+.fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;display:block;font-family:'Poppins',sans-serif;opacity:.6}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* receipt drop zone */
+.dz{border:2px dashed;border-radius:11px;padding:26px 16px;text-align:center;cursor:pointer;position:relative}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz:hover{opacity:.75}
+/* scan */
+.scan-box{border-radius:11px;padding:18px;text-align:center;margin-bottom:14px;border:1px solid}
+.spin{width:26px;height:26px;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;border-width:2.5px;border-style:solid}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* breakdown */
+.bkbox{border-radius:10px;padding:13px;margin-bottom:14px;border:1px solid}
+.bkrow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.bkrow+.bkrow{border-top:1px solid}
+.bklbl{opacity:.6}
+.bkval{font-family:'Poppins',sans-serif;font-weight:500}
+.bkdiv{border-top-width:2px!important;margin-top:4px;padding-top:8px!important}
+.bkdiv .bklbl{opacity:1;font-weight:600}
+.bkdiv .bkval{font-size:14px;font-weight:700}
+/* gas helper */
+.gas-helper{border-radius:10px;padding:11px 14px;margin-bottom:14px;border:1px solid;font-size:12px;line-height:1.7}
+/* cra note */
+.cranote{border-left:3px solid;border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;margin-bottom:14px;line-height:1.6;opacity:.7}
+/* pst toggle */
+.pst-row{display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:8px;cursor:pointer;opacity:.7}
+.pst-row input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:#4b8ef5}
+/* receipt in modal */
+.rp{position:relative;margin-bottom:14px}
+.rp img{width:100%;border-radius:10px;border:1px solid;max-height:200px;object-fit:cover;cursor:zoom-in;display:block}
+.rp img:hover{filter:brightness(1.08)}
+.rp-rm{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.78);border:none;color:#fff;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer}
+/* fullscreen receipt */
+.rfs{position:fixed;inset:0;background:#000;z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out}
+.rfs-img{max-width:96vw;max-height:88vh;object-fit:contain;border-radius:8px}
+.rfs-bar{position:absolute;top:0;left:0;right:0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.7),transparent);pointer-events:none}
+.rfs-bar button{pointer-events:all}
+.rfs-close{background:rgba(255,255,255,.18);border:none;color:#fff;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+/* category cards */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ccard{border-radius:14px;padding:16px 18px;border-left:3px solid;border:1px solid;position:relative}
+.ccard-top{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.ccard-icon{font-size:20px}
+.ccard-name{font-weight:600;font-size:13px}
+.ccard-line{font-size:10px;font-family:'Poppins',sans-serif;opacity:.4;margin-top:1px}
+.ccard-count{font-size:11px;opacity:.4}
+.ccard-tot{margin-left:auto;font-size:16px;font-weight:700;font-family:'Poppins',sans-serif}
+.ccard-ebtn{border:1px solid;padding:3px 9px;border-radius:6px;font-size:11px;background:transparent;opacity:.5;cursor:pointer;flex-shrink:0}
+.ccard-ebtn:hover{opacity:1}
+.cminis{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}
+.cmini{border-radius:7px;padding:7px 9px;border:1px solid}
+.cminilbl{font-size:10px;font-family:'Poppins',sans-serif;margin-bottom:2px;opacity:.4}
+.cminival{font-size:12px;font-weight:600;font-family:'Poppins',sans-serif}
+.ccranote{border-radius:6px;padding:7px 10px;font-size:11px;line-height:1.5;opacity:.45}
+.wpill{margin-top:6px;border-radius:6px;padding:4px 9px;font-size:11px;border:1px solid}
+/* summary table */
+.stbl{width:100%;border-collapse:collapse}
+.stbl th{padding:9px 14px;text-align:right;font-size:10px;font-family:'Poppins',sans-serif;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid;font-weight:500;opacity:.5}
+.stbl th:first-child,.stbl td:first-child{text-align:left}
+.stbl td{padding:10px 14px;text-align:right;border-bottom:1px solid;font-size:13px}
+.stbl tbody tr:hover{filter:brightness(1.05)}
+.stbl tfoot td{border-top:2px solid;font-weight:700}
+/* export */
+.xbar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.xbtn{padding:8px 15px;border-radius:8px;font-size:13px;border:1px solid;background:transparent;display:flex;align-items:center;gap:6px}
+.xbtn:hover{filter:brightness(1.2)}
+/* detail */
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}
+.di{border-radius:8px;padding:9px 11px;border:1px solid}
+.dilbl{font-size:10px;font-family:'Poppins',sans-serif;margin-bottom:2px;opacity:.4}
+.dival{font-size:13px;font-weight:600}
+/* theme */
+.font-opt{border:1px solid;border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.font-opt:hover{filter:brightness(1.12)}
+.font-opt.sel{border-width:2px}
+.color-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* info banner */
+.ibanner{border-radius:11px;padding:13px 17px;font-size:13px;line-height:1.7;margin-top:16px;border:1px solid;opacity:.75}
+/* empty */
+.empty{padding:56px 20px;text-align:center;opacity:.4}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{border-radius:3px;background:rgba(128,128,128,.2)}
+@media(max-width:900px){.sgrid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.hcol{display:none}.cgrid{grid-template-columns:1fr}}
+
+/* ── MOBILE (<=640px) ── */
+@media(max-width:480px){
+  .hdr{padding:0 10px}
+  .hdr-in{height:auto!important;padding:8px 0;gap:6px;flex-wrap:nowrap;align-items:center;overflow-x:auto}
+  .logo-area{flex-shrink:0;gap:5px}
+  .logo-icon{width:26px;height:26px;font-size:13px;border-radius:6px}
+  .logo-title{font-size:11px;white-space:nowrap}
+  .logo-sub{display:none}
+  .psel{font-size:10px;padding:4px 5px;max-width:95px;flex-shrink:0}
+  .tbtn{font-size:10px;padding:4px 7px;flex-shrink:0;white-space:nowrap}
+  .hdr-in{flex-wrap:wrap}
+  .nav{order:3;width:100%;overflow-x:auto;gap:2px;padding-bottom:3px;display:flex;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nb{font-size:11px;padding:6px 12px;white-space:nowrap;flex-shrink:0;border-radius:8px}
+  .fbar-in{flex-wrap:wrap;gap:5px;padding:8px 10px}
+  .fsel{font-size:11px;padding:5px 6px;flex-shrink:0;min-width:0}
+  .addbtn{font-size:13px;padding:10px 16px;width:100%;order:99;margin-top:4px;border-radius:10px}
+  .main{padding:10px}
+  .sgrid{grid-template-columns:1fr 1fr!important;gap:8px}
+  .sc{padding:10px 8px}.sc-val{font-size:17px}.sc-lbl{font-size:9px}.sc-sub{font-size:10px}
+  .two{grid-template-columns:1fr!important}
+  .card{padding:12px}
+  .etbl-hd{display:none!important}
+  .erow{display:block!important;padding:12px!important}
+  .erow .hcol{display:none!important}
+  .vname{font-size:14px}.vnote{font-size:12px}
+  .cgrid{grid-template-columns:1fr!important}
+  .ov{padding:0;align-items:flex-end}
+  .modal,.modal-sm,.modal-lg{width:100vw!important;max-width:100vw!important;max-height:92dvh!important;border-radius:20px 20px 0 0!important;margin:0;overflow-y:auto;padding:18px 14px}
+  .mttl{font-size:16px}
+  .frow{grid-template-columns:1fr 1fr}.frow3{grid-template-columns:1fr 1fr}
+  .sum-tbl{font-size:11px}.sum-tbl td,.sum-tbl th{padding:5px 6px}
+  .med-tbl-hdr{display:none!important}
+  .med-row{display:block!important;padding:12px!important;position:relative}
+  .bsm{font-size:11px;padding:4px 10px}
+  .mob-hide{display:none!important}
+  .mob-only{display:block!important}
+  .mob-amounts{display:flex!important}
+  .med-desk{display:none!important}
+  .hcol{display:none!important}
+  .med-mob-amounts{display:flex!important}
+  .med-row{grid-template-columns:48px 1fr 80px!important}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useMemo, useEffect } = React;
+
+// ─── FONTS ────────────────────────────────────────────────────────────────────
+const FONTS = [
+  {id:'system', name:'System Default', stack:"system-ui,-apple-system,sans-serif", url:null},
+  {id:'dm',     name:'DM Sans',        stack:"'DM Sans',sans-serif",  url:'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap'},
+  {id:'inter',  name:'Inter',          stack:"'Inter',sans-serif",    url:'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap'},
+  {id:'jakarta',name:'Plus Jakarta',   stack:"'Plus Jakarta Sans',sans-serif", url:'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap'},
+  {id:'outfit', name:'Outfit',         stack:"'Outfit',sans-serif",   url:'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap'},
+  {id:'sora',   name:'Sora',           stack:"'Sora',sans-serif",     url:'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap'},
+];
+
+// ─── PROVINCES ────────────────────────────────────────────────────────────────
+const PROVS = [
+  {code:'BC',name:'British Columbia', gst:.05,pst:.07, hst:false},
+  {code:'AB',name:'Alberta',          gst:.05,pst:0,   hst:false},
+  {code:'SK',name:'Saskatchewan',     gst:.05,pst:.06, hst:false},
+  {code:'MB',name:'Manitoba',         gst:.05,pst:.07, hst:false},
+  {code:'ON',name:'Ontario',          gst:0,  pst:0,   hst:true,hstRate:.13},
+  {code:'QC',name:'Quebec',           gst:.05,pst:.09975,hst:false,qst:true},
+  {code:'NB',name:'New Brunswick',    gst:0,  pst:0,   hst:true,hstRate:.15},
+  {code:'NS',name:'Nova Scotia',      gst:0,  pst:0,   hst:true,hstRate:.15},
+  {code:'PE',name:'PEI',              gst:0,  pst:0,   hst:true,hstRate:.15},
+  {code:'NL',name:'Newfoundland',     gst:0,  pst:0,   hst:true,hstRate:.15},
+  {code:'YT',name:'Yukon',            gst:.05,pst:0,   hst:false},
+  {code:'NT',name:'NWT',              gst:.05,pst:0,   hst:false},
+  {code:'NU',name:'Nunavut',          gst:.05,pst:0,   hst:false},
+];
+
+// ─── CRA T2125 CATEGORIES ─────────────────────────────────────────────────────
+// line: T2125 line number. gf = GST claimable fraction. df = deductible fraction.
+// CRA says "Don't include GST/HST in your expenses; claim an ITC instead."
+// So deductible = subtotal × df  (NOT subtotal+GST)
+const DEFAULT_CATS = [
+  {id:'advertising',   label:'Advertising',                       line:'8521', icon:'📣', color:'#4b8ef5', gf:1, df:1, cra:'Line 8521 — 100% deductible. Flyers, digital ads, marketing materials.'},
+  {id:'meals',         label:'Meals & Entertainment',             line:'8523', icon:'🍽️', color:'#f0a033', gf:.5, df:.5, cra:'Line 8523 — 50% deductible, 50% GST claimable. Document who/why.'},
+  {id:'baddebts',      label:'Bad Debts',                         line:'8590', icon:'💸', color:'#e85555', gf:0, df:1, cra:'Line 8590 — Amounts owed to you that are uncollectable.'},
+  {id:'insurance',     label:'Insurance',                         line:'8690', icon:'🛡️', color:'#f0a033', gf:0, df:1, cra:'Line 8690 — No GST. Business insurance premiums 100% deductible.'},
+  {id:'interest',      label:'Interest',                          line:'8710', icon:'🏦', color:'#9b72f5', gf:0, df:1, cra:'Line 8710 — No GST. Business loan interest 100% deductible.'},
+  {id:'business_tax',  label:'Business Tax, Fees & Licences',     line:'8760', icon:'🏛️', color:'#36c9c9', gf:0, df:1, cra:'Line 8760 — Memberships, dues, subscriptions, municipal licences.'},
+  {id:'office',        label:'Office Expenses',                   line:'8810', icon:'📎', color:'#e85555', gf:1, df:1, cra:'Line 8810 — 100% deductible. Pens, paper, printer ink, stamps.'},
+  {id:'supplies',      label:'Supplies',                          line:'8811', icon:'📦', color:'#2ecc8a', gf:1, df:1, cra:'Line 8811 — 100% deductible. Materials used to earn income.'},
+  {id:'legal',         label:'Legal, Accounting & Professional',  line:'8860', icon:'⚖️', color:'#36c9c9', gf:1, df:1, cra:'Line 8860 — 100% deductible. Accountant, lawyer, consultants.'},
+  {id:'management',    label:'Management & Admin Fees',           line:'8871', icon:'💼', color:'#9b72f5', gf:1, df:1, cra:'Line 8871 — Fees paid to outside management/admin services.'},
+  {id:'rent',          label:'Rent',                              line:'8910', icon:'🏢', color:'#4b8ef5', gf:1, df:1, cra:'Line 8910 — 100% deductible. Office/studio rent only (not home office).'},
+  {id:'maintenance',   label:'Maintenance & Repairs',             line:'8960', icon:'🔧', color:'#f0a033', gf:1, df:1, cra:'Line 8960 — Repairs to business property/equipment.'},
+  {id:'salaries',      label:'Salaries, Wages & Benefits',        line:'9060', icon:'👥', color:'#e85555', gf:0, df:1, cra:'Line 9060 — Employee wages. No GST on payroll.'},
+  {id:'property_tax',  label:'Property Taxes',                    line:'9180', icon:'🏠', color:'#36c9c9', gf:0, df:1, cra:'Line 9180 — Business property taxes only.'},
+  {id:'travel',        label:'Travel',                            line:'9200', icon:'✈️', color:'#4b8ef5', gf:1, df:1, cra:'Line 9200 — Flights, hotels, ground transport. Document business purpose.'},
+  {id:'phone',         label:'Telephone & Utilities',             line:'9220', icon:'📱', color:'#9b72f5', gf:1, df:1, cra:'Line 9220 — Phone, internet, electricity, gas, water (business portion).'},
+  {id:'fuel',          label:'Fuel Costs (non-vehicle)',          line:'9224', icon:'⛽', color:'#2ecc8a', gf:1, df:1, cra:'Line 9224 — Fuel for equipment/generators (NOT vehicle fuel — use 9281).'},
+  {id:'gas',           label:'Motor Vehicle — Fuel & Gas',        line:'9281', icon:'🚗', color:'#2ecc8a', gf:1, df:1, cra:'Line 9281 — Vehicle fuel. Subtotal deductible. GST claimed as ITC. Tip NOT deductible.'},
+  {id:'delivery',      label:'Delivery, Freight & Courier',       line:'9275', icon:'📬', color:'#f0a033', gf:1, df:1, cra:'Line 9275 — 100% deductible. Shipping, courier, freight.'},
+  {id:'vehicle',       label:'Motor Vehicle (other)',             line:'9281', icon:'🛻', color:'#36c9c9', gf:1, df:1, cra:'Line 9281 — Parking, repairs, insurance for business vehicle.'},
+  {id:'cca',           label:'Capital Cost Allowance (CCA)',      line:'9936', icon:'💻', color:'#9b72f5', gf:0, df:1, cra:'Line 9936 — Depreciation on business assets. See CRA CCA classes.'},
+  {id:'other',         label:'Other Expenses',                    line:'9270', icon:'📋', color:'#8b93b0', gf:1, df:1, cra:'Line 9270 — Any other ordinary/necessary business expense. Document clearly.'},
+  {id:'homeoffice',    label:'Home Office Expenses',              line:'9270', icon:'🏠', color:'#4b8ef5', gf:1, df:1, cra:'Line 9270 / T777 — % sq footage × heat/electricity/rent. T2200 may be needed.'},
+  {id:'software',      label:'Software & Subscriptions',         line:'8810', icon:'🖥️', color:'#f0a033', gf:1, df:1, cra:'Line 8810 (Office) — 100% deductible if for business use.'},
+];
+
+const DEMO = [
+  {id:1,date:'2026-01-15',vendor:'The Keg Steakhouse', category:'meals',   amount:89,   province:'BC',note:'Client lunch — ABC Corp Q1 review',receipt:null,
+   tax:{gst:5.25,pst:0,hasPst:false,tip:16,liquor:0,other:0,gasMode:false}},
+  {id:2,date:'2026-01-22',vendor:'WestJet Airlines',   category:'travel',  amount:480,  province:'BC',note:'YVR→YYZ client meeting',receipt:null,tax:null},
+  {id:3,date:'2026-02-03',vendor:'Esso – Burnaby',     category:'gas',     amount:76.19,province:'BC',note:'Business travel fuel',receipt:null,
+   tax:{gst:3.81,pst:0,hasPst:false,tip:0,liquor:0,other:0,gasMode:true,gasTotal:80}},
+  {id:4,date:'2026-02-18',vendor:'Adobe Creative Cloud',category:'software',amount:54.99,province:'BC',note:'Monthly CC subscription',receipt:null,tax:null},
+  {id:5,date:'2026-03-05',vendor:'Staples Canada',     category:'supplies',amount:67.34,province:'BC',note:'Paper, pens, labels',receipt:null,tax:null},
+];
+
+// ─── CORE CALC ────────────────────────────────────────────────────────────────
+// CRA rule: "Do NOT include GST/HST in your expenses — claim ITC instead."
+// Therefore: deductible = subtotal × df   (never subtotal + GST)
+// Gas tip: NOT deductible (CRA does not allow tip on fuel as a business expense)
+function calcBD(amount, province, catId, tax, cats) {
+  const cat = cats.find(c=>c.id===catId) || cats[cats.length-1];
+  const p   = PROVS.find(x=>x.code===province) || PROVS[0];
+  const sub = parseFloat(amount) || 0;
+
+  const autoGst = () => {
+    if (cat.gf === 0) return 0;
+    return p.hst ? sub * p.hstRate : sub * p.gst;
+  };
+
+  const tip    = parseFloat(tax?.tip)    || 0;
+  const liquor = parseFloat(tax?.liquor) || 0;
+  const other2 = parseFloat(tax?.other)  || 0;
+  const gstPaid = (tax?.gst != null && tax.gst !== '') ? (parseFloat(tax.gst)||0) : autoGst();
+  const pstPaid = (tax?.hasPst && tax?.pst != null) ? (parseFloat(tax.pst)||0) : 0;
+  const total   = sub + tip + gstPaid + pstPaid + liquor + other2;
+
+  // GST ITC claimable: 50% for meals/entertain, 0% for insurance/banking/payroll, 100% else
+  const gstClaimable = Math.round(gstPaid * cat.gf * 100) / 100;
+
+  // Deductible base: subtotal + PST + liquor tax (both non-recoverable, part of your expense cost)
+  // GST excluded (claimed separately as ITC). Gas: tip excluded. Meals: tip + liquor included in 50% base.
+  const taxBase = cat.id === 'gas' ? (sub + pstPaid) : (sub + tip + pstPaid + liquor + other2);
+  const deductibleAmount = Math.round(taxBase * cat.df * 100) / 100;
+
+  return { sub, tip, gstPaid:Math.round(gstPaid*100)/100, pstPaid, liquor:liquor+other2, total:Math.round(total*100)/100, gstClaimable, deductibleAmount };
+}
+
+function cad(n) { return '$'+Number(n||0).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// ─── THEMES ───────────────────────────────────────────────────────────────────
+const DARK  = {mode:'dark', bg:'#0c0e14',bg2:'#12151f',bg3:'#181c29',bg4:'#1f2436',accent:'#e8412a',text:'#e8ecf8',textMuted:'#8b93b0',border:'rgba(255,255,255,0.09)',green:'#2ecc8a',blue:'#4b8ef5',amber:'#f0a033',red:'#e85555',fontId:'dm'};
+const LIGHT = {mode:'light',bg:'#f4f5f8',bg2:'#ffffff',bg3:'#f0f2f7',bg4:'#e8eaf0',accent:'#e8412a',text:'#1a1c24',textMuted:'#5a6080',border:'rgba(0,0,0,0.09)',green:'#18a066',blue:'#2563eb',amber:'#d97706',red:'#dc2626',fontId:'dm'};
+
+function applyTheme(t) {
+  document.body.style.background = t.bg;
+  document.body.style.color = t.text;
+  const f = FONTS.find(x=>x.id===t.fontId)||FONTS[1];
+  document.body.style.fontFamily = f.stack;
+  if (f.url && !document.querySelector(`link[href="${f.url}"]`)) {
+    const lk=document.createElement('link'); lk.rel='stylesheet'; lk.href=f.url; document.head.appendChild(lk);
+  }
+}
+
+// ─── LOCALSTORAGE HELPERS ─────────────────────────────────────────────────────
+const LS_KEY = 'cra_tracker_v1';
+function lsLoad(key, fallback) {
+  try { const v = localStorage.getItem(LS_KEY+'_'+key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+}
+function lsSave(key, val) {
+  try {
+    localStorage.setItem(LS_KEY+'_'+key, JSON.stringify(val));
+  } catch(e) {
+    // Storage full — receipts are likely the culprit
+    if (e.name === 'QuotaExceededError') {
+      alert('⚠️ Storage is full! Your receipts are taking up too much space.\n\nTip: Export your data to CSV/Excel as a backup, then consider removing old receipts from expenses to free up space.');
+    }
+  }
+}
+
+function lsUsageMB() {
+  try {
+    let total = 0;
+    for (let k in localStorage) {
+      if (k.startsWith(LS_KEY)) total += (localStorage[k]||'').length;
+    }
+    return (total * 2 / 1024 / 1024).toFixed(1); // UTF-16 = 2 bytes per char
+  } catch { return '?'; }
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+function App() {
+  const [syncing,  setSyncing]  = useState(false);
+  const [syncMsg,  setSyncMsg]  = useState('');
+
+  const [theme,    setTheme]    = useState(()=>lsLoad('theme', DARK));
+  const [logo,     setLogo]     = useState(()=>lsLoad('logo',  {icon:'🍁',title:'KBW Expense Tracker',sub:'Self-Employed / Contractor',iconBg:'#e8412a'}));
+  const [cats,     setCats]     = useState(()=>lsLoad('cats',  DEFAULT_CATS));
+  const [expenses, setExpenses] = useState(()=>lsLoad('expenses', []));
+  const [province, setProvince] = useState(()=>lsLoad('province', 'BC'));
+  const [statCards,setStatCards]= useState(()=>lsLoad('statCards', [
+    {key:'gross',label:'Total Spent',   color:'#8b93b0',sub:'Before tax'},
+    {key:'itc',  label:'GST/HST ITCs',  color:'#2ecc8a',sub:'Input Tax Credits'},
+    {key:'ded',  label:'CRA Deductible',color:'#4b8ef5',sub:'T2125 expenses'},
+    {key:'pst',  label:'PST Paid',      color:'#f0a033',sub:'Non-recoverable'},
+  ]));
+  const [tab,      setTab]      = useState(()=>sessionStorage.getItem('kbw_tab')||'dashboard');
+  const [filter,   setFilter]   = useState({cat:'all', year:String(new Date().getFullYear()), dateFrom:'', dateTo:'', sort:'date'});
+  const [modal,    setModal]    = useState(null);
+  const [editId,   setEditId]   = useState(null);
+  const [detailExp,setDetailExp]= useState(null);
+  const [editCat,  setEditCat]  = useState(null);
+  const [editStat, setEditStat] = useState(null);
+  const [apiKey,    setApiKey]   = useState(()=>lsLoad('apiKey', ''));
+  const [gClientId, setGClientId]= useState(()=>lsLoad('gClientId',''));
+  const [ghToken,   setGhToken]  = useState(()=>lsLoad('ghToken',''));
+
+  const GH_OWNER = 'no-kluee';
+  const GH_REPO  = 'magikarp-platypus-h3l1o';
+  const GH_FILE  = 'expenses-data.json';
+  const GH_BRANCH = 'data';
+
+  async function ghLoad() {
+    const GH_TOKEN = lsLoad('ghToken','');
+    try {
+      const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`, {
+        headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const content = JSON.parse(atob(data.content.replace(/\n/g,'')));
+      return { data: content, sha: data.sha };
+    } catch { return null; }
+  }
+
+  async function ghSave(exp, med) {
+    const GH_TOKEN = lsLoad('ghToken','');
+    try {
+      const existing = await ghLoad();
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify({
+        expenses: exp.map(e=>({...e, receipt:null})),
+        medical:  med.map(m=>({...m, receipt:null}))
+      }, null, 2))));
+      const body = {
+        message: `Update expenses ${new Date().toISOString().slice(0,10)}`,
+        content,
+        ...(existing?.sha ? { sha: existing.sha } : {})
+      };
+      await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`, {
+        method: 'PUT',
+        headers: { Authorization: `token ${GH_TOKEN}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({...body, branch: GH_BRANCH})
+      });
+    } catch(e) { console.error('GitHub save error:', e); }
+  }
+  const [gToken,    setGToken]   = useState(()=>lsLoad('gToken',''));
+  const [gSyncing,  setGSyncing] = useState(false);
+  const [gStatus,   setGStatus]  = useState('');
+  const [medical,   setMedical]  = useState(()=>lsLoad('medical', []));
+  const [fullImg,  setFullImg]  = useState(null);
+  const [saveFlash,setSaveFlash]= useState(false);
+
+  // ── Google Drive helpers ──────────────────────────────────────────────────
+  const DRIVE_ROOT     = 'KBW Expenses';
+  const DRIVE_BIZ      = 'Business Expenses';
+  const DRIVE_MED      = 'Medical Expenses';
+
+  async function gSignIn() {
+    if (!gClientId) { alert('Please enter your Google Client ID in ⚙️ Settings first.'); return; }
+    return new Promise((resolve, reject) => {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: gClientId,
+        scope: 'https://www.googleapis.com/auth/drive',
+        callback: (resp) => {
+          if (resp.error) { reject(resp.error); return; }
+          const token = resp.access_token;
+          setGToken(token);
+          lsSave('gToken', token);
+          resolve(token);
+        },
+      });
+      client.requestAccessToken();
+    });
+  }
+
+  async function gGetOrCreateFolder(name, parentId, token) {
+    // Search for existing folder
+    const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false${parentId?` and '${parentId}' in parents`:''}`;
+    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const searchData = await searchRes.json();
+    if (searchData.files && searchData.files.length > 0) return searchData.files[0].id;
+    // Create folder
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: parentId ? [parentId] : [] })
+    });
+    const created = await createRes.json();
+    return created.id;
+  }
+
+  async function compressForDrive(dataUrl) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1600;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  async function gUploadReceipt(expense, token) {
+    if (!expense.receipt) return null;
+    const cat   = getCat(expense.category);
+    const year  = expense.date.split('-')[0]; // dynamic — works for 2025, 2026, 2027...
+    const isPdf = expense.receipt.startsWith('__PDF__:');
+    const raw   = isPdf ? expense.receipt.slice(8) : expense.receipt;
+    // Only create folders when there is actually a receipt to store
+    setGStatus(`📁 Business Expenses / ${year} / ${cat.label}…`);
+    const rootId = await gGetOrCreateFolder(DRIVE_ROOT, null, token);
+    const bizId  = await gGetOrCreateFolder(DRIVE_BIZ, rootId, token);
+    const yearId = await gGetOrCreateFolder(year, bizId, token);
+    const catId  = await gGetOrCreateFolder(cat.label, yearId, token);
+    // Compress image before upload (skip PDFs)
+    setGStatus('🗜 Compressing…');
+    const finalUrl = isPdf ? raw : await compressForDrive(raw);
+    const b64   = finalUrl.split(',')[1];
+    const bstr  = atob(b64);
+    const bytes = new Uint8Array(bstr.length);
+    for (let i=0;i<bstr.length;i++) bytes[i]=bstr.charCodeAt(i);
+    const mime     = isPdf ? 'application/pdf' : 'image/jpeg';
+    const ext      = isPdf ? 'pdf' : 'jpg';
+    const safeName = expense.vendor.replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_').slice(0,30);
+    const fileName = `${expense.date}_${safeName}_$${expense.amount}.${ext}`;
+    // Avoid duplicates — update if already exists
+    const eq = `name='${fileName}' and '${catId}' in parents and trashed=false`;
+    const er = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(eq)}&fields=files(id)`,{headers:{Authorization:`Bearer ${token}`}});
+    const ed = await er.json();
+    setGStatus('☁️ Uploading…');
+    let fileId;
+    if (ed.files?.length>0) {
+      fileId = ed.files[0].id;
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':mime},body:bytes});
+    } else {
+      const bd='kbw_b'; const meta=JSON.stringify({name:fileName,parents:[catId]});
+      const p1=new TextEncoder().encode(`--${bd}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${bd}\r\nContent-Type: ${mime}\r\n\r\n`);
+      const p2=new TextEncoder().encode(`\r\n--${bd}--`);
+      const body=new Uint8Array(p1.length+bytes.length+p2.length);
+      body.set(p1);body.set(bytes,p1.length);body.set(p2,p1.length+bytes.length);
+      const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':`multipart/related; boundary=${bd}`},body});
+      const uploadData = await uploadRes.json();
+      fileId = uploadData.id;
+    }
+    // Make file publicly viewable so any device can load the receipt
+    if (fileId) {
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method:'POST', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+        body: JSON.stringify({role:'reader', type:'anyone'})
+      });
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+    return fileName;
+  }
+
+  async function gBackupExpenses(token, year) {
+    const rootId = await gGetOrCreateFolder(DRIVE_ROOT, null, token);
+    const bizId  = await gGetOrCreateFolder(DRIVE_BIZ, rootId, token);
+    const yearId = await gGetOrCreateFolder(year, bizId, token);
+    const fileName = `expenses_${year}.json`;
+    const yearData = expenses.filter(e=>e.date.startsWith(year));
+    const content  = JSON.stringify(yearData.map(e=>({...e,receipt:e.receipt?'[stored as image in Drive]':null})),null,2);
+    const bytes = new TextEncoder().encode(content);
+    const q = `name='${fileName}' and '${yearId}' in parents and trashed=false`;
+    const sr = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`,{headers:{Authorization:`Bearer ${token}`}});
+    const sd = await sr.json();
+    if (sd.files?.length>0) {
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${sd.files[0].id}?uploadType=media`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:bytes});
+    } else {
+      const bd='kbw_j'; const meta=JSON.stringify({name:fileName,parents:[yearId]});
+      const p1=new TextEncoder().encode(`--${bd}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n`);
+      const p2=new TextEncoder().encode(`\r\n--${bd}--`);
+      const body=new Uint8Array(p1.length+bytes.length+p2.length);
+      body.set(p1);body.set(bytes,p1.length);body.set(p2,p1.length+bytes.length);
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':`multipart/related; boundary=${bd}`},body});
+    }
+  }
+
+  async function gUploadMedicalReceipt(record, token) {
+    if (!record.receipt) return null;
+    const year   = record.date.split('-')[0];
+    const isPdf  = record.receipt.startsWith('__PDF__:');
+    const raw    = isPdf ? record.receipt.slice(8) : record.receipt;
+    setGStatus(`📁 Medical Expenses / ${year} / ${record.type}…`);
+    const rootId  = await gGetOrCreateFolder(DRIVE_ROOT, null, token);
+    const medId   = await gGetOrCreateFolder(DRIVE_MED, rootId, token);
+    const yearId  = await gGetOrCreateFolder(year, medId, token);
+    const typeId  = await gGetOrCreateFolder(record.type, yearId, token);
+    setGStatus('🗜 Compressing medical receipt…');
+    const finalUrl = isPdf ? raw : await compressForDrive(raw);
+    const b64   = finalUrl.split(',')[1];
+    const bstr  = atob(b64); const bytes = new Uint8Array(bstr.length);
+    for (let i=0;i<bstr.length;i++) bytes[i]=bstr.charCodeAt(i);
+    const mime     = isPdf ? 'application/pdf' : 'image/jpeg';
+    const ext      = isPdf ? 'pdf' : 'jpg';
+    const safeName = record.description.replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_').slice(0,30);
+    const fileName = `${record.date}_${safeName}_$${record.total}.${ext}`;
+    const eq = `name='${fileName}' and '${typeId}' in parents and trashed=false`;
+    const er = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(eq)}&fields=files(id)`,{headers:{Authorization:`Bearer ${token}`}});
+    const ed = await er.json();
+    setGStatus('☁️ Uploading medical receipt…');
+    if (ed.files?.length>0) {
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${ed.files[0].id}?uploadType=media`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':mime},body:bytes});
+    } else {
+      const bd='kbw_med'; const meta=JSON.stringify({name:fileName,parents:[typeId]});
+      const p1=new TextEncoder().encode(`--${bd}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${bd}\r\nContent-Type: ${mime}\r\n\r\n`);
+      const p2=new TextEncoder().encode(`\r\n--${bd}--`);
+      const body=new Uint8Array(p1.length+bytes.length+p2.length);
+      body.set(p1);body.set(bytes,p1.length);body.set(p2,p1.length+bytes.length);
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':`multipart/related; boundary=${bd}`},body});
+    }
+    return fileName;
+  }
+
+  async function handleMedicalDriveBackup(record) {
+    if (!gClientId) return;
+    setGSyncing(true); setGStatus('🔗 Connecting…');
+    try {
+      let token = gToken;
+      try {
+        const test = await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:`Bearer ${token}`}});
+        if (!test.ok) throw new Error('expired');
+      } catch { token = await gSignIn(); }
+      if (record?.receipt) await gUploadMedicalReceipt(record, token);
+      setGStatus('✅ Medical receipt saved to Drive!');
+      setTimeout(()=>setGStatus(''), 3000);
+    } catch(err) {
+      console.error(err);
+      setGStatus('❌ ' + (err.message||'Drive error'));
+      setTimeout(()=>setGStatus(''), 5000);
+    }
+    setGSyncing(false);
+  }
+
+  async function gSyncFromDrive(silent=false) {
+    if (!gClientId) { if(!silent) alert('Please set up Google Drive in ⚙️ Settings first.'); return; }
+    if (!window.google?.accounts?.oauth2) {
+      if (!silent) { setGStatus('❌ Google not loaded — try refreshing'); setTimeout(()=>setGStatus(''),4000); }
+      return;
+    }
+    if (!silent) { setGSyncing(true); setGStatus('🔗 Signing in…'); }
+    try {
+      let token;
+      try { token = await gSignIn(); } catch(e) { throw new Error('Sign-in cancelled. Try again.'); }
+      if (!token) throw new Error('No access token.');
+      if (!silent) setGStatus('🔍 Loading expenses…');
+      const rootId = await gGetOrCreateFolder(DRIVE_ROOT, null, token);
+
+      // Search entire KBW Expenses folder tree for any expenses_*.json files
+      const searchQ = `name contains 'expenses_' and '${rootId}' in parents or (name contains 'expenses_' and mimeType='application/json') and trashed=false`;
+      // Simpler: just search all of Drive for expenses_ json files under root
+      const allFilesQ = `name contains 'expenses_' and trashed=false`;
+      const allFilesR = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(allFilesQ)}&fields=files(id,name,parents)&pageSize=50`,{headers:{Authorization:`Bearer ${token}`}});
+      const allFilesD = await allFilesR.json();
+
+      let allExpenses = [];
+      for (const file of (allFilesD.files||[])) {
+        if (!file.name.includes('expenses_')) continue;
+        try {
+          const dr = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,{headers:{Authorization:`Bearer ${token}`}});
+          const data = await dr.json();
+          if (Array.isArray(data)) allExpenses = [...allExpenses, ...data];
+        } catch(e) { console.log('skip file', file.name); }
+      }
+      if (!allExpenses.length) {
+        if (!silent) { setGStatus('❌ No expenses found in Drive'); setTimeout(()=>setGStatus(''),4000); }
+        if (!silent) setGSyncing(false); return;
+      }
+      const seen = new Set();
+      const cleaned = allExpenses
+        .map((e,i)=>({...e, id:e.id||Date.now()+i, receipt:(e.receipt&&typeof e.receipt==='string'&&e.receipt.startsWith('['))?null:e.receipt}))
+        .filter(e=>{ if(seen.has(e.id)) return false; seen.add(e.id); return true; });
+      setExpenses(cleaned);
+      lsSave('expenses', cleaned);
+      if (!silent) { setGStatus(`✅ Synced ${cleaned.length} expenses!`); setTimeout(()=>setGStatus(''),3000); }
+    } catch(err) {
+      console.error(err);
+      if (!silent) { setGStatus('❌ '+(err.message||'Sync error')); setTimeout(()=>setGStatus(''),5000); }
+    }
+    if (!silent) setGSyncing(false);
+  }
+
+  async function gDeleteFile(expense) {
+    if (!gClientId || !expense.receipt) return;
+    try {
+      let token = gToken;
+      try {
+        const test = await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:`Bearer ${token}`}});
+        if (!test.ok) throw new Error('expired');
+      } catch { token = await gSignIn(); }
+      const cat      = getCat(expense.category);
+      const year     = expense.date.split('-')[0];
+      const isPdf    = expense.receipt.startsWith('__PDF__:');
+      const ext      = isPdf ? 'pdf' : 'jpg';
+      const safeName = expense.vendor.replace(/[^a-zA-Z0-9 ]/g,'').replace(/\s+/g,'_').slice(0,30);
+      const fileName = `${expense.date}_${safeName}_$${expense.amount}.${ext}`;
+      // Search for the file in Drive
+      const rootId = await gGetOrCreateFolder(DRIVE_ROOT, null, token);
+      const bizId  = await gGetOrCreateFolder(DRIVE_BIZ, rootId, token);
+      const yearId = await gGetOrCreateFolder(year, bizId, token);
+      const catId  = await gGetOrCreateFolder(cat.label, yearId, token);
+      const q = `name='${fileName}' and '${catId}' in parents and trashed=false`;
+      const sr = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`,{headers:{Authorization:`Bearer ${token}`}});
+      const sd = await sr.json();
+      if (sd.files?.length > 0) {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${sd.files[0].id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});
+        setGStatus('🗑 Receipt deleted from Drive');
+        setTimeout(()=>setGStatus(''), 2000);
+      }
+    } catch(err) {
+      console.error('Drive delete error:', err);
+    }
+  }
+
+  async function handleGDriveBackup(expense) {
+    if (!gClientId) return;
+    setGSyncing(true); setGStatus('🔗 Connecting…');
+    try {
+      let token = gToken;
+      try {
+        const test = await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:`Bearer ${token}`}});
+        if (!test.ok) throw new Error('expired');
+      } catch { token = await gSignIn(); }
+      const year = expense?.date?.split('-')[0] || String(new Date().getFullYear());
+      if (expense?.receipt && !expense.receipt.startsWith('https://drive.google.com')) {
+        const driveUrl = await gUploadReceipt(expense, token);
+        // If we got a Drive URL back, update the expense receipt to use it
+        if (driveUrl && driveUrl.startsWith('https://')) {
+          setExpenses(prev => prev.map(e => e.id===expense.id ? {...e, receipt: driveUrl} : e));
+        }
+      }
+      setGStatus('💾 Saving data…');
+      await gBackupExpenses(token, year);
+      setGStatus('✅ Saved to Google Drive!');
+      setTimeout(()=>setGStatus(''), 3000);
+    } catch(err) {
+      console.error(err);
+      setGStatus('❌ ' + (err.message||'Drive error'));
+      setTimeout(()=>setGStatus(''), 5000);
+    }
+    setGSyncing(false);
+  }
+
+  // Auto-save every time key state changes
+  useEffect(()=>{ lsSave('theme',    theme);     applyTheme(theme); },[theme]);
+  useEffect(()=>{ lsSave('logo',     logo);      },[logo]);
+  useEffect(()=>{ lsSave('cats',     cats);      },[cats]);
+  useEffect(()=>{ lsSave('province', province);  },[province]);
+  useEffect(()=>{ lsSave('statCards',statCards); },[statCards]);
+  useEffect(()=>{ lsSave('apiKey',   apiKey);    },[apiKey]);
+  useEffect(()=>{ lsSave('gClientId',gClientId); },[gClientId]);
+  useEffect(()=>{ lsSave('gToken',   gToken);    },[gToken]);
+  useEffect(()=>{ lsSave('medical', medical); },[medical]);
+  useEffect(()=>{ sessionStorage.setItem('kbw_tab', tab); },[tab]);
+  useEffect(()=>{ lsSave('expenses', expenses); flash(); },[expenses]);
+  useEffect(()=>{ lsSave('ghToken', ghToken); },[ghToken]);
+
+  // Auto-save to GitHub 2 seconds after any change
+  const ghSaveTimer = useRef(null);
+  const latestExpenses = useRef(expenses);
+  const latestMedical = useRef(medical);
+  useEffect(()=>{ latestExpenses.current = expenses; },[expenses]);
+  useEffect(()=>{ latestMedical.current = medical; },[medical]);
+
+  useEffect(()=>{
+    if (window._ghLoading) return;
+    clearTimeout(ghSaveTimer.current);
+    ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
+  },[expenses, medical]);
+
+  // Load config + GitHub data on startup
+  useEffect(()=>{
+    if (!document.getElementById('google-gsi')) {
+      const s = document.createElement('script');
+      s.id='google-gsi'; s.src='https://accounts.google.com/gsi/client'; s.async=true;
+      document.head.appendChild(s);
+    }
+    const doLoad = (token, clientId) => {
+      if (clientId) { setGClientId(clientId); lsSave('gClientId', clientId); }
+      if (!token) return;
+      window._ghLoading = true;
+      fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}?ref=${GH_BRANCH}`, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+      })
+      .then(r => r.ok ? r.json() : null).catch(() => null)
+      .then(data => {
+        if (!data?.content) { window._ghLoading = false; return; }
+        const parsed = JSON.parse(atob(data.content.replace(/\n/g,'')));
+        if (parsed?.expenses?.length) {
+          const localExp = lsLoad('expenses', []);
+          const receiptById = {};
+          localExp.forEach(e => { if (e.receipt) receiptById[e.id] = e.receipt; });
+          const merged = parsed.expenses.map(e => ({ ...e, receipt: receiptById[e.id] || null }));
+          setExpenses(merged);
+          lsSave('expenses', merged);
+        }
+        if (parsed?.medical?.length) {
+          setMedical(parsed.medical);
+          lsSave('medical', parsed.medical);
+        }
+        setTimeout(() => { window._ghLoading = false; }, 1000);
+      });
+    };
+    // Token and Google client ID come only from Settings (stored per device in localStorage)
+    doLoad(lsLoad('ghToken',''), lsLoad('gClientId',''));
+  }, []);
+
+  function flash(){ setSaveFlash(true); setTimeout(()=>setSaveFlash(false),1400); }
+
+  const T = theme;
+  const getCat = id => cats.find(c=>c.id===id)||cats[cats.length-1];
+
+  const filtered = useMemo(()=>{
+    const list = expenses.filter(e=>{
+      const yr=e.date.split('-')[0];
+      const inYear    = filter.year==='all'||yr===filter.year;
+      const inCat     = filter.cat==='all'||e.category===filter.cat;
+      const afterFrom = !filter.dateFrom || e.date >= filter.dateFrom;
+      const beforeTo  = !filter.dateTo   || e.date <= filter.dateTo;
+      return inYear && inCat && afterFrom && beforeTo;
+    });
+    return list.sort((a,b)=>{
+      if (filter.sort==='added')    return b.id - a.id;
+      if (filter.sort==='amount')   return b.amount - a.amount;
+      if (filter.sort==='amount_asc') return a.amount - b.amount;
+      if (filter.sort==='date_asc') { const d=a.date.localeCompare(b.date); return d!==0?d:a.id-b.id; }
+      // default: by expense date, then by id (added time) as tiebreaker
+      const dateDiff = b.date.localeCompare(a.date);
+      return dateDiff !== 0 ? dateDiff : b.id - a.id;
+    });
+  },[expenses,filter]);
+
+  const statVals = useMemo(()=>{
+    let gross=0,itc=0,ded=0,pst=0;
+    filtered.forEach(e=>{
+      const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+      const pct=(e.bizPct!=null?e.bizPct:100)/100;
+      gross+=e.amount;
+      itc+=bd.gstClaimable*pct;
+      ded+=bd.deductibleAmount*pct;
+      pst+=bd.pstPaid;
+    });
+    return {gross:+gross.toFixed(2),itc:+itc.toFixed(2),ded:+ded.toFixed(2),pst:+pst.toFixed(2)};
+  },[filtered,province,cats]);
+
+  const years = useMemo(()=>{
+    const s=new Set(expenses.map(e=>e.date.split('-')[0]));
+    ['2025','2026'].forEach(y=>s.add(y));
+    return [...s].sort().reverse();
+  },[expenses]);
+
+  function closeModal(){ setModal(null);setEditId(null);setDetailExp(null);setEditCat(null);setEditStat(null); }
+
+  function dl(filename, mime, content) {
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportCSV() {
+    const hdr=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose'];
+    const rows=filtered.map(e=>{
+      const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+      const pct=(e.bizPct!=null?e.bizPct:100)/100;
+      const c=getCat(e.category);
+      return[e.date,e.vendor,c.label,c.line,e.province||province,`${e.bizPct??100}%`,e.amount,bd.tip,bd.gstPaid,bd.pstPaid,bd.liquor,bd.total,+(bd.gstClaimable*pct).toFixed(2),+(bd.deductibleAmount*pct).toFixed(2),e.payment?.type||'',e.payment?.name||'',e.payment?.last4||'',e.note||''];
+    });
+    const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    dl('CRA_Expenses.csv','text/csv',csv);
+  }
+
+  function exportXLS() {
+    const cols=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose'];
+    let tbl='<table><tr>'+cols.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+    filtered.forEach(e=>{
+      const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+      const pct=(e.bizPct!=null?e.bizPct:100)/100;
+      const c=getCat(e.category);
+      tbl+=`<tr><td>${e.date}</td><td>${e.vendor}</td><td>${c.label}</td><td>${c.line}</td><td>${e.province||province}</td><td>${e.bizPct??100}%</td><td>${e.amount}</td><td>${bd.tip}</td><td>${bd.gstPaid}</td><td>${bd.pstPaid}</td><td>${bd.liquor}</td><td>${bd.total}</td><td>${+(bd.gstClaimable*pct).toFixed(2)}</td><td>${+(bd.deductibleAmount*pct).toFixed(2)}</td><td>${e.payment?.type||''}</td><td>${e.payment?.name||''}</td><td>${e.payment?.last4||''}</td><td>${e.note||''}</td></tr>`;
+    });
+    tbl+='</table>';
+    const xls=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>CRA Expenses</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>${tbl}</body></html>`;
+    dl('CRA_Expenses.xls','application/vnd.ms-excel',xls);
+  }
+
+  function downloadTemplate() {
+    const hdr=['Date','Vendor','Category','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Business Purpose','Payment Type','Card Name','Card Last 4'];
+    const examples=[
+      ['2026-03-15','Tim Hortons','Meals & Entertainment','BC','100%','4.50','0','0.23','0','0','Client coffee meeting','Credit Card','Amex','3405'],
+      ['2026-03-18','Esso','Motor Vehicle — Fuel & Gas','BC','100%','65.00','0','3.25','0','0','Gas for client visits','Credit Card','Visa','1234'],
+      ['2026-03-20','Staples','Office Expenses','BC','100%','29.99','0','1.50','2.40','0','Printer paper','Debit Card','','5678'],
+      ['2025-12-01','Google Ads','Advertising','BC','100%','150.00','0','7.50','0','0','December ad spend','Credit Card','Amex','3405'],
+    ];
+    const csv=[hdr,...examples].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    dl('KBW_Expense_Template.csv','text/csv',csv);
+  }
+
+  function importCSV(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const text = ev.target.result;
+        const lines = text.split('\n').filter(l=>l.trim());
+        if (lines.length < 2) { alert('File appears empty.'); return; }
+        function parseRow(line) {
+          const fields=[]; let cur='', inQ=false;
+          for (let i=0;i<line.length;i++) {
+            const ch=line[i];
+            if (ch==='"') { if(inQ&&line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
+            else if (ch===','&&!inQ) { fields.push(cur.trim()); cur=''; }
+            else cur+=ch;
+          }
+          fields.push(cur.trim());
+          return fields;
+        }
+        const headers = parseRow(lines[0]).map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,''));
+        const imported = [];
+        let skipped = 0;
+        const baseTime = Date.now();
+        for (let i=1;i<lines.length;i++) {
+          const row = parseRow(lines[i]);
+          if (row.length < 3) continue;
+          const get = (...keys) => {
+            for (const k of keys) {
+              const idx = headers.findIndex(h=>h.includes(k));
+              if (idx>=0 && row[idx] !== undefined) return row[idx].replace(/^"|"$/g,'');
+            }
+            return '';
+          };
+          const date   = get('date');
+          const vendor = get('vendor');
+          const catName= get('category');
+          if (!date || !vendor) { skipped++; continue; }
+          const cat    = cats.find(c=>c.label.toLowerCase()===catName.toLowerCase()) || cats[cats.length-1];
+          const amount = parseFloat(get('subtotal','pretax','amount'))||0;
+          const tip    = parseFloat(get('tip'))||0;
+          const gst    = parseFloat(get('gsthst','gst'))||0;
+          const pst    = parseFloat(get('pst'))||0;
+          const other  = parseFloat(get('othertax','other'))||0;
+          const bizPctS= get('business');
+          const bizPct = bizPctS ? parseInt(bizPctS)||100 : 100;
+          const prov   = get('province')||province;
+          const note   = get('purpose','note');
+          const payType= get('paymenttype','payment')||'';
+          const payName= get('cardname','name')||'';
+          const payLast4=get('last4','card')||'';
+          // Use base time + index * large offset to guarantee unique IDs
+          imported.push({
+            id: baseTime * 1000 + i,
+            date, vendor, category: cat.id,
+            amount, province: prov, bizPct,
+            tax: { gst, pst, hasPst: pst>0, tip, liquor: other, other: 0, gasMode: false, gasTotal: 0 },
+            payment: { type: payType, name: payName, last4: payLast4 },
+            note, receipt: null
+          });
+        }
+        if (imported.length===0) { alert('No valid rows found. Check the format matches the template.'); return; }
+        const msg = `Import ${imported.length} expense${imported.length!==1?'s':''}${skipped>0?` (${skipped} rows skipped)`:''}\n\nReplace all existing expenses, or add to them?\n\nOK = Replace all\nCancel = Add to existing`;
+        if (window.confirm(msg)) {
+          setExpenses(imported);
+        } else {
+          setExpenses(prev => {
+            const existingKeys = new Set(prev.map(e=>`${e.date}|${e.vendor}|${e.amount}`));
+            const newOnes = imported.filter(e=>!existingKeys.has(`${e.date}|${e.vendor}|${e.amount}`));
+            return [...prev, ...newOnes];
+          });
+        }
+        alert(`✅ Imported ${imported.length} expense${imported.length!==1?'s':''}!`);
+      } catch(err) {
+        alert('Error reading file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function dedupeExpenses() {
+    // Remove duplicates: keep first occurrence of each unique vendor+date+amount combo
+    const seen = new Set();
+    const deduped = expenses.filter(e => {
+      const key = `${e.date}|${e.vendor}|${e.amount}|${e.category}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const removed = expenses.length - deduped.length;
+    if (removed === 0) { alert('No duplicates found!'); return; }
+    if (window.confirm(`Found ${removed} duplicate expense${removed!==1?'s':''}. Remove them?`)) {
+      setExpenses(deduped);
+      alert(`✅ Removed ${removed} duplicate${removed!==1?'s':''}. ${deduped.length} expenses remain.`);
+    }
+  }
+  const borderC = {borderColor:T.border};
+  const cardS   = {background:T.bg2,...borderC};
+
+  return (
+    <div className="shell" style={{background:T.bg,color:T.text}}>
+
+      {/* Header */}
+      <div className="hdr" style={{background:T.bg2,borderColor:T.border}}>
+        <div className="hdr-in">
+          <div className="logo-area" onClick={()=>setModal('logo')} title="Click to customise logo">
+            {logo.logoImg
+              ? <img src={logo.logoImg} style={{width:34,height:34,borderRadius:9,objectFit:'cover',flexShrink:0}} alt="logo"/>
+              : <div className="logo-icon" style={{background:logo.iconBg}}>{logo.icon}</div>
+            }
+            <div>
+              <div className="logo-title">{logo.title}</div>
+              <div className="logo-sub">{logo.sub}</div>
+            </div>
+          </div>
+          <div className="nav">
+            {['dashboard','expenses','categories','medical','summary'].map(t=>(
+              <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text,background:t==='medical'&&tab==='medical'?'rgba(236,72,153,.12)':undefined}} onClick={()=>setTab(t)}>
+                {t==='medical'?'🏥 Medical':t[0].toUpperCase()+t.slice(1)}
+              </button>
+            ))}
+          </div>
+          <select className="psel" style={{borderColor:T.border,color:T.text}} value={province} onChange={e=>setProvince(e.target.value)}>
+            {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
+          </select>
+          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')}>🎨 Theme</button>
+          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')}><span className="mob-hide">⚙️ Settings</span><span className="mob-only">⚙️</span></button>
+          {gStatus&&<span style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="fbar" style={{background:T.bg2,borderColor:T.border}}>
+        <div className="fbar-in">
+          <select className="fsel" style={{borderColor:T.border,color:T.text}} value={filter.year} onChange={e=>setFilter(p=>({...p,year:e.target.value,dateFrom:'',dateTo:''}))}>
+            <option value="all">All Years</option>
+            {years.map(y=><option key={y} value={y}>{y}</option>)}
+          </select>
+          <select className="fsel" style={{borderColor:T.border,color:T.text,maxWidth:180}} value={filter.cat} onChange={e=>setFilter(p=>({...p,cat:e.target.value}))}>
+            <option value="all">All Categories</option>
+            {cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+          </select>
+          <span className="mob-hide flbl">From</span>
+          <input className="mob-hide" type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:7,padding:'5px 9px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}} value={filter.dateFrom} onChange={e=>setFilter(p=>({...p,dateFrom:e.target.value,year:'all'}))}/>
+          <span className="mob-hide flbl">To</span>
+          <input className="mob-hide" type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:7,padding:'5px 9px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}} value={filter.dateTo} onChange={e=>setFilter(p=>({...p,dateTo:e.target.value,year:'all'}))}/>
+          {(filter.dateFrom||filter.dateTo)&&<button className="mob-hide" onClick={()=>setFilter(p=>({...p,dateFrom:'',dateTo:'',year:String(new Date().getFullYear())}))} style={{fontSize:11,background:'transparent',border:`1px solid ${T.border}`,color:T.text,padding:'4px 8px',borderRadius:6,opacity:.6}}>✕</button>}
+          <select className="fsel" style={{borderColor:T.border,color:T.text}} value={filter.sort} onChange={e=>setFilter(p=>({...p,sort:e.target.value}))}>
+            <option value="date">Date (newest first)</option>
+            <option value="date_asc">Date (oldest first)</option>
+            <option value="added">Recently Added</option>
+            <option value="amount">Amount (highest)</option>
+            <option value="amount_asc">Amount (lowest)</option>
+          </select>
+          <span style={{marginLeft:'auto',fontSize:11,opacity:.4,whiteSpace:'nowrap'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
+          <span style={{fontSize:11,opacity:.3,marginLeft:8,whiteSpace:'nowrap'}}>💾 {lsUsageMB()} MB</span>
+          <button className="addbtn" style={{background:T.accent,color:'#fff',marginLeft:12,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>{setEditId(null);setModal('expense');}}>+ Add Expense</button>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div className="main">
+        {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
+        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{const exp=expenses.find(e=>e.id===id);setExpenses(p=>p.filter(e=>e.id!==id));if(exp?.receipt)setTimeout(()=>gDeleteFile(exp),300);}} onZoom={setFullImg} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
+        {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
+        {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={setFullImg} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
+        {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
+      </div>
+
+      {/* Modals */}
+      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} onSave={data=>{
+        if(editId) setExpenses(p=>p.map(e=>e.id===editId?{...e,...data}:e));
+        else setExpenses(p=>[...p,{id:Date.now(),...data}]);
+        closeModal();
+        // Auto-backup to Drive after save
+        setTimeout(()=>handleGDriveBackup(data), 500);
+      }} onClose={closeModal} onZoom={setFullImg} />}
+      {modal==='detail'   && detailExp && <DetailModal  expense={detailExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={setFullImg} />}
+      {modal==='catEdit'  && editCat   && <CatEditModal cat={editCat} T={T} onSave={p=>{setCats(x=>x.map(c=>c.id===editCat.id?{...c,...p}:c));closeModal();}} onClose={closeModal} />}
+      {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
+      {modal==='theme'    && <ThemeModal  theme={T} onSave={t=>{setTheme(t);closeModal();}} onClose={closeModal} />}
+      {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
+      {modal==='settings' && <SettingsModal apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{setApiKey(k);setGClientId(g);setGhToken(gh);closeModal();}} onClose={closeModal} onSync={gSyncFromDrive} />}
+
+      {/* Lightbox receipt viewer */}
+      {fullImg && <ReceiptLightbox src={fullImg} onClose={()=>setFullImg(null)} />}
+    </div>
+  );
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,onDetail,onEditStat}) {
+  const byCat = useMemo(()=>{const m={};filtered.forEach(e=>{m[e.category]=(m[e.category]||0)+e.amount;});return Object.entries(m).sort((a,b)=>b[1]-a[1]);},[filtered]);
+  const mx = byCat[0]?.[1]||1;
+  return(
+    <div>
+      <div className="sgrid">
+        {statCards.map(sc=>(
+          <div key={sc.key} className="sc" style={{background:T.bg2,borderColor:T.border}} onClick={()=>onEditStat(sc)}>
+            <div className="sc-bar" style={{background:sc.color}}/>
+            <div className="sc-hint">✏ edit</div>
+            <div className="sc-lbl">{sc.label}</div>
+            <div className="sc-val" style={{color:sc.color}}>{cad(statVals[sc.key])}</div>
+            <div className="sc-sub">{sc.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="two">
+        <div className="card" style={{background:T.bg2,borderColor:T.border}}>
+          <div className="sec-ttl">Spending by Category</div>
+          {byCat.length===0&&<div style={{opacity:.4,fontSize:13}}>No expenses yet</div>}
+          {byCat.map(([id,amt])=>{const c=getCat(id);return(
+            <div key={id} className="cbar">
+              <div className="cbar-h"><span className="cbar-name">{c.icon} {c.label}</span><span className="cbar-amt">{cad(amt)}</span></div>
+              <div className="prog"><div className="prog-fill" style={{width:`${Math.round(amt/mx*100)}%`,background:c.color}}/></div>
+            </div>
+          );})}
+        </div>
+        <div className="card" style={{background:T.bg2,borderColor:T.border}}>
+          <div className="sec-ttl">Recent Expenses</div>
+          {filtered.slice(0,7).map(e=>{
+            const c=getCat(e.category);
+            const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+            return(
+              <div key={e.id} style={{display:'flex',alignItems:'center',gap:9,marginBottom:12,cursor:'pointer'}} onClick={()=>onDetail(e)}>
+                <div style={{fontSize:19}}>{c.icon}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{e.vendor}</div>
+                  <div style={{fontSize:10,opacity:.4}}>{e.date} · L{c.line}</div>
+                </div>
+                <div style={{textAlign:'right',flexShrink:0}}>
+                  <div style={{fontSize:13,fontWeight:600,fontFamily:"'Poppins',sans-serif"}}>{cad(e.amount)}</div>
+                  <div style={{fontSize:10,color:T.green}}>ITC {cad(bd.gstClaimable)}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="ibanner" style={{borderColor:T.border}}>
+        🍁 <b>CRA T2125:</b> Don't include GST/HST in expenses — claim ITC instead. Deductible = subtotal only. Gas tip not deductible. Meals = 50% deductible, 50% ITC. PST optional — enter only if on receipt. Keep receipts <b>6 yrs</b>. Click stat cards to customise · <b>🎨 Theme</b> to change colours/fonts · logo to rename.
+      </div>
+    </div>
+  );
+}
+
+// ─── EXPENSES ─────────────────────────────────────────────────────────────────
+function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
+  const fileRef = useRef();
+  return(
+    <div>
+      <div className="xbar">
+        <span style={{fontSize:12,opacity:.5}}>Export:</span>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}>📄 CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}>📊 Excel</button>
+        <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
+        <span style={{fontSize:12,opacity:.5}}>Import:</span>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}>⬆ Import CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}>📋 Download Template</button>
+        <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
+      </div>
+      {filtered.length===0
+        ?<div className="empty"><div style={{fontSize:44,marginBottom:12}}>🧾</div><div>No expenses match filter</div></div>
+        :<div className="etbl" style={{borderColor:T.border}}>
+          <div className="etbl-hd" style={{borderColor:T.border,background:T.bg2}}>
+            <span className="th"/><span className="th">Date</span><span className="th">Vendor</span><span className="th">Category</span>
+            <span className="th ra">Amount</span><span className="th ra">GST ITC</span>
+            <span className="th ra hcol">Deductible</span><span className="th ra">Actions</span>
+          </div>
+          {filtered.map(e=>{
+            const c=getCat(e.category);
+            const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+            const pct=(e.bizPct!=null?e.bizPct:100)/100;
+            const adjITC=+(bd.gstClaimable*pct).toFixed(2);
+            const adjDed=+(bd.deductibleAmount*pct).toFixed(2);
+            const payIcon = e.payment?.type==='Credit Card'?'💳':e.payment?.type==='Debit Card'?'🏧':e.payment?.type==='Cash'?'💵':'💳';
+            const receipt = e.receipt;
+            const isPdfReceipt = receipt?.startsWith('__PDF__:');
+            return(
+              <div key={e.id} className="erow" style={{borderColor:T.border,background:'transparent'}}
+                onMouseEnter={ev=>ev.currentTarget.style.background=T.bg3}
+                onMouseLeave={ev=>ev.currentTarget.style.background='transparent'}
+                onClick={()=>onDetail(e)}>
+                {/* Thumbnail — always shown */}
+                {receipt
+                  ? isPdfReceipt
+                    ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in',fontSize:20}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}>📄</div>
+                    : <img className="r-thumb" style={{borderColor:T.border}} src={receipt} alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
+                  : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
+
+                {/* Desktop: date column */}
+                <div className="hcol" style={{fontSize:12,opacity:.55}}>{e.date}</div>
+
+                {/* Vendor column — desktop shows just vendor+note+payment, mobile shows everything */}
+                <div style={{minWidth:0}}>
+                  {/* Mobile-only: date */}
+                  <div className="mob-only" style={{fontSize:11,opacity:.45,marginBottom:2}}>{e.date}</div>
+                  <div className="vname">{e.vendor}</div>
+                  {e.note&&<div className="vnote">{e.note}</div>}
+                  {e.payment?.type&&<div style={{fontSize:12,opacity:.45,marginTop:2}}>
+                    {payIcon}{' '}{e.payment.name||e.payment.type}{e.payment.last4?` ···· ${e.payment.last4}`:''}
+                    {e.bizPct&&e.bizPct!==100?<span style={{marginLeft:6,color:T.green}}>{e.bizPct}% biz</span>:''}
+                  </div>}
+                  {/* Mobile-only: category badge + amounts */}
+                  <div className="mob-only" style={{marginTop:4}}>
+                    <span className="badge" style={{background:c.color+'22',color:c.color}}>{c.icon} {c.label}</span>
+                    <span className="lnbadge" style={{marginLeft:4}}>L{c.line}</span>
+                  </div>
+                  <div className="mob-only mob-amounts" style={{marginTop:6}}>
+                    <span style={{fontSize:12}}><span style={{opacity:.4,fontSize:10}}>AMT </span><b>{cad(e.amount)}</b></span>
+                    <span style={{fontSize:12}}><span style={{opacity:.4,fontSize:10}}>ITC </span><b style={{color:T.green}}>{cad(adjITC)}</b></span>
+                    <span style={{fontSize:12}}><span style={{opacity:.4,fontSize:10}}>DED </span><b style={{color:T.blue}}>{cad(adjDed)}</b></span>
+                  </div>
+                </div>
+
+                {/* Desktop: category */}
+                <div className="hcol"><span className="badge" style={{background:c.color+'22',color:c.color}}>{c.icon} {c.label}</span><span className="lnbadge">L{c.line}</span></div>
+
+                {/* Desktop: amounts */}
+                <div className="ra mono hcol" style={{fontSize:15,fontWeight:600}}>{cad(e.amount)}</div>
+                <div className="ra mono hcol" style={{color:T.green,fontWeight:600,fontSize:15}}>{cad(adjITC)}</div>
+                <div className="ra mono hcol" style={{color:T.blue,fontSize:15}}>{cad(adjDed)}</div>
+
+                {/* Actions */}
+                <div className="rac" onClick={ev=>ev.stopPropagation()}>
+                  <button className="bsm" style={{borderColor:T.border,color:T.text}} onClick={()=>onEdit(e.id)}>Edit</button>
+                  <button className="bsm" style={{borderColor:'rgba(232,85,85,.25)',color:T.red}} onClick={()=>onDelete(e.id)}>✕</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>}
+    </div>
+  );
+}
+
+// ─── CATEGORIES ───────────────────────────────────────────────────────────────
+function Categories({filtered,cats,province,T,getCat,calcBD,onEditCat}) {
+  return(
+    <div className="cgrid">
+      {cats.map(cat=>{
+        const exps=filtered.filter(e=>e.category===cat.id);
+        const tot=exps.reduce((s,e)=>s+e.amount,0);
+        const itc=exps.reduce((s,e)=>s+calcBD(e.amount,e.province||province,e.category,e.tax,cats).gstClaimable,0);
+        const ded=exps.reduce((s,e)=>s+calcBD(e.amount,e.province||province,e.category,e.tax,cats).deductibleAmount,0);
+        return(
+          <div key={cat.id} className="ccard" style={{background:T.bg2,borderColor:T.border,borderLeftColor:cat.color}}>
+            <div className="ccard-top">
+              <span className="ccard-icon" style={{fontSize:24}}>{cat.icon}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                  <div className="ccard-name" style={{fontSize:15,fontWeight:600}}>{cat.label}</div>
+                  <button className="ccard-ebtn" style={{borderColor:T.border,color:T.text,fontSize:11,padding:'2px 9px',borderRadius:6,background:T.bg4,border:`1px solid ${T.border}`,cursor:'pointer',opacity:.7,flexShrink:0}} onClick={()=>onEditCat(cat)}>✏ Edit</button>
+                </div>
+                <div className="ccard-line" style={{fontSize:12,marginTop:2}}>T2125 Line {cat.line} · {exps.length} expense{exps.length!==1?'s':''}</div>
+              </div>
+              <div className="ccard-tot" style={{fontSize:20,fontWeight:700,flexShrink:0}}>{cad(tot)}</div>
+            </div>
+            <div className="cminis">
+              <div className="cmini" style={{borderColor:T.border,background:T.bg4}}>
+                <div className="cminilbl" style={{fontSize:11,marginBottom:4}}>GST ITC</div>
+                <div className="cminival" style={{color:T.green,fontSize:15}}>{cad(itc)}</div>
+              </div>
+              <div className="cmini" style={{borderColor:T.border,background:T.bg4}}>
+                <div className="cminilbl" style={{fontSize:11,marginBottom:4}}>Deductible</div>
+                <div className="cminival" style={{color:T.blue,fontSize:15}}>{cad(ded)}</div>
+              </div>
+            </div>
+            <div className="ccranote" style={{background:T.bg4,fontSize:12,opacity:.7}}>{cat.cra}</div>
+            {cat.df<1&&<div className="wpill" style={{borderColor:'rgba(240,160,51,.3)',color:T.amber,background:'rgba(240,160,51,.08)',fontSize:12}}>⚠ {cat.gf*100}% GST ITC · {cat.df*100}% deductible</div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── SUMMARY ──────────────────────────────────────────────────────────────────
+function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,exportCSV,exportXLS}) {
+  const rows=cats.map(cat=>{
+    const exps=filtered.filter(e=>e.category===cat.id);
+    if(!exps.length)return null;
+    const g  =exps.reduce((s,e)=>s+e.amount,0);
+    const itc=exps.reduce((s,e)=>s+calcBD(e.amount,e.province||province,e.category,e.tax,cats).gstClaimable,0);
+    const p  =exps.reduce((s,e)=>s+calcBD(e.amount,e.province||province,e.category,e.tax,cats).pstPaid,0);
+    const d  =exps.reduce((s,e)=>s+calcBD(e.amount,e.province||province,e.category,e.tax,cats).deductibleAmount,0);
+    return{cat,n:exps.length,g,itc,p,d};
+  }).filter(Boolean);
+
+  return(
+    <div>
+      <div className="sgrid" style={{marginBottom:18}}>
+        {statCards.map(sc=>(
+          <div key={sc.key} className="sc" style={{background:T.bg2,borderColor:T.border}}>
+            <div className="sc-bar" style={{background:sc.color}}/>
+            <div className="sc-lbl">{sc.label}</div>
+            <div className="sc-val" style={{color:sc.color}}>{cad(statVals[sc.key])}</div>
+            <div className="sc-sub">{sc.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="xbar">
+        <span style={{fontSize:12,opacity:.5}}>Export for CRA:</span>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}>📄 CSV</button>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}>📊 Excel</button>
+      </div>
+      <div className="etbl" style={{borderColor:T.border,marginBottom:16}}>
+        <div style={{padding:'13px 17px',borderBottom:`1px solid ${T.border}`,fontSize:15,fontWeight:700,background:T.bg2}}>T2125 — Business Expense Summary</div>
+        <table className="stbl">
+          <thead><tr style={{background:T.bg3}}>
+            <th style={{borderColor:T.border}}>Category (Line)</th>
+            <th style={{borderColor:T.border}}>Count</th>
+            <th style={{borderColor:T.border}}>Gross Spent</th>
+            <th style={{borderColor:T.border}}>GST ITC</th>
+            <th style={{borderColor:T.border}}>PST</th>
+            <th style={{borderColor:T.border}}>Deductible</th>
+            <th style={{borderColor:T.border}}>Rate</th>
+          </tr></thead>
+          <tbody>
+            {rows.map(r=>(
+              <tr key={r.cat.id} style={{borderColor:T.border,background:T.bg2}}>
+                <td style={{borderColor:T.border}}>{r.cat.icon} {r.cat.label} <span style={{fontFamily:"'Poppins',sans-serif",opacity:.4,fontSize:11}}>L{r.cat.line}</span></td>
+                <td style={{borderColor:T.border}}>{r.n}</td>
+                <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif"}}>{cad(r.g)}</td>
+                <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif",color:T.green,fontWeight:600}}>{cad(r.itc)}</td>
+                <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif",color:T.amber}}>{cad(r.p)}</td>
+                <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif",color:T.blue,fontWeight:600}}>{cad(r.d)}</td>
+                <td style={{borderColor:T.border}}>
+                  <span className="badge" style={r.cat.df<1?{background:'rgba(240,160,51,.15)',color:T.amber}:{background:'rgba(46,204,138,.12)',color:T.green}}>{r.cat.df*100}%</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{background:T.bg3}}>
+              <td colSpan={2} style={{borderColor:T.border}}>TOTALS</td>
+              <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif"}}>{cad(statVals.gross)}</td>
+              <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif",color:T.green}}>{cad(statVals.itc)}</td>
+              <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif",color:T.amber}}>{cad(statVals.pst)}</td>
+              <td style={{borderColor:T.border,fontFamily:"'Poppins',sans-serif",color:T.blue}}>{cad(statVals.ded)}</td>
+              <td style={{borderColor:T.border}}/>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div className="two">
+        <div className="card" style={{background:T.bg2,borderColor:T.border,borderLeft:`3px solid ${T.green}`}}>
+          <div style={{fontWeight:700,color:T.green,marginBottom:8}}>📥 GST34 Return — Line 108</div>
+          <div style={{fontSize:13,opacity:.7,lineHeight:1.7}}>Total <b style={{opacity:1}}>Input Tax Credits</b> to claim:<br/>
+          <span style={{fontSize:22,fontWeight:700,fontFamily:"'Poppins',sans-serif",color:T.green}}>{cad(statVals.itc)}</span></div>
+        </div>
+        <div className="card" style={{background:T.bg2,borderColor:T.border,borderLeft:`3px solid ${T.blue}`}}>
+          <div style={{fontWeight:700,color:T.blue,marginBottom:8}}>📋 T2125 Business Expenses</div>
+          <div style={{fontSize:13,opacity:.7,lineHeight:1.7}}>Total allowable deductions (subtotals only, excl. GST):<br/>
+          <span style={{fontSize:22,fontWeight:700,fontFamily:"'Poppins',sans-serif",color:T.blue}}>{cad(statVals.ded)}</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── EXPENSE MODAL ────────────────────────────────────────────────────────────
+function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,onSave,onClose,onZoom}) {
+  const today=new Date().toISOString().split('T')[0];
+  const [date,    setDate]    = useState(expense?.date    ||today);
+  const [vendor,  setVendor]  = useState(expense?.vendor  ||'');
+  const [cat,     setCat]     = useState(expense?.category||'advertising');
+  const [province,setProv]    = useState(expense?.province||defaultProvince);
+  const [note,    setNote]    = useState(expense?.note    ||'');
+  const [receipt, setReceipt] = useState(expense?.receipt ||null);
+  const [scanning,setScanning]= useState(false);
+  const [scanErr, setScanErr] = useState('');
+  // Payment method
+  const [payType,  setPayType]  = useState(expense?.payment?.type  ||'Credit Card');
+  const [payLast4, setPayLast4] = useState(expense?.payment?.last4 ||'');
+  const [payName,  setPayName]  = useState(expense?.payment?.name  ||'');
+  // Business use %
+  const [bizPct,   setBizPct]   = useState(expense?.bizPct != null ? String(expense.bizPct) : '100');
+
+  // Tax fields
+  const init=expense?.tax||{gst:'',pst:'',hasPst:false,tip:'',liquor:'',other:'',gasMode:false,gasTotal:''};
+  const [gst,    setGst]    = useState(String(init.gst   ||''));
+  const [pst,    setPst]    = useState(String(init.pst   ||''));
+  const [hasPst, setHasPst] = useState(!!init.hasPst);
+  const [tip,    setTip]    = useState(String(init.tip   ||''));
+  const [liquor, setLiquor] = useState(String(init.liquor||''));
+  const [gasMode,setGasMode]= useState(true);   // always on for gas — type total, get split
+  const [gasTotal,setGasTotal]=useState(init.gasTotal?String(init.gasTotal): (expense?.category==='gas'&&expense?.amount ? String((expense.tax?.gasTotal)||'') : ''));
+  // amount = pre-tax subtotal
+  const [amount, setAmount] = useState(expense?.amount!=null?String(expense.amount):'');
+
+  const fileRef = useRef();
+  const catObj  = cats.find(c=>c.id===cat)||cats[cats.length-1];
+  const isGas   = cat==='gas';
+
+  // Gas: derive subtotal + GST directly from gasTotal (no useEffect needed)
+  const p = PROVS.find(x=>x.code===province)||PROVS[0];
+  const gstRate = p.hst ? p.hstRate : p.gst;
+
+  function handleGasTotal(val) {
+    setGasTotal(val);
+    const total = parseFloat(val) || 0;
+    if (total > 0) {
+      const sub  = +(total / (1 + gstRate)).toFixed(2);
+      const gstV = +(total - sub).toFixed(2);
+      setAmount(String(sub));
+      setGst(String(gstV));
+    } else {
+      setAmount('');
+      setGst('');
+    }
+  }
+
+  // Recalculate if province changes while a gasTotal is already entered
+  useEffect(()=>{
+    if (isGas && parseFloat(gasTotal) > 0) {
+      handleGasTotal(gasTotal);
+    }
+  }, [province]);
+
+  const taxObj  = {gst,pst,hasPst,tip,liquor,other:'',gasMode:true,gasTotal};
+  const amt     = parseFloat(amount)||0;
+  const bd      = amt>0 ? calcBD(amt,province,cat,taxObj,cats) : null;
+
+  const PROMPT_TEXT = `You are a Canadian tax receipt OCR. Extract all financial details from this receipt.
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "vendor": "exact store/business name",
+  "date": "YYYY-MM-DD or null",
+  "category": "one of: advertising|meals|insurance|interest|business_tax|office|supplies|legal|management|rent|maintenance|salaries|property_tax|travel|phone|fuel|gas|delivery|vehicle|cca|other|homeoffice|software",
+  "subtotal": number,
+  "tip": number or 0,
+  "gst": number or 0,
+  "hst": number or 0,
+  "pst": number or 0,
+  "qst": number or 0,
+  "liquor_tax": number or 0,
+  "total": number,
+  "province": "2-letter CA province code",
+  "payment_type": "Credit Card|Debit Card|Cash|Cheque|E-Transfer|Other",
+  "card_last4": "4 digits or null",
+  "card_name": "card network or bank name e.g. Visa, Mastercard, Amex, TD Debit or null",
+  "note": "brief 1-line description of what was purchased"
+}
+Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly printed on receipt. All numbers as floats, 0 if absent.`;
+
+  async function doScan(dataUrl, mime) {
+    try {
+      const base64 = dataUrl.split(',')[1];
+      const isPdf  = mime === 'application/pdf';
+
+      const fileBlock = isPdf
+        ? { type:'document', source:{ type:'base64', media_type:'application/pdf', data:base64 } }
+        : { type:'image',    source:{ type:'base64', media_type: mime.startsWith('image/') ? mime : 'image/jpeg', data:base64 } };
+
+      const body = JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{ role:'user', content:[ fileBlock, { type:'text', text:PROMPT_TEXT } ] }]
+      });
+
+      // API call — use provided API key (works from file://) or browser IPC (works on localhost/claude.ai)
+      let res;
+      try {
+        const headers = { 'Content-Type':'application/json', 'anthropic-version':'2023-06-01' };
+        if (apiKey) {
+          headers['x-api-key'] = apiKey;
+        } else {
+          headers['anthropic-dangerous-direct-browser-ipc'] = 'true';
+        }
+        res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST', headers, body
+        });
+      } catch(fetchErr) {
+        throw new Error('Network blocked — add your Anthropic API key via ⚙️ AI Setup button, or open via http://localhost:8080');
+      }
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+      const txt    = (data.content?.find(b=>b.type==='text')?.text || '').replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(txt);
+
+      if (parsed.vendor)   setVendor(parsed.vendor);
+      if (parsed.date)     setDate(parsed.date);
+      if (parsed.category) setCat(parsed.category);
+      if (parsed.province) setProv(parsed.province);
+      if (parsed.note && !note) setNote(parsed.note);
+
+      // Payment method
+      if (parsed.payment_type) setPayType(parsed.payment_type);
+      if (parsed.card_last4)   setPayLast4(parsed.card_last4);
+      if (parsed.card_name)    setPayName(parsed.card_name);
+
+      const gstV = parsed.gst || parsed.hst || 0;
+      const pstV = parsed.pst || parsed.qst || 0;
+      const sub  = parsed.subtotal || 0;
+
+      if (parsed.category === 'gas' && parsed.total) {
+        setGasTotal(String(parsed.total));
+      } else {
+        setAmount(String(sub));
+        setGst(gstV ? String(gstV) : '');
+      }
+      if (pstV) { setPst(String(pstV)); setHasPst(true); }
+      setTip(parsed.tip    ? String(parsed.tip)       : '');
+      setLiquor(parsed.liquor_tax ? String(parsed.liquor_tax) : '');
+      setScanning(false);
+
+    } catch(err) {
+      console.error('Scan error:', err);
+      setScanning(false);
+      setScanErr(`Could not auto-read receipt (${err.message||'unknown error'}) — fill in manually below.`);
+    }
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf';
+
+    if (isPdf) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        setReceipt('__PDF__:' + ev.target.result);
+        setScanErr('');
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Compress image before storing — keeps localStorage from filling up
+    // Resize to max 1200px wide, 0.75 quality JPEG = ~80% smaller than original
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.75);
+      setReceipt(compressed);
+      setScanErr('');
+    };
+    img.onerror = () => {
+      // Fallback: store original
+      const reader = new FileReader();
+      reader.onload = ev => { setReceipt(ev.target.result); setScanErr(''); };
+      reader.readAsDataURL(file);
+    };
+    img.src = objectUrl;
+  }
+
+  function submit() {
+    if(!vendor.trim()){alert('Please enter a vendor name.');return;}
+    if(isGas && !(parseFloat(gasTotal)>0)){alert('Please enter the total amount paid at the pump.');return;}
+    if(!isGas && !(parseFloat(amount)>0)){alert('Please enter a pre-tax amount.');return;}
+    const savedTax={gst:parseFloat(gst)||0,pst:parseFloat(pst)||0,hasPst,tip:parseFloat(tip)||0,liquor:parseFloat(liquor)||0,other:0,gasMode:isGas,gasTotal:parseFloat(gasTotal)||0};
+    const payment={type:payType,last4:payLast4.trim(),name:payName.trim()};
+    const pct = Math.min(100, Math.max(0, parseFloat(bizPct)||100));
+    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),receipt,tax:savedTax,payment,bizPct:pct});
+  }
+
+  const inp={background:T.bg4,borderColor:T.border,color:T.text};
+
+  return(
+    <div className="ov" onClick={onClose}>
+      <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr">
+          <div className="mttl">{editId?'Edit Expense':'Add Expense'}</div>
+          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
+        </div>
+
+        {/* Receipt */}
+        <div className="fg">
+          <label className="fl">Receipt Photo — AI Auto-Scan</label>
+          {scanning?(
+            <div className="scan-box" style={{background:'rgba(75,142,245,.08)',borderColor:'rgba(75,142,245,.25)'}}>
+              <div className="spin" style={{borderColor:'rgba(75,142,245,.2)',borderTopColor:T.blue}}/>
+              <div style={{color:T.blue,fontSize:13,fontWeight:500}}>Scanning receipt with AI…</div>
+              <div style={{fontSize:11,opacity:.5,marginTop:3}}>Reading vendor · amounts · GST · PST · tip · payment method…</div>
+            </div>
+          ):receipt?(
+            <div className="rp">
+              {receipt.startsWith('__PDF__:')
+                ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'20px 16px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(receipt.slice(8))}>
+                    <div style={{fontSize:40,marginBottom:8}}>📄</div>
+                    <div style={{fontSize:13,fontWeight:500}}>PDF Receipt</div>
+                    <div style={{fontSize:11,opacity:.4,marginTop:3}}>Click to open full PDF</div>
+                  </div>
+                : <img src={receipt} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(receipt)}/>
+              }
+              <button className="rp-rm" onClick={()=>{setReceipt(null);setScanErr('');}}>Remove</button>
+            </div>
+          ):(
+            <div className="dz" style={{borderColor:T.border}} onClick={()=>fileRef.current.click()}>
+              <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} onClick={e=>e.stopPropagation()}/>
+              <div style={{fontSize:30,marginBottom:8}}>📷</div>
+              <div style={{fontSize:13,opacity:.6}}>Click or drag receipt photo or PDF</div>
+              <div style={{fontSize:11,opacity:.4,marginTop:3}}>Saved as backup for CRA · image is compressed automatically</div>
+            </div>
+          )}
+          {scanErr&&(
+            <div style={{marginTop:6,fontSize:12,borderRadius:8,padding:'10px 13px',border:`1px solid rgba(240,160,51,.3)`,background:'rgba(240,160,51,.08)',color:T.amber}}>
+              ⚠ {scanErr}
+            </div>
+          )}
+        </div>
+
+        {/* Date + Province */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 60px',gap:4,marginBottom:12}}>
+          <div><label className="fl">Date</label><input type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:8,border:'1px solid',width:'100%',padding:'4px 6px',fontSize:13,fontFamily:'inherit',outline:'none',height:34,WebkitAppearance:'none',appearance:'none',lineHeight:'1.2'}} value={date} onChange={e=>setDate(e.target.value)}/></div>
+          <div><label className="fl">Prov.</label>
+            <select style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:8,border:'1px solid',width:'100%',padding:'4px 2px',fontSize:12,fontFamily:'inherit',outline:'none',height:34}} value={province} onChange={e=>setProv(e.target.value)}>
+              {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Vendor */}
+        <div className="fg"><label className="fl">Vendor / Business Name</label>
+          <input type="text" style={inp} placeholder="e.g. Esso, The Keg, WestJet" value={vendor} onChange={e=>setVendor(e.target.value)}/>
+        </div>
+
+        {/* Category */}
+        <div className="fg"><label className="fl">Category</label>
+          <select style={inp} value={cat} onChange={e=>setCat(e.target.value)}>
+            {cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label} (L{c.line})</option>)}
+          </select>
+        </div>
+
+        {/* CRA note */}
+        <div className="cranote" style={{borderLeftColor:catObj.color,background:T.bg4}}>📋 {catObj.cra}</div>
+
+        {/* GAS MODE: always enter total-inc-GST, auto-splits */}
+        {isGas&&(
+          <div className="gas-helper" style={{background:'rgba(46,204,138,.08)',borderColor:'rgba(46,204,138,.3)',color:T.green}}>
+            <div style={{fontWeight:600,marginBottom:6,display:'flex',alignItems:'center',gap:6}}>⛽ Gas — Enter Your Receipt Total</div>
+            <div style={{fontSize:11,opacity:.7,marginBottom:10,color:T.text}}>
+              Type the <b>total amount you paid</b> (inc. GST) and the subtotal + GST will be calculated automatically based on your province ({province}, {((PROVS.find(x=>x.code===province)||PROVS[0]).hst ? ((PROVS.find(x=>x.code===province)||PROVS[0]).hstRate*100).toFixed(0) : (PROVS.find(x=>x.code===province)||PROVS[0]).gst*100).toFixed(0)}% tax).
+            </div>
+            <label className="fl" style={{color:T.text}}>Total Paid (inc. GST) — from your receipt</label>
+            <input type="number" step="0.01" placeholder="e.g. 80.00" style={{background:T.bg4,borderColor:'rgba(46,204,138,.4)',color:T.text,borderRadius:8,padding:'9px 12px',fontSize:14,width:'100%',outline:'none'}}
+              value={gasTotal} onChange={e=>handleGasTotal(e.target.value)}/>
+            {parseFloat(gasTotal)>0&&(
+              <div style={{marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+                {[
+                  {lbl:'Pre-Tax Subtotal',val:cad(parseFloat(amount)||0),color:T.text},
+                  {lbl:`GST (${(gstRate*100).toFixed(0)}%)`,val:cad(parseFloat(gst)||0),color:T.green},
+                  {lbl:'CRA Deductible',val:cad(parseFloat(amount)||0),color:T.blue},
+                ].map(x=>(
+                  <div key={x.lbl} style={{background:T.bg4,borderRadius:8,padding:'8px 10px',border:`1px solid ${T.border}`}}>
+                    <div style={{fontSize:10,fontFamily:"'Poppins',sans-serif",opacity:.5,marginBottom:3}}>{x.lbl}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:x.color}}>{x.val}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Amount — hidden for gas (handled by total field above) */}
+        {!isGas&&(
+        <div className="fg">
+          <label className="fl">Pre-Tax Subtotal ($) <span style={{opacity:.4,fontWeight:400}}>before GST/PST/tip</span></label>
+          <input type="number" step="0.01" placeholder="0.00" style={inp} value={amount} onChange={e=>setAmount(e.target.value)}/>
+        </div>
+        )}
+
+        {/* Tax fields — GST auto-calculated for gas */}
+        <div className="fg">
+          <label className="fl">Tax &amp; Extras <span style={{opacity:.4,fontWeight:400}}>{isGas?'optional — PST / other charges only':'all optional — enter only what\'s on your receipt'}</span></label>
+          <div className="frow3">
+            {!isGas&&<div>
+              <label className="fl" style={{fontSize:10}}>GST / HST</label>
+              <input type="number" step="0.01" placeholder="0.00" style={inp} value={gst} onChange={e=>setGst(e.target.value)}/>
+            </div>}
+            {!isGas&&<div>
+              <label className="fl" style={{fontSize:10}}>Tip</label>
+              <input type="number" step="0.01" placeholder="0.00" style={inp} value={tip} onChange={e=>setTip(e.target.value)}/>
+            </div>}
+            <div>
+              <label className="fl" style={{fontSize:10}}>Liquor / Other Tax</label>
+              <input type="number" step="0.01" placeholder="0.00" style={inp} value={liquor} onChange={e=>setLiquor(e.target.value)}/>
+            </div>
+          </div>
+          <label className="pst-row" style={{color:T.text}}>
+            <input type="checkbox" checked={hasPst} onChange={e=>setHasPst(e.target.checked)}/>
+            PST is shown on this receipt
+          </label>
+          {hasPst&&<input type="number" step="0.01" placeholder="PST amount" style={{...inp,marginTop:6}} value={pst} onChange={e=>setPst(e.target.value)}/>}
+        </div>
+
+        {/* Live breakdown */}
+        {bd&&amt>0&&(
+          <div className="bkbox" style={{background:T.bg3,borderColor:T.border}}>
+            {bd.tip>0&&<>
+              <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Subtotal</span><span className="bkval">{cad(bd.sub)}</span></div>
+              <div className="bkrow" style={{borderColor:T.border}}>
+                <span className="bklbl">Tip {isGas?<span style={{color:T.amber,fontSize:11}}>(⚠ not deductible for gas)</span>:''}</span>
+                <span className="bkval">{cad(bd.tip)}</span>
+              </div>
+            </>}
+            {bd.liquor>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Liquor / other tax</span><span className="bkval">{cad(bd.liquor)}</span></div>}
+            <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">GST/HST paid</span><span className="bkval">{cad(bd.gstPaid)}</span></div>
+            {bd.pstPaid>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl" style={{color:T.amber}}>PST paid (non-recoverable)</span><span className="bkval" style={{color:T.amber}}>{cad(bd.pstPaid)}</span></div>}
+            <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Receipt Total</span><span className="bkval">{cad(bd.total)}</span></div>
+            <div className="bkrow bkdiv" style={{borderColor:T.border}}><span className="bklbl">✅ GST ITC Claimable</span><span className="bkval" style={{color:T.green}}>{cad(bd.gstClaimable)}</span></div>
+            <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">✅ CRA Deductible (subtotal only)</span><span className="bkval" style={{color:T.blue}}>{cad(bd.deductibleAmount)}</span></div>
+            {catObj.df<1&&<div style={{marginTop:7,fontSize:11,color:T.amber}}>⚠ {catObj.label}: only {catObj.df*100}% deductible per CRA</div>}
+          </div>
+        )}
+
+        {/* Business use % — for gas and vehicle */}
+        {(isGas || cat==='vehicle' || cat==='travel') && (
+          <div className="fg">
+            <label className="fl">Business Use % <span style={{opacity:.4,fontWeight:400}}>CRA allows only the business portion</span></label>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <input type="range" min="0" max="100" step="5"
+                style={{flex:1,accentColor:T.green,background:'transparent',border:'none',padding:'4px 0'}}
+                value={bizPct} onChange={e=>setBizPct(e.target.value)}/>
+              <div style={{background:T.bg4,border:`1px solid ${T.border}`,borderRadius:8,padding:'6px 12px',minWidth:64,textAlign:'center',fontWeight:600,color:T.green,fontSize:15}}>
+                {bizPct}%
+              </div>
+            </div>
+            {parseFloat(bizPct)<100&&bd&&amt>0&&(
+              <div style={{fontSize:12,color:T.amber,marginTop:6,background:'rgba(240,160,51,.08)',borderRadius:7,padding:'6px 10px',border:`1px solid rgba(240,160,51,.2)`}}>
+                ⚠ At {bizPct}% business use: Deductible = {cad(bd.deductibleAmount * (parseFloat(bizPct)/100))} · ITC = {cad(bd.gstClaimable * (parseFloat(bizPct)/100))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Payment Method */}
+        <div className="fg">
+          <label className="fl">Payment Method</label>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+            {['Credit Card','Debit Card','Cash','Cheque','E-Transfer','Other'].map(pt=>(
+              <button key={pt} type="button"
+                style={{padding:'8px 10px',borderRadius:8,border:`1px solid ${payType===pt?T.blue:T.border}`,background:payType===pt?`rgba(75,142,245,.12)`:T.bg4,color:T.text,fontWeight:payType===pt?600:400,fontSize:13,transition:'all .15s'}}
+                onClick={()=>setPayType(pt)}>
+                {pt==='Credit Card'?'💳':pt==='Debit Card'?'🏧':pt==='Cash'?'💵':pt==='Cheque'?'📝':pt==='E-Transfer'?'📲':'•'} {pt}
+              </button>
+            ))}
+          </div>
+          {(payType==='Credit Card'||payType==='Debit Card')&&(
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div>
+                <label className="fl" style={{fontSize:10}}>Card Name <span style={{opacity:.5,fontWeight:400}}>(e.g. Amex, Visa)</span></label>
+                <input type="text" style={inp} placeholder="e.g. Amex, TD Visa" value={payName} onChange={e=>setPayName(e.target.value)}/>
+              </div>
+              <div>
+                <label className="fl" style={{fontSize:10}}>Last 4 Digits</label>
+                <input type="text" style={inp} placeholder="e.g. 3405" maxLength={4} value={payLast4} onChange={e=>setPayLast4(e.target.value.replace(/\D/g,''))}/>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Note */}
+        <div className="fg">
+          <label className="fl">Business Purpose <span style={{opacity:.4,fontWeight:400}}>CRA requires this for audits</span></label>
+          <textarea rows={2} style={inp} placeholder="Who, what, why — e.g. 'Client lunch with ABC Corp to discuss Q2 campaign'" value={note} onChange={e=>setNote(e.target.value)}/>
+        </div>
+
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:6}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 17px',borderRadius:9}} onClick={onClose}>Cancel</button>
+          <button style={{background:T.accent,color:'#fff',padding:'9px 19px',borderRadius:9,fontWeight:600}} onClick={submit}>{editId?'Save Changes':'Add Expense'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
+function DetailModal({expense,cats,province,T,getCat,calcBD,onClose,onZoom}) {
+  const e=expense, c=getCat(e.category);
+  const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
+  const pct=(e.bizPct!=null?e.bizPct:100)/100;
+  const adjITC=+(bd.gstClaimable*pct).toFixed(2);
+  const adjDed=+(bd.deductibleAmount*pct).toFixed(2);
+  const pay=e.payment;
+  const payLabel = pay?.type
+    ? [pay.name, pay.type, pay.last4?`···· ${pay.last4}`:''].filter(Boolean).join(' ')
+    : null;
+  const isPdf = e.receipt?.startsWith('__PDF__:');
+  return(
+    <div className="ov" onClick={onClose}>
+      <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={ev=>ev.stopPropagation()}>
+        <div className="mhdr">
+          <div className="mttl">{e.vendor}</div>
+          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
+        </div>
+        {e.receipt&&(
+          <div className="rp">
+            {isPdf
+              ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(e.receipt.slice(8))}>
+                  <div style={{fontSize:36,marginBottom:6}}>📄</div>
+                  <div style={{fontSize:13,fontWeight:500}}>PDF Receipt — click to open</div>
+                </div>
+              : <img src={e.receipt} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
+            }
+            {!isPdf&&<button className="rp-rm" style={{pointerEvents:'none',opacity:.6}}>🔍 click to expand</button>}
+          </div>
+        )}
+        <div className="dgrid">
+          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">Category</div><div className="dival">{c.icon} {c.label}</div></div>
+          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">T2125 Line</div><div className="dival">{c.line}</div></div>
+          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">Date</div><div className="dival">{e.date}</div></div>
+          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">Province</div><div className="dival">{e.province}</div></div>
+          {payLabel&&<div className="di" style={{borderColor:T.border,background:T.bg4,gridColumn:'span 2'}}><div className="dilbl">Payment</div><div className="dival">💳 {payLabel}</div></div>}
+          {e.bizPct!=null&&e.bizPct!==100&&(
+            <div className="di" style={{borderColor:T.border,background:'rgba(46,204,138,.08)',gridColumn:'span 2'}}>
+              <div className="dilbl">Business Use</div>
+              <div className="dival" style={{color:T.green}}>{e.bizPct}% business</div>
+            </div>
+          )}
+        </div>
+        <div className="bkbox" style={{background:T.bg3,borderColor:T.border}}>
+          <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Pre-Tax Subtotal</span><span className="bkval">{cad(bd.sub)}</span></div>
+          {bd.tip>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Tip</span><span className="bkval">{cad(bd.tip)}</span></div>}
+          {bd.liquor>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Liquor / other tax</span><span className="bkval">{cad(bd.liquor)}</span></div>}
+          <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">GST/HST paid</span><span className="bkval">{cad(bd.gstPaid)}</span></div>
+          {bd.pstPaid>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl" style={{color:T.amber}}>PST paid</span><span className="bkval" style={{color:T.amber}}>{cad(bd.pstPaid)}</span></div>}
+          <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Receipt Total</span><span className="bkval">{cad(bd.total)}</span></div>
+          <div className="bkrow bkdiv" style={{borderColor:T.border}}>
+            <span className="bklbl">✅ GST ITC Claimable{pct<1?` (${e.bizPct}%)`:''}</span>
+            <span className="bkval" style={{color:T.green}}>{cad(adjITC)}</span>
+          </div>
+          <div className="bkrow" style={{borderColor:T.border}}>
+            <span className="bklbl">✅ CRA Deductible{pct<1?` (${e.bizPct}%)`:''}</span>
+            <span className="bkval" style={{color:T.blue}}>{cad(adjDed)}</span>
+          </div>
+        </div>
+        {e.note&&<div style={{background:T.bg4,borderRadius:8,padding:'9px 12px',fontSize:13,border:`1px solid ${T.border}`}}><span style={{fontSize:10,opacity:.4,display:'block',marginBottom:2}}>Business purpose</span>{e.note}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── CATEGORY EDIT MODAL ──────────────────────────────────────────────────────
+function CatEditModal({cat,T,onSave,onClose}) {
+  const [label,setLabel]=useState(cat.label);
+  const [icon, setIcon] =useState(cat.icon);
+  const [color,setColor]=useState(cat.color);
+  const [cra,  setCra]  =useState(cat.cra);
+  const inp={background:T.bg4,borderColor:T.border,color:T.text};
+  return(
+    <div className="ov" onClick={onClose}>
+      <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr"><div className="mttl">Edit Category</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button></div>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:18,background:T.bg3,borderRadius:10,padding:'12px 14px',border:`1px solid ${T.border}`}}>
+          <span style={{fontSize:28}}>{icon}</span>
+          <div><div style={{fontWeight:600}}>{label}</div><div style={{fontSize:11,opacity:.4}}>T2125 Line {cat.line}</div></div>
+          <div style={{marginLeft:'auto',width:22,height:22,borderRadius:'50%',background:color,border:`2px solid ${T.border}`}}/>
+        </div>
+        <div className="fg"><label className="fl">Label</label><input type="text" style={inp} value={label} onChange={e=>setLabel(e.target.value)}/></div>
+        <div className="frow fg">
+          <div><label className="fl">Icon (emoji)</label><input type="text" style={{...inp,fontSize:22,textAlign:'center'}} value={icon} onChange={e=>setIcon(e.target.value)} maxLength={4}/></div>
+          <div><label className="fl">Colour</label><input type="color" style={inp} value={color} onChange={e=>setColor(e.target.value)}/></div>
+        </div>
+        <div className="fg"><label className="fl">CRA Reminder Note</label><textarea rows={2} style={inp} value={cra} onChange={e=>setCra(e.target.value)}/></div>
+        <div style={{fontSize:12,opacity:.4,marginBottom:14,background:T.bg4,borderRadius:8,padding:'8px 11px'}}>GST rate ({cat.gf*100}%) and deductibility ({cat.df*100}%) are CRA-locked.</div>
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'8px 16px',borderRadius:8}} onClick={onClose}>Cancel</button>
+          <button style={{background:T.accent,color:'#fff',padding:'8px 18px',borderRadius:8,fontWeight:600}} onClick={()=>onSave({label,icon,color,cra})}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── STAT CARD EDIT MODAL ─────────────────────────────────────────────────────
+function StatEditModal({stat,T,onSave,onClose}) {
+  const [label,setLabel]=useState(stat.label);
+  const [color,setColor]=useState(stat.color);
+  const [sub,  setSub]  =useState(stat.sub);
+  const inp={background:T.bg4,borderColor:T.border,color:T.text};
+  return(
+    <div className="ov" onClick={onClose}>
+      <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr"><div className="mttl">Edit Stat Card</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button></div>
+        <div style={{background:T.bg3,borderRadius:10,padding:'14px 16px',marginBottom:18,position:'relative',overflow:'hidden',border:`1px solid ${T.border}`}}>
+          <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:color}}/>
+          <div style={{fontSize:10,fontFamily:"'Poppins',sans-serif",textTransform:'uppercase',letterSpacing:'.3px',marginBottom:6,opacity:.5}}>{label}</div>
+          <div style={{fontSize:20,fontWeight:700,color}}>{cad(12345.67)}</div>
+          <div style={{fontSize:11,marginTop:3,opacity:.4}}>{sub}</div>
+        </div>
+        <div className="fg"><label className="fl">Label</label><input type="text" style={inp} value={label} onChange={e=>setLabel(e.target.value)}/></div>
+        <div className="fg"><label className="fl">Sub-label</label><input type="text" style={inp} value={sub} onChange={e=>setSub(e.target.value)}/></div>
+        <div className="fg"><label className="fl">Colour</label><input type="color" style={inp} value={color} onChange={e=>setColor(e.target.value)}/></div>
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:4}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'8px 16px',borderRadius:8}} onClick={onClose}>Cancel</button>
+          <button style={{background:T.accent,color:'#fff',padding:'8px 18px',borderRadius:8,fontWeight:600}} onClick={()=>onSave({label,color,sub})}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── THEME MODAL ──────────────────────────────────────────────────────────────
+function ThemeModal({theme,onSave,onClose}) {
+  const [t,setT]=useState({...theme});
+  const inp={background:t.bg4,borderColor:t.border,color:t.text};
+  const setF=k=>v=>setT(x=>({...x,[k]:v}));
+  return(
+    <div className="ov" onClick={onClose}>
+      <div className="modal modal-lg" style={{background:t.bg2,borderColor:t.border,color:t.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr"><div className="mttl">🎨 Theme Customisation</div><button className="mclose" style={{borderColor:t.border,color:t.text}} onClick={onClose}>✕</button></div>
+
+        {/* Mode quick-switch */}
+        <div className="fg">
+          <label className="fl">Base Mode</label>
+          <div style={{display:'flex',gap:10}}>
+            <button onClick={()=>setT({...DARK,fontId:t.fontId})} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${t.mode==='dark'?t.blue:t.border}`,background:t.mode==='dark'?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>🌙 Dark</button>
+            <button onClick={()=>setT({...LIGHT,fontId:t.fontId})} style={{flex:1,padding:'10px',borderRadius:9,border:`2px solid ${t.mode==='light'?t.blue:t.border}`,background:t.mode==='light'?'rgba(75,142,245,.1)':t.bg4,color:t.text,fontWeight:600}}>☀️ Light</button>
+          </div>
+        </div>
+
+        {/* Font */}
+        <div className="fg">
+          <label className="fl">Font</label>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+            {FONTS.map(f=>(
+              <div key={f.id} className={`font-opt${t.fontId===f.id?' sel':''}`}
+                style={{borderColor:t.fontId===f.id?t.blue:t.border,background:t.bg4,color:t.text,fontFamily:f.stack,borderWidth:t.fontId===f.id?2:1}}
+                onClick={()=>{setT(x=>({...x,fontId:f.id}));if(f.url&&!document.querySelector(`link[href="${f.url}"]`)){const lk=document.createElement('link');lk.rel='stylesheet';lk.href=f.url;document.head.appendChild(lk);}}}>
+                <div style={{fontSize:13,fontWeight:600,fontFamily:f.stack}}>{f.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Colours */}
+        <div className="fg">
+          <label className="fl">Colours</label>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {k:'bg',    lbl:'Background'},
+              {k:'bg2',   lbl:'Card / Header'},
+              {k:'bg3',   lbl:'Hover / Row'},
+              {k:'bg4',   lbl:'Input Background'},
+              {k:'accent',lbl:'Accent / Buttons'},
+              {k:'text',  lbl:'Text'},
+              {k:'green', lbl:'ITC / Positive'},
+              {k:'blue',  lbl:'Deductible'},
+              {k:'amber', lbl:'Warning / PST'},
+              {k:'red',   lbl:'Delete / Danger'},
+            ].map(({k,lbl})=>(
+              <label key={k} style={{display:'flex',alignItems:'center',gap:10,background:t.bg4,borderRadius:8,padding:'8px 12px',border:`1px solid ${t.border}`,cursor:'pointer'}}>
+                <input type="color" value={t[k]||'#000000'} onChange={e=>setF(k)(e.target.value)} style={{width:32,height:28,borderRadius:6,border:'none',padding:0,background:'transparent'}}/>
+                <span style={{fontSize:13}}>{lbl}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Border */}
+        <div className="fg">
+          <label className="fl">Border Style</label>
+          <div style={{display:'flex',gap:8}}>
+            {['rgba(255,255,255,0.06)','rgba(255,255,255,0.14)','rgba(255,255,255,0.25)','rgba(0,0,0,0.06)','rgba(0,0,0,0.12)','rgba(0,0,0,0.2)'].map(b=>(
+              <div key={b} onClick={()=>setF('border')(b)} style={{flex:1,height:32,borderRadius:8,border:`2px solid ${b===t.border?t.blue:'transparent'}`,background:t.bg4,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <div style={{width:'80%',height:1,background:b,borderRadius:1}}/>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:6}}>
+          <button style={{background:t.bg4,border:`1px solid ${t.border}`,color:t.text,padding:'9px 17px',borderRadius:9}} onClick={onClose}>Cancel</button>
+          <button style={{background:t.accent,color:'#fff',padding:'9px 19px',borderRadius:9,fontWeight:600}} onClick={()=>onSave(t)}>Apply Theme</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── LOGO MODAL ───────────────────────────────────────────────────────────────
+function LogoModal({logo,T,onSave,onClose}) {
+  const [icon,    setIcon]    = useState(logo.icon);
+  const [title,   setTitle]   = useState(logo.title);
+  const [sub,     setSub]     = useState(logo.sub);
+  const [iconBg,  setIconBg]  = useState(logo.iconBg);
+  const [logoImg, setLogoImg] = useState(logo.logoImg||null); // custom image
+  const fileRef = useRef();
+  const inp={background:T.bg4,borderColor:T.border,color:T.text};
+
+  function handleLogoFile(e) {
+    const file=e.target.files[0]; if(!file) return;
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const SIZE=68; // 34px × 2 for retina
+      const c=document.createElement('canvas'); c.width=SIZE; c.height=SIZE;
+      const ctx=c.getContext('2d');
+      ctx.drawImage(img,0,0,SIZE,SIZE);
+      setLogoImg(c.toDataURL('image/png',0.9));
+    };
+    img.src=url;
+  }
+
+  return(
+    <div className="ov" onClick={onClose}>
+      <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr"><div className="mttl">Edit Logo & Branding</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button></div>
+        {/* Preview */}
+        <div style={{display:'flex',alignItems:'center',gap:10,background:T.bg3,borderRadius:10,padding:'12px 16px',marginBottom:18,border:`1px solid ${T.border}`}}>
+          {logoImg
+            ? <img src={logoImg} style={{width:34,height:34,borderRadius:9,objectFit:'cover',flexShrink:0}} alt="logo"/>
+            : <div style={{width:34,height:34,borderRadius:9,background:iconBg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>{icon}</div>
+          }
+          <div>
+            <div style={{fontWeight:700,fontSize:15}}>{title}</div>
+            <div style={{fontSize:10,opacity:.4}}>{sub}</div>
+          </div>
+        </div>
+
+        {/* Logo image upload */}
+        <div className="fg">
+          <label className="fl">Logo Image <span style={{opacity:.4,fontWeight:400}}>(optional — replaces emoji)</span></label>
+          {logoImg
+            ? <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <img src={logoImg} style={{width:44,height:44,borderRadius:9,objectFit:'cover',border:`1px solid ${T.border}`}} alt="logo"/>
+                <button style={{background:'rgba(232,85,85,.1)',border:`1px solid rgba(232,85,85,.25)`,color:T.red,padding:'7px 14px',borderRadius:8,fontSize:12}} onClick={()=>setLogoImg(null)}>Remove Image</button>
+                <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'7px 14px',borderRadius:8,fontSize:12}} onClick={()=>fileRef.current.click()}>Change</button>
+              </div>
+            : <div style={{border:`2px dashed ${T.border}`,borderRadius:10,padding:'18px',textAlign:'center',cursor:'pointer',position:'relative'}} onClick={()=>fileRef.current.click()}>
+                <div style={{fontSize:24,marginBottom:6}}>🖼</div>
+                <div style={{fontSize:13,opacity:.6}}>Click to upload your logo</div>
+                <div style={{fontSize:11,opacity:.4,marginTop:3}}>PNG, JPG — will be cropped to square</div>
+              </div>
+          }
+          <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleLogoFile}/>
+        </div>
+
+        {!logoImg && <>
+          <div className="frow fg">
+            <div><label className="fl">App Icon (emoji)</label><input type="text" style={{...inp,fontSize:22,textAlign:'center'}} value={icon} onChange={e=>setIcon(e.target.value)} maxLength={4}/></div>
+            <div><label className="fl">Icon Background</label><input type="color" style={inp} value={iconBg} onChange={e=>setIconBg(e.target.value)}/></div>
+          </div>
+        </>}
+        <div className="fg"><label className="fl">App Title</label><input type="text" style={inp} value={title} onChange={e=>setTitle(e.target.value)}/></div>
+        <div className="fg"><label className="fl">Subtitle</label><input type="text" style={inp} value={sub} onChange={e=>setSub(e.target.value)}/></div>
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:4}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'8px 16px',borderRadius:8}} onClick={onClose}>Cancel</button>
+          <button style={{background:T.accent,color:'#fff',padding:'8px 18px',borderRadius:8,fontWeight:600}} onClick={()=>onSave({icon,title,sub,iconBg,logoImg})}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS MODAL ───────────────────────────────────────────────────────────
+function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onSync}) {
+  const [key,     setKey]     = useState(apiKey||'');
+  const [showKey, setShowKey] = useState(false);
+  const [gId,     setGId]     = useState(gClientId||'');
+  const [showGId, setShowGId] = useState(false);
+  const [ghTok,   setGhTok]   = useState(ghToken||'');
+  const [showGh,  setShowGh]  = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testMsg, setTestMsg] = useState('');
+  const inp = {background:T.bg4,borderColor:T.border,color:T.text,borderRadius:8,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',fontFamily:'inherit'};
+
+  async function testKey(k) {
+    if (!k.trim()) return;
+    setTesting(true); setTestMsg('');
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','x-api-key':k.trim()},
+        body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:10,messages:[{role:'user',content:'hi'}]})
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error.message);
+      setTestMsg('✅ Key works! AI scan is ready.');
+    } catch(e) {
+      setTestMsg('❌ ' + (e.message||'Invalid key'));
+    }
+    setTesting(false);
+  }
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text,maxWidth:520}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr">
+          <div className="mttl">⚙️ Settings</div>
+          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
+        </div>
+
+        {/* ── GOOGLE DRIVE SECTION ── */}
+        <div style={{background:'rgba(66,133,244,.08)',border:'1px solid rgba(66,133,244,.25)',borderRadius:12,padding:'16px',marginBottom:18}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+            <div style={{fontSize:24}}>📁</div>
+            <div>
+              <div style={{fontWeight:600,fontSize:14}}>Google Drive Backup</div>
+              <div style={{fontSize:11,opacity:.5}}>Auto-saves receipts into organized folders</div>
+            </div>
+            {gId&&<span style={{marginLeft:'auto',fontSize:11,color:T.green,fontWeight:600}}>✅ Connected</span>}
+          </div>
+
+          <div style={{fontSize:12,opacity:.7,lineHeight:1.8,marginBottom:12,background:T.bg4,borderRadius:8,padding:'10px 13px'}}>
+            <b>Folder structure created automatically:</b><br/>
+            📁 KBW Expenses / Business Expenses / 2026 / Meals &amp; Entertainment / receipt.jpg<br/>
+            📁 KBW Expenses / Business Expenses / 2026 / Gas &amp; Fuel / receipt.jpg<br/>
+            📁 KBW Expenses / Medical Expenses / 2026 / Dental / receipt.jpg<br/>
+            📁 KBW Expenses / Business Expenses / 2026 / expenses_2026.json
+          </div>
+
+          <div style={{fontSize:12,color:T.blue,fontWeight:600,marginBottom:8}}>
+            Setup (free, 5 min):
+          </div>
+          <div style={{fontSize:11,opacity:.7,lineHeight:2,marginBottom:12}}>
+            1. Go to <a href="https://console.cloud.google.com" target="_blank" style={{color:T.blue}}>console.cloud.google.com</a> → sign in with your Google account<br/>
+            2. Click <b>Select a project</b> → <b>New Project</b> → name it "KBW Expenses" → <b>Create</b><br/>
+            3. Search <b>"Google Drive API"</b> → click it → click <b>Enable</b><br/>
+            4. Go to <b>APIs &amp; Services → Credentials</b> → <b>Create Credentials → OAuth client ID</b><br/>
+            5. Application type: <b>Web application</b><br/>
+            6. Under <b>Authorized JavaScript origins</b> add: <code style={{background:T.bg4,padding:'1px 5px',borderRadius:3}}>http://localhost:8080</code><br/>
+            7. Click <b>Create</b> → copy the <b>Client ID</b> → paste below
+          </div>
+
+          <label style={{fontSize:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',opacity:.6,display:'block',marginBottom:5}}>Google OAuth Client ID</label>
+          <div style={{display:'flex',gap:8}}>
+            <input type={showGId?'text':'password'} style={inp} placeholder="123456789-abc.apps.googleusercontent.com" value={gId} onChange={e=>setGId(e.target.value)} spellCheck={false}/>
+            <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 12px',borderRadius:8,flexShrink:0,fontSize:12}} onClick={()=>setShowGId(s=>!s)}>{showGId?'Hide':'Show'}</button>
+          </div>
+          {gId&&<div style={{fontSize:11,opacity:.5,marginTop:6}}>⚠ Also add your current URL to Authorized JavaScript origins if not on localhost</div>}
+
+          {/* Sync button — shown when Drive is already connected */}
+          {gClientId && (
+            <button style={{width:'100%',marginTop:12,padding:'11px',borderRadius:9,background:'rgba(46,204,138,.1)',border:'1px solid rgba(46,204,138,.3)',color:T.green,fontWeight:600,fontSize:13,cursor:'pointer'}}
+              onClick={()=>{onClose();setTimeout(()=>onSync(),300);}}>
+              🔄 Sync Expenses from Drive → This Device
+            </button>
+          )}
+          <div style={{fontSize:11,opacity:.45,marginTop:8,lineHeight:1.6}}>Use this to load your expenses onto a new device (e.g. phone). Pulls all expense data from Drive and replaces what's currently on this device.</div>
+        </div>
+
+        {/* ── API KEY SECTION ── */}
+        <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{fontSize:22}}>🤖</div>
+            <div>
+              <div style={{fontWeight:600,fontSize:14}}>AI Receipt Scan <span style={{fontSize:11,opacity:.4,fontWeight:400}}>(optional)</span></div>
+              <div style={{fontSize:11,opacity:.5}}>Auto-reads vendor, GST, PST from photos</div>
+            </div>
+          </div>
+          <div style={{fontSize:11,opacity:.6,lineHeight:1.7,marginBottom:10}}>
+            Get a free key at <a href="https://console.anthropic.com" target="_blank" style={{color:T.blue}}>console.anthropic.com</a> → API Keys → Create Key.<br/>
+            Free $5 credit = ~5,000 scans. No credit card needed.
+          </div>
+          <div style={{display:'flex',gap:8,marginBottom:8}}>
+            <input type={showKey?'text':'password'} style={inp} placeholder="sk-ant-api03-..." value={key} onChange={e=>setKey(e.target.value)} spellCheck={false}/>
+            <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 12px',borderRadius:8,flexShrink:0,fontSize:12}} onClick={()=>setShowKey(s=>!s)}>{showKey?'Hide':'Show'}</button>
+          </div>
+          <button style={{width:'100%',padding:'9px',borderRadius:8,border:`1px solid ${T.border}`,background:T.bg4,color:T.text,fontSize:13}} onClick={()=>testKey(key)} disabled={!key.trim()||testing}>
+            {testing?'⏳ Testing…':'🔍 Test Key'}
+          </button>
+          {testMsg&&<div style={{marginTop:8,padding:'8px 12px',borderRadius:7,fontSize:12,background:testMsg.startsWith('✅')?'rgba(46,204,138,.1)':'rgba(232,85,85,.1)',color:testMsg.startsWith('✅')?T.green:T.red}}>{testMsg}</div>}
+        </div>
+
+        <div style={{fontSize:11,opacity:.35,marginBottom:14}}>🔒 All keys stored only in your browser's localStorage — never sent anywhere except their respective services.</div>
+
+        {/* GitHub Sync */}
+        <div style={{background:'rgba(36,41,47,.4)',border:`1px solid ${T.border}`,borderRadius:12,padding:'16px',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{fontSize:22}}>🐙</div>
+            <div>
+              <div style={{fontWeight:600,fontSize:14}}>GitHub Sync {ghTok&&<span style={{color:T.green,fontSize:11}}> ✅ Connected</span>}</div>
+              <div style={{fontSize:11,opacity:.5}}>Auto-syncs expenses across all devices</div>
+            </div>
+          </div>
+          <div style={{fontSize:11,opacity:.6,lineHeight:1.7,marginBottom:10}}>
+            1. Go to <a href="https://github.com/settings/tokens/new" target="_blank" style={{color:T.blue}}>github.com/settings/tokens/new</a><br/>
+            2. Name it "KBW Expenses" → check <b>repo</b> scope → click <b>Generate token</b><br/>
+            3. Copy the token and paste below
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <input type={showGh?'text':'password'} style={inp} placeholder="ghp_xxxxxxxxxxxx" value={ghTok} onChange={e=>setGhTok(e.target.value)} spellCheck={false}/>
+            <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 12px',borderRadius:8,flexShrink:0,fontSize:12}} onClick={()=>setShowGh(s=>!s)}>{showGh?'Hide':'Show'}</button>
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'8px 16px',borderRadius:8}} onClick={onClose}>Cancel</button>
+          <button style={{background:T.accent,color:'#fff',padding:'8px 20px',borderRadius:8,fontWeight:600}} onClick={()=>onSave(key.trim(), gId.trim(), ghTok.trim())}>Save Settings</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MEDICAL EXPENSES ─────────────────────────────────────────────────────────
+const MED_TYPES = ['Dental','Vision','Prescription','Physiotherapy','Chiropractic','Mental Health','Hospital','Lab / Tests','Medical Device','Travel for Medical','Insurance Premium','Other'];
+
+function MedicalTab({medical, setMedical, T, onZoom, onDriveBackup, gClientId}) {
+  const [showAdd, setShowAdd]   = useState(false);
+  const [editId,  setEditId]    = useState(null);
+  const [filterYr,setFilterYr]  = useState(String(new Date().getFullYear()));
+
+  const years = useMemo(()=>{
+    const s=new Set(medical.map(m=>m.date.split('-')[0]));
+    ['2025','2026'].forEach(y=>s.add(y));
+    return [...s].sort().reverse();
+  },[medical]);
+
+  const filtered = medical.filter(m=>filterYr==='all'||m.date.startsWith(filterYr))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+
+  const totals = useMemo(()=>{
+    let total=0, providerPaid=0, youPaid=0;
+    filtered.forEach(m=>{
+      total       += parseFloat(m.total)||0;
+      providerPaid+= parseFloat(m.providerPaid)||0;
+      youPaid     += parseFloat(m.youPaid)||0;
+    });
+    return {total:+total.toFixed(2), providerPaid:+providerPaid.toFixed(2), youPaid:+youPaid.toFixed(2)};
+  },[filtered]);
+
+  function del(id){ setMedical(p=>p.filter(m=>m.id!==id)); }
+
+  return (
+    <div>
+      {/* Header banner */}
+      <div style={{background:'rgba(236,72,153,.08)',border:'1px solid rgba(236,72,153,.25)',borderRadius:14,padding:'16px 20px',marginBottom:20,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+        <div style={{fontSize:28}}>🏥</div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:15,marginBottom:3}}>Medical Expenses — CRA T1</div>
+          <div style={{fontSize:12,opacity:.65,lineHeight:1.6}}>
+            Track medical expenses separately from business expenses. CRA allows you to claim eligible medical expenses on your personal T1 return. Your provider coverage is tracked separately so you only claim what <b>you actually paid</b>.
+          </div>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+        {[
+          {lbl:'Total Medical Costs', val:cad(totals.total),       color:T.text,    sub:'All expenses combined'},
+          {lbl:'Provider Covered',    val:cad(totals.providerPaid), color:'#ec4899', sub:'Insurance / benefit plan'},
+          {lbl:'You Paid (CRA Claim)',val:cad(totals.youPaid),      color:T.blue,    sub:'Claimable on T1 return'},
+        ].map(s=>(
+          <div key={s.lbl} style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:14,padding:'16px 18px',position:'relative',overflow:'hidden'}}>
+            <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:s.color}}/>
+            <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'.8px',opacity:.5,marginBottom:7}}>{s.lbl}</div>
+            <div style={{fontSize:22,fontWeight:700,color:s.color}}>{s.val}</div>
+            <div style={{fontSize:11,opacity:.4,marginTop:4}}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Controls */}
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <select value={filterYr} onChange={e=>setFilterYr(e.target.value)} style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:8,padding:'7px 10px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}}>
+          <option value="all">All Years</option>
+          {years.map(y=><option key={y} value={y}>{y}</option>)}
+        </select>
+        <span style={{fontSize:12,opacity:.4}}>{filtered.length} record{filtered.length!==1?'s':''}</span>
+        <button style={{marginLeft:'auto',background:'rgba(236,72,153,.9)',color:'#fff',padding:'8px 18px',borderRadius:9,fontWeight:600,fontSize:13}} onClick={()=>{setEditId(null);setShowAdd(true);}}>
+          + Add Medical Expense
+        </button>
+      </div>
+
+      {/* Table */}
+      {filtered.length===0
+        ? <div style={{textAlign:'center',padding:'50px 20px',opacity:.4}}>
+            <div style={{fontSize:40,marginBottom:12}}>🏥</div>
+            <div>No medical expenses yet for {filterYr}</div>
+          </div>
+        : <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:14,overflow:'hidden'}}>
+            <div className="med-tbl-hdr" style={{display:'grid',gridTemplateColumns:'48px 1fr 130px 100px 110px 110px 110px 80px',gap:10,padding:'10px 16px',borderBottom:`1px solid ${T.border}`,fontSize:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.4px',opacity:.5,fontFamily:"'Poppins',sans-serif"}}>
+              <span/><span>Description / Provider</span><span>Type</span><span>Date</span>
+              <span style={{textAlign:'right'}}>Total</span>
+              <span style={{textAlign:'right'}}>Provider Paid</span>
+              <span style={{textAlign:'right'}}>You Paid</span>
+              <span/>
+            </div>
+            {filtered.map(m=>(
+              <div key={m.id} className="med-row" style={{display:'grid',gridTemplateColumns:'48px 1fr 130px 100px 110px 110px 110px 80px',gap:10,padding:'11px 16px',borderBottom:`1px solid ${T.border}`,alignItems:'center',cursor:'pointer',transition:'background .1s'}}
+                onMouseEnter={e=>e.currentTarget.style.background=T.bg3}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+                onClick={()=>{setEditId(m.id);setShowAdd(true);}}>
+                {/* Thumbnail */}
+                {m.receipt
+                  ? m.receipt.startsWith('__PDF__:')
+                    ? <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}>📄</div>
+                    : <img src={m.receipt} style={{width:40,height:40,borderRadius:7,objectFit:'cover',border:`1px solid ${T.border}`,cursor:'zoom-in'}} alt="" onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}/>
+                  : <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🧾</div>
+                }
+                {/* Description + mobile amounts */}
+                <div style={{minWidth:0}}>
+                  <div style={{fontWeight:500,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{m.description}</div>
+                  <div style={{fontSize:11,opacity:.4,marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    {m.provider||'No provider'}
+                    {m.rxName?` · 💊 ${m.rxName}`:''}
+                    {m.payment?.type?` · ${m.payment.type==='Credit Card'?'💳':'💳'} ${m.payment.name||m.payment.type}${m.payment.last4?` ···· ${m.payment.last4}`:''}` :''}
+                    {m.notes?` · ${m.notes}`:''}
+                  </div>
+                  {/* Mobile-only amounts row */}
+                  <div className="med-mob-amounts" style={{display:'none',gap:12,marginTop:5,flexWrap:'wrap'}}>
+                    <span style={{fontSize:11}}><span style={{opacity:.4}}>Total </span><b>{cad(m.total)}</b></span>
+                    <span style={{fontSize:11}}><span style={{opacity:.4}}>Provider </span><b style={{color:'#ec4899'}}>{cad(m.providerPaid)}</b></span>
+                    <span style={{fontSize:11}}><span style={{opacity:.4}}>You Paid </span><b style={{color:T.blue}}>{cad(m.youPaid)}</b></span>
+                  </div>
+                </div>
+                {/* Desktop columns */}
+                <div className="med-desk"><span style={{background:'rgba(236,72,153,.12)',color:'#ec4899',borderRadius:20,padding:'2px 9px',fontSize:11,fontWeight:500}}>{m.type}</span></div>
+                <div className="med-desk" style={{fontSize:12,opacity:.6}}>{m.date}</div>
+                <div className="med-desk" style={{textAlign:'right',fontWeight:600}}>{cad(m.total)}</div>
+                <div className="med-desk" style={{textAlign:'right',color:'#ec4899'}}>{cad(m.providerPaid)}</div>
+                <div className="med-desk" style={{textAlign:'right',color:T.blue,fontWeight:600}}>{cad(m.youPaid)}</div>
+                {/* Actions */}
+                <div style={{display:'flex',gap:5,justifyContent:'flex-end'}} onClick={e=>e.stopPropagation()}>
+                  <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'4px 9px',borderRadius:7,fontSize:12}} onClick={()=>{setEditId(m.id);setShowAdd(true);}}>Edit</button>
+                  <button style={{background:'rgba(232,85,85,.1)',border:'1px solid rgba(232,85,85,.2)',color:T.red,padding:'4px 8px',borderRadius:7,fontSize:12}} onClick={()=>del(m.id)}>✕</button>
+                </div>
+              </div>
+            ))}
+            {/* Totals row */}
+            <div style={{padding:'12px 16px',background:T.bg3,fontWeight:700,fontSize:13,display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
+              <span style={{flex:1}}>TOTALS ({filtered.length} expense{filtered.length!==1?'s':''})</span>
+              <span>{cad(totals.total)}</span>
+              <span style={{color:'#ec4899'}}>{cad(totals.providerPaid)}</span>
+              <span style={{color:T.blue}}>{cad(totals.youPaid)}</span>
+            </div>
+          </div>
+      }
+
+      {/* CRA note */}
+      <div style={{marginTop:16,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:11,padding:'13px 17px',fontSize:13,opacity:.7,lineHeight:1.7}}>
+        🍁 <b style={{opacity:1}}>CRA T1 Medical:</b> You can claim eligible medical expenses for yourself, spouse/partner, and dependants. Only the amount <b style={{opacity:1}}>you paid</b> (after provider coverage) is claimable. Expenses must total more than the lesser of $2,759 or 3% of your net income. Keep all receipts 6 years.
+      </div>
+
+      {showAdd && <MedicalModal editId={editId} record={medical.find(m=>m.id===editId)} T={T} onZoom={onZoom} onDriveBackup={onDriveBackup} gClientId={gClientId}
+        onSave={data=>{
+          if(editId) setMedical(p=>p.map(m=>m.id===editId?{...m,...data}:m));
+          else setMedical(p=>[...p,{id:Date.now(),...data}]);
+          setShowAdd(false); setEditId(null);
+        }}
+        onClose={()=>{setShowAdd(false);setEditId(null);}}
+      />}
+    </div>
+  );
+}
+
+function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup, gClientId}) {
+  const today = new Date().toISOString().split('T')[0];
+  const [date,        setDate]        = useState(record?.date        || today);
+  const [description, setDescription] = useState(record?.description || '');
+  const [type,        setType]        = useState(record?.type        || 'Dental');
+  const [provider,    setProvider]    = useState(record?.provider    || '');
+  const [rxName,      setRxName]      = useState(record?.rxName      || '');
+  const [rxDoctor,    setRxDoctor]    = useState(record?.rxDoctor    || '');
+  const [total,       setTotal]       = useState(record?.total       != null ? String(record.total) : '');
+  const [providerPaid,setProviderPaid]= useState(record?.providerPaid!= null ? String(record.providerPaid) : '');
+  const [notes,       setNotes]       = useState(record?.notes       || '');
+  const [receipt,     setReceipt]     = useState(record?.receipt     || null);
+  const [payType,     setPayType]     = useState(record?.payment?.type  ||'Credit Card');
+  const [payLast4,    setPayLast4]    = useState(record?.payment?.last4 ||'');
+  const [payName,     setPayName]     = useState(record?.payment?.name  ||'');
+  const fileRef = useRef();
+
+  const totalN  = parseFloat(total)||0;
+  const provN   = parseFloat(providerPaid)||0;
+  const youPaid = +(Math.max(0, totalN - provN)).toFixed(2);
+  const isRx    = type === 'Prescription';
+
+  function handleFile(e) {
+    const file = e.target.files[0]; if(!file) return;
+    const isPdf = file.type==='application/pdf';
+    if (isPdf) {
+      const r=new FileReader(); r.onload=ev=>setReceipt('__PDF__:'+ev.target.result); r.readAsDataURL(file); return;
+    }
+    const img2=new Image(), url=URL.createObjectURL(file);
+    img2.onload=()=>{
+      URL.revokeObjectURL(url);
+      const MAX=1200; let w=img2.width,h=img2.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;} if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img2,0,0,w,h);
+      setReceipt(c.toDataURL('image/jpeg',0.75));
+    };
+    img2.src=url;
+  }
+
+  function submit() {
+    if(!description.trim()){alert('Please enter a description.');return;}
+    if(!(totalN>0)){alert('Please enter the total cost.');return;}
+    const data = {date,description:description.trim(),type,provider:provider.trim(),rxName:rxName.trim(),rxDoctor:rxDoctor.trim(),total:totalN,providerPaid:provN,youPaid,notes:notes.trim(),receipt,payment:{type:payType,last4:payLast4.trim(),name:payName.trim()}};
+    onSave(data);
+    if (receipt && onDriveBackup) setTimeout(()=>onDriveBackup(data), 400);
+  }
+
+  const inp={background:T.bg4,borderColor:T.border,color:T.text,borderRadius:8,padding:'9px 12px',fontSize:14,width:'100%',outline:'none',border:'1px solid',fontFamily:'inherit'};
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text,maxWidth:520}} onClick={e=>e.stopPropagation()}>
+        <div className="mhdr">
+          <div className="mttl">🏥 {editId?'Edit':'Add'} Medical Expense</div>
+          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
+        </div>
+
+        {/* Receipt */}
+        <div className="fg">
+          <label className="fl">Receipt / Document</label>
+          {receipt
+            ? <div className="rp">
+                {receipt.startsWith('__PDF__:')
+                  ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'16px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(receipt.slice(8))}>
+                      <div style={{fontSize:32,marginBottom:6}}>📄</div><div style={{fontSize:13}}>PDF — click to view</div>
+                    </div>
+                  : <img src={receipt} style={{width:'100%',borderRadius:10,border:`1px solid ${T.border}`,maxHeight:180,objectFit:'cover',cursor:'zoom-in'}} alt="" onClick={()=>onZoom(receipt)}/>
+                }
+                <button className="rp-rm" onClick={()=>setReceipt(null)}>Remove</button>
+              </div>
+            : <div style={{border:`2px dashed ${T.border}`,borderRadius:11,padding:'22px 16px',textAlign:'center',cursor:'pointer',position:'relative'}} onClick={()=>fileRef.current.click()}>
+                <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{position:'absolute',inset:0,opacity:0,cursor:'pointer'}} onChange={handleFile} onClick={e=>e.stopPropagation()}/>
+                <div style={{fontSize:26,marginBottom:6}}>📷</div>
+                <div style={{fontSize:13,opacity:.6}}>Click or drag receipt / EOB document</div>
+              </div>
+          }
+        </div>
+
+        <div className="frow fg">
+          <div><label className="fl">Date</label><input type="date" style={inp} value={date} onChange={e=>setDate(e.target.value)}/></div>
+          <div><label className="fl">Type</label>
+            <select style={inp} value={type} onChange={e=>setType(e.target.value)}>
+              {MED_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="fg"><label className="fl">Description</label>
+          <input type="text" style={inp} placeholder="e.g. Dental filling, Glasses frames & lenses, Prescription refill" value={description} onChange={e=>setDescription(e.target.value)}/>
+        </div>
+
+        <div className="fg"><label className="fl">Provider / Clinic / Pharmacy</label>
+          <input type="text" style={inp} placeholder="e.g. Pacific Blue Cross, Dr. Smith Dental, Shoppers Drug Mart" value={provider} onChange={e=>setProvider(e.target.value)}/>
+        </div>
+
+        {/* Prescription-specific fields — only shown when type is Prescription */}
+        {isRx && (
+          <div style={{background:'rgba(75,142,245,.07)',border:`1px solid rgba(75,142,245,.2)`,borderRadius:11,padding:'14px',marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:600,color:T.blue,marginBottom:10}}>💊 Prescription Details</div>
+            <div className="frow">
+              <div>
+                <label className="fl">Drug / Medication Name</label>
+                <input type="text" style={inp} placeholder="e.g. Amoxicillin 500mg" value={rxName} onChange={e=>setRxName(e.target.value)}/>
+              </div>
+              <div>
+                <label className="fl">Prescribed By</label>
+                <input type="text" style={inp} placeholder="e.g. Dr. Johnson" value={rxDoctor} onChange={e=>setRxDoctor(e.target.value)}/>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cost calculation */}
+        <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:11,padding:'15px',marginBottom:14}}>
+          <div style={{fontWeight:600,fontSize:13,marginBottom:12}}>💰 Cost Breakdown</div>
+          <div className="frow" style={{marginBottom:12}}>
+            <div>
+              <label className="fl">Total Cost ($)</label>
+              <input type="number" step="0.01" placeholder="0.00" style={inp} value={total} onChange={e=>setTotal(e.target.value)}/>
+            </div>
+            <div>
+              <label className="fl">Insurance / Provider Paid ($)</label>
+              <input type="number" step="0.01" placeholder="0.00" style={inp} value={providerPaid} onChange={e=>setProviderPaid(e.target.value)}/>
+            </div>
+          </div>
+          {totalN>0&&(
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+              {[
+                {lbl:'Total Cost',      val:cad(totalN),    color:T.text},
+                {lbl:'Provider Covered',val:cad(provN),     color:'#ec4899'},
+                {lbl:'You Paid ✅',     val:cad(youPaid),   color:T.blue},
+              ].map(x=>(
+                <div key={x.lbl} style={{background:T.bg4,borderRadius:8,padding:'8px 10px',border:`1px solid ${T.border}`,textAlign:'center'}}>
+                  <div style={{fontSize:10,opacity:.5,marginBottom:4}}>{x.lbl}</div>
+                  <div style={{fontWeight:700,fontSize:15,color:x.color}}>{x.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{fontSize:11,opacity:.45,marginTop:10}}>Only the <b style={{opacity:1}}>"You Paid"</b> amount is claimable on your CRA T1 return.</div>
+        </div>
+
+        {/* Payment Method */}
+        <div className="fg">
+          <label className="fl">Payment Method <span style={{opacity:.4,fontWeight:400}}>for your out-of-pocket portion</span></label>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            {['Credit Card','Debit Card','Cash','Cheque','E-Transfer','Other'].map(pt=>(
+              <button key={pt} type="button"
+                style={{padding:'8px 10px',borderRadius:8,border:`1px solid ${payType===pt?'rgba(236,72,153,.6)':T.border}`,background:payType===pt?'rgba(236,72,153,.1)':T.bg4,color:T.text,fontWeight:payType===pt?600:400,fontSize:13,transition:'all .15s',cursor:'pointer'}}
+                onClick={()=>setPayType(pt)}>
+                {pt==='Credit Card'?'💳':pt==='Debit Card'?'🏧':pt==='Cash'?'💵':pt==='Cheque'?'📝':pt==='E-Transfer'?'📲':'•'} {pt}
+              </button>
+            ))}
+          </div>
+          {(payType==='Credit Card'||payType==='Debit Card')&&(
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div>
+                <label className="fl" style={{fontSize:10}}>Card Name <span style={{opacity:.5,fontWeight:400}}>(e.g. Amex, Visa)</span></label>
+                <input type="text" style={inp} placeholder="e.g. Amex, TD Visa" value={payName} onChange={e=>setPayName(e.target.value)}/>
+              </div>
+              <div>
+                <label className="fl" style={{fontSize:10}}>Last 4 Digits</label>
+                <input type="text" style={inp} placeholder="e.g. 3405" maxLength={4} value={payLast4} onChange={e=>setPayLast4(e.target.value.replace(/\D/g,''))}/>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="fg"><label className="fl">Notes</label>
+          <textarea rows={2} style={inp} placeholder="e.g. Prescribed by Dr. Lee · Claim submitted to Blue Cross March 2026" value={notes} onChange={e=>setNotes(e.target.value)}/>
+        </div>
+
+        <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:6}}>
+          <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 17px',borderRadius:9}} onClick={onClose}>Cancel</button>
+          <button style={{background:'rgba(236,72,153,.9)',color:'#fff',padding:'9px 19px',borderRadius:9,fontWeight:600}} onClick={submit}>{editId?'Save Changes':'Add Record'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── RECEIPT LIGHTBOX ─────────────────────────────────────────────────────────
+function ReceiptLightbox({src, onClose}) {
+  const isPdf = src && src.startsWith('__PDF__:');
+  const isDriveUrl = src && src.startsWith('https://');
+  const isPlaceholder = !src || src.startsWith('[') || src === 'null';
+  const raw = isPdf ? src.slice(8) : src;
+  const [blobUrl, setBlobUrl] = useState(null);
+
+  useEffect(()=>{
+    const handler = e => { if(e.key==='Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return ()=>window.removeEventListener('keydown', handler);
+  },[onClose]);
+
+  // For data URLs: convert to blob for reliable display
+  useEffect(()=>{
+    if (isPlaceholder || isPdf || isDriveUrl) return;
+    try {
+      const arr  = raw.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      const bytes = new Uint8Array(bstr.length);
+      for (let i=0;i<bstr.length;i++) bytes[i]=bstr.charCodeAt(i);
+      const blob = new Blob([bytes], {type:mime});
+      const url  = URL.createObjectURL(blob);
+      setBlobUrl(url);
+      return ()=>URL.revokeObjectURL(url);
+    } catch { setBlobUrl(raw); }
+  },[raw]);
+
+  useEffect(()=>{
+    if (!isPdf) return;
+    try {
+      const arr=raw.split(','),mime=arr[0].match(/:(.*?);/)[1];
+      const bstr=atob(arr[1]),bytes=new Uint8Array(bstr.length);
+      for(let i=0;i<bstr.length;i++) bytes[i]=bstr.charCodeAt(i);
+      const blob=new Blob([bytes],{type:mime}),url=URL.createObjectURL(blob);
+      window.open(url,'_blank');
+      setTimeout(()=>URL.revokeObjectURL(url),10000);
+    } catch { window.open(raw,'_blank'); }
+    onClose();
+  },[]);
+
+  if (isPdf) return null;
+
+  if (isPlaceholder) return (
+    <div className="rfs" onClick={onClose}>
+      <div className="rfs-bar">
+        <span style={{color:'rgba(255,255,255,.7)',fontSize:13}}>Receipt stored in Google Drive</span>
+        <button className="rfs-close" onClick={onClose}>✕</button>
+      </div>
+      <div style={{color:'rgba(255,255,255,.6)',textAlign:'center',padding:40}}>
+        <div style={{fontSize:48,marginBottom:16}}>📁</div>
+        <div style={{fontSize:16,marginBottom:8}}>Receipt is in Google Drive</div>
+        <div style={{fontSize:13,opacity:.5}}>Open Google Drive to view this receipt</div>
+      </div>
+    </div>
+  );
+
+  // Drive URL — load directly from Google Drive
+  const displayUrl = isDriveUrl ? raw : blobUrl;
+
+  return (
+    <div className="rfs" onClick={onClose} style={{cursor:'zoom-out'}}>
+      <div className="rfs-bar">
+        <span style={{color:'rgba(255,255,255,.7)',fontSize:13,pointerEvents:'none'}}>
+          🖼 Receipt — click outside or Esc to close
+        </span>
+        <div style={{display:'flex',gap:8,pointerEvents:'all'}}>
+          {displayUrl&&<a href={displayUrl} download="receipt.jpg" target="_blank" rel="noreferrer"
+             style={{background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'}}
+             onClick={e=>e.stopPropagation()}>⬇ Download</a>}
+          <button className="rfs-close" onClick={onClose}>✕</button>
+        </div>
+      </div>
+      {displayUrl
+        ? <img src={displayUrl} alt="Receipt"
+            style={{maxWidth:'90vw',maxHeight:'86vh',objectFit:'contain',borderRadius:12,boxShadow:'0 0 80px rgba(0,0,0,.9)',cursor:'default',display:'block'}}
+            onClick={e=>e.stopPropagation()}/>
+        : <div style={{color:'rgba(255,255,255,.5)',fontSize:14}}>Loading…</div>
+      }
+    </div>
+  );
+}
+
+
+// ─── APP WRAPPER (handles PIN before loading main App) ────────────────────────
+function AppWrapper() {
+  const [unlocked, setUnlocked] = useState(()=>sessionStorage.getItem('kbw_unlocked')==='1');
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [firstPin, setFirstPin] = useState('');
+  const storedHash = (()=>{ try { return localStorage.getItem('cra_tracker_v1_pinHash')||''; } catch { return ''; } })();
+  const [hasPin, setHasPin] = useState(!!storedHash);
+
+  async function hashPin(pin) {
+    const s = 'kbw-salt:' + pin;
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    } catch { return 'plain:' + s; }
+  }
+
+  async function verifyPin(pin) {
+    if (!hasPin) {
+      // First run on this device: set a PIN (enter twice)
+      if (pin.length < 6) { setPinError('PIN must be 6 digits.'); setPinInput(''); return; }
+      if (!firstPin) { setFirstPin(pin); setPinInput(''); setPinError(''); return; }
+      if (firstPin !== pin) { setFirstPin(''); setPinInput(''); setPinError("PINs didn't match. Start again."); return; }
+      try { localStorage.setItem('cra_tracker_v1_pinHash', await hashPin(pin)); } catch {}
+      setHasPin(true); setFirstPin('');
+      sessionStorage.setItem('kbw_unlocked','1');
+      setUnlocked(true); setPinError('');
+      return;
+    }
+    const h = await hashPin(pin);
+    if (h === localStorage.getItem('cra_tracker_v1_pinHash')) {
+      sessionStorage.setItem('kbw_unlocked','1');
+      setUnlocked(true); setPinError('');
+    } else {
+      setPinError('Incorrect PIN. Try again.');
+      setPinInput('');
+    }
+  }
+
+  const prompt = hasPin ? 'Enter your PIN to continue' : (firstPin ? 'Confirm your new 6-digit PIN' : 'Choose a 6-digit PIN for this device');
+  if (!unlocked) return <PinScreen pinInput={pinInput} setPinInput={setPinInput} pinError={pinError} onSubmit={verifyPin} prompt={prompt} />;
+  return <App />;
+}
+function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt}) {
+  // Load logo from localStorage to show on PIN screen
+  const logo = (() => { try { const v=localStorage.getItem('cra_tracker_v1_logo'); return v?JSON.parse(v):null; } catch { return null; } })();
+  const icon  = logo?.logoImg || logo?.icon  || '🍁';
+  const title = logo?.title || 'KBW Expense Tracker';
+  const iconBg = logo?.iconBg || '#e8412a';
+  const isImg = logo?.logoImg;
+
+  useEffect(()=>{
+    document.body.style.background='#0c0e14';
+    document.body.style.color='#e8ecf8';
+  },[]);
+
+  function handleDigit(d){ if(pinInput.length<6) setPinInput(p=>p+d); }
+  function handleDelete(){ setPinInput(p=>p.slice(0,-1)); }
+  useEffect(()=>{ if(pinInput.length>=6) onSubmit(pinInput); },[pinInput]);
+
+  return (
+    <div style={{minHeight:'100dvh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0c0e14',fontFamily:"'Poppins',sans-serif"}}>
+      <div style={{textAlign:'center',padding:32,maxWidth:320,width:'100%'}}>
+        {/* Logo */}
+        <div style={{display:'flex',justifyContent:'center',marginBottom:12}}>
+          {isImg
+            ? <img src={isImg} style={{width:56,height:56,borderRadius:14,objectFit:'cover'}} alt="logo"/>
+            : <div style={{width:56,height:56,borderRadius:14,background:iconBg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>{icon}</div>
+          }
+        </div>
+        <div style={{fontSize:18,fontWeight:700,marginBottom:4,color:'#e8ecf8'}}>{title}</div>
+        <div style={{fontSize:13,opacity:.4,marginBottom:32}}>{prompt||'Enter your PIN to continue'}</div>
+
+        {/* PIN dots */}
+        <div style={{display:'flex',gap:12,justifyContent:'center',marginBottom:24}}>
+          {[0,1,2,3,4,5].map(i=>(
+            <div key={i} style={{width:14,height:14,borderRadius:'50%',background:i<pinInput.length?'#e8412a':'rgba(255,255,255,.15)',transition:'background .1s'}}/>
+          ))}
+        </div>
+
+        {pinError&&<div style={{color:'#e85555',fontSize:13,marginBottom:16}}>{pinError}</div>}
+
+        {/* Numpad */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,maxWidth:240,margin:'0 auto'}}>
+          {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((d,i)=>(
+            <button key={i}
+              style={{padding:'16px',borderRadius:12,border:'1px solid rgba(255,255,255,.1)',background:d===''?'transparent':'rgba(255,255,255,.07)',color:'#e8ecf8',fontSize:20,fontWeight:500,cursor:d===''?'default':'pointer',fontFamily:'inherit',transition:'background .1s'}}
+              onClick={()=>{ if(d==='⌫') handleDelete(); else if(d!=='') handleDigit(String(d)); }}
+              onMouseEnter={e=>{ if(d!=='') e.target.style.background='rgba(255,255,255,.15)'; }}
+              onMouseLeave={e=>{ if(d!=='') e.target.style.background='rgba(255,255,255,.07)'; }}
+              disabled={d===''}
+            >{d}</button>
+          ))}
+        </div>
+        {pinInput.length>=4&&(
+          <button onClick={()=>onSubmit(pinInput)}
+            style={{marginTop:16,width:'100%',maxWidth:240,margin:'16px auto 0',display:'block',padding:'14px',borderRadius:12,background:'#e8412a',border:'none',color:'#fff',fontSize:16,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+            Unlock →
+          </button>
+        )}
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>PIN resets when you close the app</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AppWrapper/>);
+</script>
+</body>
+</html>
