@@ -3769,10 +3769,10 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   async function send(i,isVoid){
     const b=await pdfOf(i); if(!b) return;
     const c=P.customers.find(x=>x.name===i.customer)||{};
-    const subject=isVoid?`Invoice ${i.num} has been voided`:`Invoice ${i.num} from ${P.name||'me'}`;
+    const subject=isVoid?`Invoice #${i.num} has been voided`:`Invoice #${i.num} from ${P.name||'me'}`;
     const first=(c.contact||'').split(' ')[0]||'there';
     const ordDate=d=>{ try{ const [y,m,dd]=d.split('-').map(Number); const mo=new Date(y,m-1,dd).toLocaleDateString('en-CA',{month:'long'}); const v=dd%100, suf=(v>=11&&v<=13)?'th':({1:'st',2:'nd',3:'rd'}[dd%10]||'th'); return mo+' '+dd+suf; }catch(e){ return d; } };
-    const body=isVoid?`Hi ${first},\n\nInvoice ${i.num} dated ${ordDate(i.date)} has been voided, so no payment is needed for it. The voided copy is attached for your records.\n\nThanks!`:`Hi ${first},\n\nPlease see the attached for your latest invoice dated ${ordDate(i.date)}.\n\nThanks!`;
+    const body=isVoid?`Hi ${first},\n\nInvoice #${i.num} dated ${ordDate(i.date)} has been voided, so no payment is needed for it. The voided copy is attached for your records.\n\nThanks!`:`Hi ${first},\n\nPlease see the attached for your latest invoice dated ${ordDate(i.date)}.\n\nThanks!`;
     let pdf64=''; try{ pdf64=await blobB64(b); }catch(e){}
     const accts=(P.mail&&P.mail.accounts)||[]; const ac=accts.find(a=>a.email&&a.email===c.from)||accts.find(a=>a.email)||null;
     setCmp({i,b,to:c.email||'',cc:'',subject,body,fname:invFile(i),pdf64,from:ac?ac.email:'',busy:0,err:''});
@@ -4991,7 +4991,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26o</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26p</div>
       </div>
     </div>
   );
