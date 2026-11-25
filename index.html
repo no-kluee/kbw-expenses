@@ -3521,7 +3521,66 @@ const invStatus = i => i.paid ? 'Paid' : (!i.sent ? 'Draft' : ((i.due||i.date) <
 const longDate = d => { try { const [y,m,dd]=d.split('-').map(Number); return new Date(y,m-1,dd).toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}); } catch { return d||''; } };
 const invFile = i => `Invoice_${i.num}_${i.date}.pdf`;
 
-async function makeInvoicePdf(inv, prof, logoImg) {
+async function makeInvoicePdfClean(inv, prof, logoImg) {
+  const {jsPDF} = await loadJsPdf();
+  const cust = (prof.customers||[]).find(c=>c.name===inv.customer) || {name:inv.customer};
+  const d = new jsPDF({unit:'pt',format:'letter'});
+  const W=612, H=792, M=56, R=556;
+  const sub=invSub(inv), gst=invGst(inv), tot=invTot(inv), paid=!!inv.paid, due=paid?0:tot;
+  const INK=[29,29,31], GRY=[134,134,139], LINE=[229,229,234], ACC=[5,150,136], GRN=[36,138,61];
+  const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||10); d.setTextColor(...(o.c||INK)); d.text(String(t),x,y,{align:o.a||'left',charSpace:o.cs||0}); };
+  const hr=(y,x1=M,x2=R,c=LINE)=>{ d.setDrawColor(...c); d.setLineWidth(.6); d.line(x1,y,x2,y); };
+  // top row: logo + invoice number
+  if (logoImg) { try { const f=/^data:image\/(png|jpe?g)/i.exec(logoImg); d.addImage(logoImg,f?f[1].toUpperCase().replace('JPG','JPEG'):'PNG',M,M-6,34,34); } catch(e){} }
+  txt('Invoice No. '+inv.num,R,M+15,{s:10.5,a:'right',c:GRY});
+  // title + hero amount
+  txt('Invoice',M,150,{b:1,s:34});
+  const label=paid?'Paid in full':'Amount due';
+  txt(label,M,200,{s:10,c:paid?GRN:GRY});
+  txt(cad(paid?tot:due),M,238,{b:1,s:40,c:paid?GRN:ACC});
+  txt(paid?('Paid '+longDate(inv.paid)):('Due '+longDate(inv.due||inv.date)),M,260,{s:10.5,c:GRY});
+  // info row
+  let y=318; hr(y-26);
+  txt('Billed to',M,y,{s:8.5,c:GRY}); txt('Issued',360,y,{s:8.5,c:GRY}); txt('Due',460,y,{s:8.5,c:GRY});
+  let by=y+16; txt(cust.name||'',M,by,{b:1,s:10.5}); by+=14.5;
+  const addr=String(cust.addr||'').split('\n').filter(Boolean);
+  [cust.contact,...addr,cust.email].filter(Boolean).forEach(l=>{ txt(l,M,by,{s:10,c:[80,80,85]}); by+=14; });
+  const sd=s=>{ try{const [yy,mm,dd]=s.split('-').map(Number);return new Date(yy,mm-1,dd).toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}catch{return s;} };
+  txt(sd(inv.date),360,y+16,{s:10.5}); txt(sd(inv.due||inv.date),460,y+16,{s:10.5});
+  y=Math.max(by,y+40)+30;
+  // items
+  txt('Description',M,y,{s:8.5,c:GRY}); txt('Amount',R,y,{s:8.5,a:'right',c:GRY}); y+=9; hr(y);
+  (inv.items||[]).forEach(it=>{
+    const lines=d.splitTextToSize(String(it.desc||''),380);
+    lines.forEach((l,k)=>txt(l,M,y+22+k*14,{s:11}));
+    txt(cad(it.amount),R,y+22,{s:11,a:'right'});
+    y+=14*Math.max(1,lines.length)+22; hr(y);
+  });
+  // totals
+  y+=26; const lx=360;
+  const row=(k,v,o={})=>{ txt(k,lx,y,{s:o.s||10.5,b:o.b,c:o.kc||GRY}); txt(v,R,y,{s:o.s||10.5,b:o.b,a:'right',c:o.vc||INK}); y+=o.gap||22; };
+  row('Subtotal',cad(sub));
+  if(+inv.gstRate>0) row(`GST ${inv.gstRate}%`,cad(gst),{gap:12});
+  if(+inv.gstRate>0&&prof.gstNo){ txt('No. '+prof.gstNo,lx,y,{s:8.5,c:GRY}); y+=22; }
+  hr(y-12,lx,R); y+=6;
+  row('Total',cad(tot),{b:1,s:12,kc:INK});
+  if(paid) row('Paid '+sd(inv.paid),'-'+cad(tot),{kc:GRN,vc:GRN});
+  hr(y-12,lx,R); y+=8;
+  row('Amount due',cad(due),{b:1,s:13,kc:INK,vc:paid?INK:ACC});
+  // notes
+  if(inv.notes){ y+=18; txt('Notes',M,y,{s:8.5,c:GRY}); y+=15; String(inv.notes).split('\n').forEach(p=>d.splitTextToSize(p,R-M).forEach(l=>{ txt(l,M,y,{s:9.5,c:[80,80,85]}); y+=13.5; })); }
+  // footer
+  const fy=724; hr(fy);
+  let fx=fy+20; txt(prof.name||'',M,fx,{b:1,s:9});
+  const pa=String(prof.addr||'').split('\n').filter(Boolean);
+  txt([...pa].join(', '),M,fx+13,{s:9,c:GRY});
+  txt(prof.phone||'',R,fx,{s:9,a:'right',c:GRY});
+  if(prof.gstNo) txt('GST/HST '+prof.gstNo,R,fx+13,{s:9,a:'right',c:GRY});
+  return d.output('blob');
+}
+
+async function makeInvoicePdf(inv, prof, logoImg) { return prof.invStyle==='classic' ? makeInvoicePdfClassic(inv,prof,logoImg) : makeInvoicePdfClean(inv,prof,logoImg); }
+async function makeInvoicePdfClassic(inv, prof, logoImg) {
   const {jsPDF} = await loadJsPdf();
   const cust = (prof.customers||[]).find(c=>c.name===inv.customer) || {name:inv.customer};
   const d = new jsPDF({unit:'pt',format:'letter'});
@@ -3770,6 +3829,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="fg"><label className="fl">GST number</label><input style={inp} value={P.gstNo} onChange={e=>setP('gstNo',e.target.value)}/></div>
             <div className="fg"><label className="fl">GST rate %</label><input type="number" style={inp} value={P.gstRate} onChange={e=>setP('gstRate',e.target.value)}/></div>
             <div className="fg"><label className="fl">Next invoice # (if none yet)</label><input type="number" style={inp} value={P.startNum} onChange={e=>setP('startNum',e.target.value)}/></div>
+            <div className="fg"><label className="fl">PDF style</label><select style={inp} value={P.invStyle==='classic'?'classic':'clean'} onChange={e=>setP('invStyle',e.target.value)}><option value="clean">Clean (new)</option><option value="classic">Classic (like Wave)</option></select></div>
           </div>
           <div className="fg"><label className="fl">Notes / terms on each invoice</label><textarea style={{...inp,minHeight:64}} value={P.notes} onChange={e=>setP('notes',e.target.value)}/></div>
 
@@ -4828,7 +4888,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26h</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26i</div>
       </div>
     </div>
   );
