@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25g polish ---- */
+/* ---- v2026.11.25h polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25g ---- */
+/* ---- v2026.11.25h ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -541,18 +541,18 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
 
-/* ---- v2026.11.25g compact receipt row ---- */
+/* ---- v2026.11.25h compact receipt row ---- */
 .rrow{display:flex;align-items:center;gap:12px;padding:10px 14px!important;cursor:pointer}
 .rrthumb{width:56px;height:56px;border-radius:10px;flex-shrink:0;display:block}
 
 .dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
 .dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
 
-/* ---- v2026.11.25g wide screens: use the space ---- */
+/* ---- v2026.11.25h wide screens: use the space ---- */
 @media(min-width:1500px){.main,.phead,.fbar{max-width:1400px}.dpane{width:520px}}
 @media(min-width:2000px){.main,.phead,.fbar{max-width:1700px}.dpane{width:620px}}
 
-/* ---- v2026.11.25g frequent vendors ---- */
+/* ---- v2026.11.25h frequent vendors ---- */
 .vchips{display:flex;gap:8px;overflow-x:auto;padding:8px 0 2px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .vchips::-webkit-scrollbar{display:none}
 .vchip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;border:none;background:rgba(128,128,128,.18);color:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
@@ -1662,6 +1662,26 @@ function App() {
     undoRef.current = {items, t};
     setUndo({n: items.length, name: items.length===1 ? items[0].vendor : ''});
   }
+  // Bulk edits (category, client): ask first, then offer Undo for 12 seconds
+  const [bulkUndo, setBulkUndo] = useState(null);
+  const bulkRef = useRef(null);
+  function bulkApply(ids, fn, label) {
+    const st = new Set(ids);
+    if (ids.length > 1 && !window.confirm(`${label||'Change'} on ${ids.length} expenses?\n\nYou can undo this right after.`)) return;
+    const prev = expenses.filter(e=>st.has(e.id)).map(e=>({...e}));
+    if (bulkRef.current) clearTimeout(bulkRef.current.t);
+    setExpenses(p=>p.map(e=>st.has(e.id)?{...e,...fn(e)}:e));
+    const t = setTimeout(()=>{ bulkRef.current=null; setBulkUndo(null); }, 12000);
+    bulkRef.current = {prev, t};
+    setBulkUndo({n: prev.length, label: label||'Updated'});
+  }
+  function undoBulk() {
+    const u = bulkRef.current; if (!u) return;
+    clearTimeout(u.t);
+    const m = new Map(u.prev.map(e=>[e.id,e]));
+    setExpenses(p=>p.map(e=>m.has(e.id)?m.get(e.id):e));
+    bulkRef.current = null; setBulkUndo(null);
+  }
   function undoDelete() {
     const u = undoRef.current; if (!u) return;
     clearTimeout(u.t); setExpenses(p=>[...p, ...u.items]);
@@ -1795,7 +1815,7 @@ function App() {
       <div className="bodyrow">
       <div className="main">
         {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
-        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={(ids,fn)=>{const st=new Set(ids);setExpenses(p=>p.map(e=>st.has(e.id)?{...e,...fn(e)}:e));}} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
+        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
@@ -1819,10 +1839,11 @@ function App() {
           </div>
         </div>
       )}
-      {(undo||syncFlash) && (
+      {(undo||syncFlash||bulkUndo) && (
         <div className="toastwrap">
           {undo && <div className="toast"><span>{undo.n>1?`${undo.n} expenses deleted`:`Deleted${undo.name?' '+(undo.name.length>22?undo.name.slice(0,22)+'…':undo.name):''}`}</span><button onClick={undoDelete}>Undo</button></div>}
-          {syncFlash && !undo && <div className="toast pill"><Ic n="check" s={14}/> Synced</div>}
+          {bulkUndo && !undo && <div className="toast"><span>{bulkUndo.n} expenses updated</span><button onClick={undoBulk}>Undo</button></div>}
+          {syncFlash && !undo && !bulkUndo && <div className="toast pill"><Ic n="check" s={14}/> Synced</div>}
         </div>
       )}
       {/* Modals */}
@@ -2107,11 +2128,11 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
         <div className="selbar" style={{background:T.bg2+'f7',color:T.text}}>
           <b style={{fontSize:13}}>{sel.length} selected</b>
           <button type="button" onClick={()=>setSel(sel.length===rows.length?[]:rows.map(e=>e.id))}>{sel.length===rows.length?'Clear':`All ${rows.length}`}</button>
-          <select value="" disabled={!sel.length} onChange={e=>{ const v=e.target.value; if(v) onBulk(sel,()=>({category:v})); }}>
+          <select value="" disabled={!sel.length} onChange={e=>{ const v=e.target.value; if(v) onBulk(sel,()=>({category:v}),`Set category to ${(cats.find(c=>c.id===v)||{}).label||v}`); }}>
             <option value="">Category…</option>
             {cats.map(c=><option key={c.id} value={c.id} style={{color:'#000'}}>{c.label}</option>)}
           </select>
-          {clientNames.length>0 && <select value="" disabled={!sel.length} onChange={e=>{ const v=e.target.value; if(v) onBulk(sel,x=>({clients:[...new Set([...(x.clients||[]),v])]})); }}>
+          {clientNames.length>0 && <select value="" disabled={!sel.length} onChange={e=>{ const v=e.target.value; if(v) onBulk(sel,x=>({clients:[...new Set([...(x.clients||[]),v])]}),`Add client ${v}`); }}>
             <option value="">Add client…</option>
             {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
           </select>}
@@ -4199,7 +4220,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25g</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25h</div>
       </div>
     </div>
   );
