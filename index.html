@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25e polish ---- */
+/* ---- v2026.11.25f polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25e ---- */
+/* ---- v2026.11.25f ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -541,16 +541,22 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .mrow select{background:none;border:none;font-size:16px;width:auto;padding:0;text-align:right}
 }
 
-/* ---- v2026.11.25e compact receipt row ---- */
+/* ---- v2026.11.25f compact receipt row ---- */
 .rrow{display:flex;align-items:center;gap:12px;padding:10px 14px!important;cursor:pointer}
 .rrthumb{width:56px;height:56px;border-radius:10px;flex-shrink:0;display:block}
 
 .dact .pbtn{width:auto!important;min-width:84px;height:40px!important;padding:0 22px!important;border-radius:20px!important;font-size:16px;font-weight:600}
 .dact .pbtn.ghost{background:transparent!important;border:none!important;min-width:0}
 
-/* ---- v2026.11.25e wide screens: use the space ---- */
+/* ---- v2026.11.25f wide screens: use the space ---- */
 @media(min-width:1500px){.main,.phead,.fbar{max-width:1400px}.dpane{width:520px}}
 @media(min-width:2000px){.main,.phead,.fbar{max-width:1700px}.dpane{width:620px}}
+
+/* ---- v2026.11.25f frequent vendors ---- */
+.vchips{display:flex;gap:8px;overflow-x:auto;padding:8px 0 2px;margin:0 -2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.vchips::-webkit-scrollbar{display:none}
+.vchip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;border:none;background:rgba(128,128,128,.18);color:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.vchip:active{opacity:.6}
 </style>
 </head>
 <body>
@@ -792,6 +798,7 @@ function App() {
   const [cards,    setCards]    = useState(()=>lsLoad('cards', []));
   window.kbwCards = cards;
   const [clients,  setClients]  = useState(()=>lsLoad('clients', []));
+  const [vendors,  setVendors]  = useState(()=>lsLoad('vendors', []));
   const [recurring,setRecurring]= useState(()=>lsLoad('recurring', []));
   const [mileage,  setMileage]  = useState(()=>lsLoad('mileage', []));
   window.kbwClients = clients;
@@ -1267,6 +1274,7 @@ function App() {
   useEffect(()=>{ lsSave('gClientId',gClientId); },[gClientId]);
   useEffect(()=>{ lsSave('cards',cards); },[cards]);
   useEffect(()=>{ lsSave('clients',clients); },[clients]);
+  useEffect(()=>{ lsSave('vendors',vendors); },[vendors]);
   useEffect(()=>{ lsSave('recurring',recurring); },[recurring]);
   useEffect(()=>{ lsSave('mileage',mileage); },[mileage]);
   useEffect(()=>{ lsSave('gToken',   gToken);    },[gToken]);
@@ -1283,10 +1291,10 @@ function App() {
   useEffect(()=>{ latestMedical.current = medical; },[medical]);
   const firstSettings = useRef(true);
   useEffect(()=>{
-    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards, clients, recurring, mileage };
+    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage };
     if (firstSettings.current) { firstSettings.current = false; return; }
     if (window._ghReady && !window._ghLoading) settingsDirty.current = true;
-  },[theme, logo, cats, province, statCards, gClientId, cards, clients, recurring, mileage]);
+  },[theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage]);
 
   // Load saved data from GitHub (startup, and right after a token is saved in Settings)
   async function pullFromGitHub(token) {
@@ -1352,6 +1360,7 @@ function App() {
         if (Array.isArray(st.statCards) && st.statCards.length) setStatCards(st.statCards);
         if (Array.isArray(st.cards)) { setCards(st.cards); lsSave('cards', st.cards); }
         if (Array.isArray(st.clients)) { setClients(st.clients); lsSave('clients', st.clients); }
+        if (Array.isArray(st.vendors)) { setVendors(st.vendors); lsSave('vendors', st.vendors); }
         if (Array.isArray(st.recurring)) { setRecurring(st.recurring); lsSave('recurring', st.recurring); }
         if (Array.isArray(st.mileage)) { setMileage(st.mileage); lsSave('mileage', st.mileage); }
         if (typeof st.gClientId === 'string' && st.gClientId) { setGClientId(st.gClientId); lsSave('gClientId', st.gClientId); }
@@ -1387,7 +1396,7 @@ function App() {
     window._ghDirty = true;
     clearTimeout(ghSaveTimer.current);
     ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
-  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards, clients, recurring, mileage]);
+  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards, clients, vendors, recurring, mileage]);
 
   // Pull the latest when you come back to the app (never while a local change is still waiting to save)
   const lastPullAt = useRef(Date.now());
@@ -1816,7 +1825,7 @@ function App() {
         </div>
       )}
       {/* Modals */}
-      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} clients={clients} allExpenses={expenses} startFile={startFile} onSave={(data,opts)=>{
+      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} clients={clients} vendors={vendors} allExpenses={expenses} startFile={startFile} onSave={(data,opts)=>{
         const rid = editId || Date.now();
         // Start the Google sign-in right here, inside the tap, so phones do not block the popup
         const tokenP = (data.receipt && isLocalReceipt(data.receipt) && gClientId) ? driveTokenNow() : null;
@@ -1835,7 +1844,7 @@ function App() {
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
       {modal==='theme'    && <ThemeModal  theme={T} auto={autoTheme} onSave={(t,a)=>{setAutoTheme(!!a);lsSave('themeAuto',!!a);setTheme(t);closeModal();}} onClose={closeModal} />}
       {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
-      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} clients={clients} setClients={setClients} recurring={recurring} setRecurring={setRecurring} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
+      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} clients={clients} setClients={setClients} vendors={vendors} setVendors={setVendors} cats={cats} recurring={recurring} setRecurring={setRecurring} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
         const tokenChanged = gh && gh !== lsLoad('ghToken','');
         setApiKey(k);setGClientId(g);setGhToken(gh);lsSave('ghToken', gh);closeModal();
         if (gh && (tokenChanged || !window._ghReady)) {
@@ -2261,7 +2270,7 @@ function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,expo
 }
 
 // ─── EXPENSE MODAL ────────────────────────────────────────────────────────────
-function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clients,allExpenses,startFile,onSave,onClose,onZoom}) {
+function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clients,vendors,allExpenses,startFile,onSave,onClose,onZoom}) {
   const today=new Date().toISOString().split('T')[0];
   const [date,    setDate]    = useState(expense?.date    ||today);
   const [vendor,  setVendor]  = useState(expense?.vendor  ||'');
@@ -2310,6 +2319,12 @@ function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clien
     if (Array.isArray(prev.clients) && prev.clients.length) setClientSel(prev.clients);
     setMemoMsg('Filled in from your last '+prev.vendor+' expense');
   },[vendor]);
+  const vendorOptions = useMemo(()=>{
+    const seen=new Set(), out=[];
+    const cnt={}; (allExpenses||[]).forEach(e=>{ const n=(e.vendor||'').trim(); if(n) cnt[n]=(cnt[n]||0)+1; });
+    [...(vendors||[]).map(v=>v.name), ...Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])].forEach(n=>{ const k=n.toLowerCase(); if(!seen.has(k)){seen.add(k); out.push(n);} });
+    return out.slice(0,60);
+  },[vendors,allExpenses]);
   const catObj  = cats.find(c=>c.id===cat)||cats[cats.length-1];
   const isGas   = cat==='gas';
 
@@ -2553,7 +2568,9 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
 
         {/* Vendor */}
         <div className="fg"><label className="fl">Vendor / Business Name</label>
-          <input type="text" style={inp} placeholder="e.g. Esso, The Keg, WestJet" value={vendor} onChange={e=>{setVendor(e.target.value);setMemoMsg('');}}/>
+          <input type="text" list="kbw-vendor-list" autoComplete="off" style={inp} placeholder="e.g. Esso, The Keg, WestJet" value={vendor} onChange={e=>{setVendor(e.target.value);setMemoMsg('');}}/>
+          <datalist id="kbw-vendor-list">{vendorOptions.map(n=><option key={n} value={n}/>)}</datalist>
+          {!editId && !vendor && (vendors||[]).length>0 && <div className="vchips">{(vendors||[]).map((v,i)=><button type="button" key={i} className="vchip" onClick={()=>{ setVendor(v.name); setMemoMsg(''); if(v.category && cats.some(c=>c.id===v.category)) setCat(v.category); }}>{v.name}</button>)}</div>}
           {memoMsg && <div style={{fontSize:11,color:T.green,marginTop:4}}>✓ {memoMsg}</div>}
         </div>
 
@@ -3073,6 +3090,35 @@ function SavedCardsEditor({cards, setCards, T, inp}) {
   );
 }
 
+function VendorsEditor({vendors, setVendors, cats, T, inp}) {
+  const [name,setName]=useState(''), [cat,setCat]=useState('');
+  const ok = name.trim() && !vendors.some(v=>v.name.toLowerCase()===name.trim().toLowerCase());
+  const add=()=>{ if(!ok) return; setVendors([...vendors,{name:name.trim(),category:cat}]); setName(''); setCat(''); };
+  return (
+    <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Frequent vendors</div>
+      <div style={{fontSize:11,opacity:.5,marginBottom:12}}>Shortcuts for places you buy from often, like Amazon. They show as quick picks when you add an expense and sync to all your devices. Pick a category to fill it in automatically.</div>
+      {vendors.length===0 && <div style={{fontSize:12,opacity:.5,marginBottom:10}}>No vendors yet.</div>}
+      {vendors.map((v,i)=>{ const c=cats.find(x=>x.id===v.category); return (
+        <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:`1px solid ${T.border}`,fontSize:13}}>
+          <span style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis'}}>{v.name}</span>
+          {c && <span style={{fontSize:12,opacity:.55}}>{c.icon} {c.label}</span>}
+          <button type="button" style={{background:'none',border:'none',color:T.red,fontSize:13,cursor:'pointer'}} onClick={()=>setVendors(vendors.filter((_,j)=>j!==i))}>Remove</button>
+        </div>
+      );})}
+      <div style={{display:'flex',gap:8,marginTop:12}}>
+        <input type="text" style={inp} placeholder="Vendor name, e.g. Amazon" value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();add();}}}/>
+      </div>
+      <div style={{display:'flex',gap:8,marginTop:8}}>
+        <select style={inp} value={cat} onChange={e=>setCat(e.target.value)}>
+          <option value="">Category: decide each time</option>
+          {cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+        </select>
+        <button type="button" disabled={!ok} style={{padding:'0 18px',borderRadius:9,background:ok?T.accent:T.bg4,color:ok?'#fff':T.textMuted,fontWeight:600,fontSize:13,border:'none',cursor:ok?'pointer':'default',flexShrink:0}} onClick={add}>Add</button>
+      </div>
+    </div>
+  );
+}
 function ClientsEditor({clients, setClients, T, inp}) {
   const [name,setName]=useState('');
   const add=()=>{ const n=name.trim(); if(!n||clients.includes(n)) return; setClients([...clients,n]); setName(''); };
@@ -3303,7 +3349,7 @@ function PdfPreview({src, width, className, style, fallback, onClick, alt}){
 function kbwEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
-function SettingsModal({cards, setCards, clients, setClients, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
+function SettingsModal({cards, setCards, clients, setClients, vendors, setVendors, cats, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
   const [gId,     setGId]     = useState(gClientId||'');
@@ -3343,6 +3389,7 @@ function SettingsModal({cards, setCards, clients, setClients, recurring, setRecu
         {/* ── SAVED CARDS ── */}
         <SavedCardsEditor cards={cards||[]} setCards={setCards} T={T} inp={inp} />
         <ClientsEditor clients={clients||[]} setClients={setClients} T={T} inp={inp} />
+        <VendorsEditor vendors={vendors||[]} setVendors={setVendors} cats={cats||[]} T={T} inp={inp} />
         <RecurringEditor recurring={recurring||[]} setRecurring={setRecurring} T={T} />
 
         {/* ── GOOGLE DRIVE SECTION ── */}
@@ -4141,7 +4188,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25e</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25f</div>
       </div>
     </div>
   );
