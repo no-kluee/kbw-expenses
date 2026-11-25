@@ -383,6 +383,135 @@ select.xbtn{width:auto;padding:8px 30px 8px 12px}
   .erow .rac .bsm{padding:5px 11px;font-size:13px}
   .erow .vname{padding-right:96px}
 }
+
+/* ═══ APPLE-CLEAN LAYOUT ═══ */
+:root{--sep:rgba(128,128,128,.22)}
+.col{display:flex;flex-direction:column;min-width:0;flex:1}
+.bodyrow{display:flex;align-items:flex-start;min-width:0}
+.main{flex:1;min-width:0;max-width:1100px;margin:0;padding:10px 28px 48px;width:100%}
+.nb-i{display:none}
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;width:100%;max-width:1100px;margin:0;padding:26px 28px 8px}
+.ptitle{font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.psub{font-size:13px;opacity:.6;margin-top:4px}
+.pact{display:flex;gap:8px;flex-shrink:0}
+.pbtn{height:34px;min-width:34px;padding:0 14px;border-radius:17px;background:rgba(118,118,128,.24);color:inherit;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:500;position:relative;border:none}
+body[data-mode=light] .pbtn{background:rgba(118,118,128,.14)}
+.pbtn.primary{background:#0a6fe0;color:#fff;font-weight:600}
+body[data-mode=light] .pbtn.primary{background:#0071e3}
+.pbtn.on{box-shadow:0 0 0 2px #0a84ff inset}
+.pbtn.ghost{background:transparent}
+.pdot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#ff9f0a}
+.fbar{position:static!important;border:none!important;background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;padding:6px 28px 0;max-width:1100px;margin:0;width:100%}
+.fbar-in{flex-wrap:wrap;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(118,118,128,.14);max-width:none;overflow:visible}
+/* search */
+.srch{position:relative;margin-bottom:10px}
+.srch input{height:38px;border:none!important;border-radius:10px!important;background:rgba(118,118,128,.24)!important;padding:0 36px 0 36px;font-size:16px;color:inherit}
+body[data-mode=light] .srch input{background:rgba(118,118,128,.14)!important}
+.srch-ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.5;pointer-events:none;display:flex}
+.srch .kbdhint{display:none}
+@media(min-width:901px){.srch .kbdhint{display:inline-block;position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;opacity:.4;border:1px solid currentColor;border-radius:5px;padding:0 6px;line-height:17px;pointer-events:none}}
+/* chips */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;height:32px;padding:0 14px;border-radius:16px;background:rgba(118,118,128,.24);color:inherit;font-size:14px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:none}
+body[data-mode=light] .chip{background:rgba(118,118,128,.14)}
+.chip.on{background:#fff;color:#000}
+body[data-mode=light] .chip.on{background:#000;color:#fff}
+select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:none;background-repeat:no-repeat;background-position:right 10px center;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E")}
+@media(min-width:901px){.chips{flex-wrap:wrap;overflow:visible}}
+.xtools2{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+/* month groups and rows */
+.mgroup{margin-bottom:18px}
+.mhead{position:sticky;top:var(--stk,0px);z-index:4;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 4px 6px;font-size:13px;font-weight:600;background:var(--bg,#000);border:none}
+.mhead span:last-child{font-weight:500;opacity:.6}
+.mcard{border-radius:12px;overflow:hidden}
+.erow{display:grid!important;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px!important;border-bottom:none!important;position:relative;cursor:pointer;content-visibility:auto;contain-intrinsic-size:auto 62px}
+.erow+.erow::before{content:'';position:absolute;top:0;left:70px;right:0;height:1px;background:var(--sep)}
+.erow:hover{background:rgba(128,128,128,.1)}
+.erow.cur{background:rgba(10,132,255,.18)!important}
+.erow.sel{background:rgba(10,132,255,.22)!important}
+.vname{font-size:15px;font-weight:500;-webkit-line-clamp:1;line-height:1.3}
+.rsub{font-size:12.5px;opacity:.62;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;margin-top:1px}
+.rsub .rcat{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rsub .rpay,.rsub .rtag{display:inline-flex;align-items:center;gap:3px;flex-shrink:0}
+.rsub .rdot{opacity:.6}
+.cdot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rright{text-align:right}
+.ramt{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.rnote{font-size:12px;opacity:.6;margin-top:1px;font-variant-numeric:tabular-nums}
+.r-wrap,.r-thumb,.r-icon{width:40px;height:40px}
+.r-thumb,.r-icon{border-radius:10px;border:none}
+.r-icon{font-size:18px}
+.rac{position:absolute;right:112px;top:50%;transform:translateY(-50%);opacity:0;pointer-events:none;transition:opacity .12s;display:flex;gap:6px}
+.erow:hover .rac{opacity:1;pointer-events:auto}
+@media(hover:none){.rac{display:none!important}}
+.showmore{width:100%;padding:14px;background:transparent;border:none;color:inherit;font-weight:600;font-size:13px}
+.empty{padding:56px 20px}
+/* detail pane + detail content */
+.dpane{width:430px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;border-left:.5px solid;padding:26px 24px 40px;box-sizing:border-box}
+.dempty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:60%;text-align:center;opacity:.45;font-size:14px;padding:0 24px}
+.dbody{display:flex;flex-direction:column;gap:16px}
+.dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.dmeta{font-size:13px;opacity:.6;display:flex;align-items:center;gap:6px}
+.dttl{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin-top:3px;word-break:break-word}
+.damt{font-size:28px;font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dbody .rp{margin:0}
+.dbody .rp img{border:none;border-radius:14px;max-height:260px}
+.grp{border-radius:12px;overflow:hidden}
+.grow{position:relative;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0 16px;min-height:42px;font-size:14px}
+.grow+.grow::before{content:'';position:absolute;top:0;left:16px;right:0;height:1px;background:var(--sep)}
+.grow .gl{opacity:.65}
+.grow .gv{text-align:right;font-variant-numeric:tabular-nums}
+.dact{display:flex;gap:10px;align-items:center}
+/* sidebar on desktop */
+@media(min-width:901px){
+  .shell{flex-direction:row;align-items:flex-start}
+  .hdr{position:sticky;top:0;height:100vh;width:228px;flex-shrink:0;padding:22px 12px!important;border-bottom:none!important;border-right:.5px solid rgba(128,128,128,.28);overflow-y:auto;display:flex;flex-direction:column;background:var(--bg2,#1c1c1e)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .hdr-in{flex-direction:column;align-items:stretch;height:100%!important;max-width:none;margin:0;padding:0!important;gap:18px!important;flex-wrap:nowrap!important;overflow:visible!important}
+  .logo-area{padding:0 8px}
+  .logo-sub{opacity:.5}
+  .nav{flex-direction:column;background:transparent!important;padding:0;gap:2px;margin:0;border-radius:0}
+  .nb{display:flex!important;align-items:center;gap:10px;height:34px;padding:0 10px!important;border-radius:8px!important;font-size:14px;justify-content:flex-start;opacity:1!important;background:transparent!important;box-shadow:none!important}
+  .nb:hover{background:rgba(128,128,128,.14)!important}
+  .nb-i{display:flex}
+  .nb.on{background:rgba(10,132,255,.2)!important;color:#4da3ff!important;box-shadow:none!important}
+  body[data-mode=light] .nb.on{background:rgba(0,113,227,.1)!important;color:#0066d6!important}
+  .hdr-tools{margin-top:auto;display:flex;flex-direction:column;gap:2px;align-items:stretch}
+  .hdr-tools .psel{width:100%;max-width:none;background:transparent!important;text-align:left;padding:7px 10px;font-size:13px}
+  .hdr-tools .tbtn{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;height:34px;background:transparent!important;font-size:13.5px;padding:0 10px}
+  .hdr-tools .tbtn:hover,.hdr-tools .psel:hover{background:rgba(128,128,128,.14)!important}
+  .hdr-tools .gstat{position:static;padding:4px 10px}
+}
+@media(max-width:1179px){.dpane{display:none}}
+/* phone */
+@media(max-width:480px){
+  .shell{display:block}
+  .hdr{position:sticky;top:0}
+  .hdr-in{flex-wrap:nowrap!important;align-items:center}
+  .hdr-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .hdr-tools .tbtn{width:34px;height:34px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:17px;font-size:15px!important}
+  .hdr-tools .psel{max-width:58px;font-size:13px!important;padding:6px 4px!important}
+  .hdr-tools .tlbl{display:none}
+  .logo-sub{display:none}
+  .phead{padding:14px 16px 4px;align-items:center}
+  .ptitle{font-size:30px}
+  .pbtn{height:38px;min-width:38px;padding:0;border-radius:19px}
+  .pbtn.on{box-shadow:0 0 0 2px #0a84ff inset}
+  .fbar{padding:6px 16px 0}
+  .fbar-in{overflow:visible}
+  .main{padding:8px 16px 28px}
+  .erow{padding:10px 12px!important}
+  .rac{display:none!important}
+  .rsub .rpay,.rsub .rtn{display:none}
+  .nb-i{display:flex;justify-content:center}
+  .modal::before{content:'';display:block;width:36px;height:5px;border-radius:3px;background:rgba(128,128,128,.45);margin:-8px auto 12px}
+  .mhdr{position:sticky;top:-18px}
+  .modal{background-clip:padding-box}
+  .grow{min-height:44px}
+}
+/* modal fields */
+.modal input,.modal select,.modal textarea{border-color:transparent!important}
+.modal .dz{border-radius:14px}
 </style>
 </head>
 <body>
@@ -710,6 +839,9 @@ function App() {
   const [medical,   setMedical]  = useState(()=>lsLoad('medical', []));
   const [fullImg,  setFullImg]  = useState(null);
   const [zoomList, setZoomList] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [wide, setWide] = useState(()=>{ try { return window.matchMedia('(min-width:1180px)').matches; } catch { return false; } });
+  useEffect(()=>{ try { const mq = window.matchMedia('(min-width:1180px)'); const h = e=>setWide(e.matches); if (mq.addEventListener) mq.addEventListener('change',h); else mq.addListener(h); return ()=>{ if (mq.removeEventListener) mq.removeEventListener('change',h); else mq.removeListener(h); }; } catch {} },[]);
   const [startFile,setStartFile]= useState(null);
   const [undo,     setUndo]     = useState(null);
   const [syncFlash, setSyncFlash] = useState(false);
@@ -1289,11 +1421,14 @@ function App() {
       if (filter.sort==='amount')   return b.amount - a.amount;
       if (filter.sort==='amount_asc') return a.amount - b.amount;
       if (filter.sort==='date_asc') { const d=a.date.localeCompare(b.date); return d!==0?d:a.id-b.id; }
+      if (filter.sort==='vendor') return (a.vendor||'').localeCompare(b.vendor||'');
+      if (filter.sort==='cat') return getCat(a.category).label.localeCompare(getCat(b.category).label) || b.date.localeCompare(a.date);
+      if (filter.sort==='itc' || filter.sort==='ded') { const f = x=>{ const bd=calcBD(x.amount,x.province||province,x.category,x.tax,cats); const p=(x.bizPct!=null?x.bizPct:100)/100; return (filter.sort==='itc'?bd.gstClaimable:bd.deductibleAmount)*p; }; return f(b)-f(a); }
       // default: by expense date, then by id (added time) as tiebreaker
       const dateDiff = b.date.localeCompare(a.date);
       return dateDiff !== 0 ? dateDiff : b.id - a.id;
     });
-  },[expenses,filter]);
+  },[expenses,filter,province,cats]);
 
   const statVals = useMemo(()=>{
     let gross=0,itc=0,ded=0,pst=0;
@@ -1314,7 +1449,7 @@ function App() {
     return [...s].sort().reverse();
   },[expenses]);
 
-  function closeModal(){ setStartFile(null);setModal(null);setEditId(null);setDetailExp(null);setEditCat(null);setEditStat(null); }
+  function closeModal(){ setStartFile(null);setModal(null);setEditId(null);if(modal!=='expense')setDetailExp(null);setEditCat(null);setEditStat(null); }
 
   function dl(filename, mime, content) {
     const blob = new Blob([content], {type: mime});
@@ -1493,13 +1628,19 @@ function App() {
     window.addEventListener('keydown', h);
     return ()=>window.removeEventListener('keydown', h);
   },[modal, fullImg]);
+  const dExp = detailExp ? (expenses.find(x=>x.id===detailExp.id) || null) : null;
+  const TITLES = {dashboard:'Dashboard',expenses:'Expenses',categories:'Categories',medical:'Medical',summary:'Summary',mileage:'Mileage'};
+  const hasFilters = ['dashboard','expenses','categories','summary'].includes(tab);
+  const filtersActive = filter.cat!=='all' || !!filter.dateFrom || !!filter.dateTo || filter.sort!=='date';
+  const syncLabel = syncSt.s==='ok' ? 'Synced' : syncSt.s==='syncing' ? 'Syncing…' : syncSt.s==='error' ? 'Sync failed' : 'Sync';
+  const openAdd = ()=>{ setEditId(null); setModal('expense'); };
   const borderC = {borderColor:T.border};
   const cardS   = {background:T.bg2,...borderC};
 
   return (
     <div className="shell" style={{background:T.bg,color:T.text}}>
 
-      {/* Header */}
+      {/* Sidebar (desktop) / top bar (phone) */}
       <div className="hdr" style={{background:T.bg2,borderColor:T.border}}>
         <div className="hdr-in">
           <div className="logo-area" onClick={()=>setModal('logo')} title="Click to customise logo">
@@ -1514,21 +1655,50 @@ function App() {
           </div>
           <div className="nav">
             {['dashboard','expenses','categories','medical','summary','mileage'].map(t=>(
-              <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text,background:t==='medical'&&tab==='medical'?'rgba(236,72,153,.12)':undefined}} onClick={()=>setTab(t)}>
+              <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text}} onClick={()=>setTab(t)}>
                 <span className="nb-i"><Ic n={t} s={21}/></span><span>{t[0].toUpperCase()+t.slice(1)}</span>
               </button>
             ))}
           </div>
-          <select className="psel" style={{borderColor:T.border,color:T.text}} value={province} onChange={e=>setProvince(e.target.value)}>
-            {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
-          </select>
-          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme"><Ic n="theme" s={16}/><span className="mob-hide"> Theme</span></button>
-          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')}><span className="mob-hide"><Ic n="settings" s={16}/> Settings</span><span className="mob-only"><Ic n="settings" s={18}/></span></button>
-          {gStatus&&<span className="gstat" style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
+          <div className="hdr-tools">
+            <select className="psel" style={{borderColor:T.border,color:T.text}} value={province} onChange={e=>setProvince(e.target.value)} aria-label="Province">
+              {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
+            </select>
+            <button type="button" className="tbtn tsync" onClick={syncNow} title={syncSt.s==='error'?syncSt.msg:syncSt.s==='syncing'?'Syncing…':syncSt.s==='ok'?'Synced. Tap to sync now.':'Tap to sync'} aria-label="Sync now"
+               style={{borderColor:syncSt.s==='error'?T.red:T.border,color:syncSt.s==='error'?T.red:syncSt.s==='ok'?T.green:syncSt.s==='syncing'?T.amber:T.text}}>
+              <span style={{display:'inline-block',animation:syncSt.s==='syncing'?'kbwspin 1s linear infinite':'none'}}>{syncSt.s==='error'?'⚠':'↻'}</span><span className="mob-hide tlbl"> {syncLabel}</span>
+            </button>
+            <a className="tbtn tdrive" href="https://drive.google.com/drive/folders/1Vs6c6Txnu5uKC8yS2BVigzya8yJ0h2w9" target="_blank" rel="noopener" title="Open receipts in Google Drive" aria-label="Open Google Drive folder" style={{borderColor:T.border,color:T.text,textDecoration:'none'}}>
+              <svg width="17" height="17" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+              <span className="mob-hide tlbl"> Receipts folder</span>
+            </a>
+            <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme"><Ic n="theme" s={16}/><span className="mob-hide tlbl"> Theme</span></button>
+            <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')} aria-label="Settings"><Ic n="settings" s={16}/><span className="mob-hide tlbl"> Settings</span></button>
+            {gStatus&&<span className="gstat" style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
+          </div>
         </div>
       </div>
 
-      {/* Filter bar */}
+      <div className="col">
+      <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(f){ setStartFile(f); setEditId(null); setModal('expense'); } }}/>
+
+      {/* Page title + actions */}
+      <div className="phead">
+        <div style={{minWidth:0}}>
+          <h1 className="ptitle">{TITLES[tab]}</h1>
+          {hasFilters && <div className="psub">{filter.year==='all'?'All years':filter.year}{filter.cat!=='all'?' · '+getCat(filter.cat).label:''} · {filtered.length} expense{filtered.length!==1?'s':''}</div>}
+        </div>
+        {hasFilters && <div className="pact">
+          <button type="button" className={'pbtn'+(showFilters?' on':'')} onClick={()=>setShowFilters(v=>!v)} aria-label="Filters" aria-expanded={showFilters}>
+            <Ic n="settings" s={17}/><span className="mob-hide">Filter</span>{filtersActive&&<i className="pdot"/>}
+          </button>
+          <button type="button" className="pbtn" onClick={()=>camRef.current&&camRef.current.click()} aria-label="Scan a receipt" title="Scan a receipt"><Ic n="camera" s={17}/><span className="mob-hide">Scan</span></button>
+          <button type="button" className="pbtn primary" onClick={openAdd} aria-label="Add expense"><Ic n="plus" s={17} w={2}/><span className="mob-hide">Add Expense</span></button>
+        </div>}
+      </div>
+
+      {/* Filters (opens from the Filter button) */}
+      {hasFilters && showFilters && (
       <div className="fbar" style={{background:T.bg2,borderColor:T.border}}>
         <div className="fbar-in">
           <select className="fsel" style={{borderColor:T.border,color:T.text}} value={filter.year} onChange={e=>setFilter(p=>({...p,year:e.target.value,dateFrom:'',dateTo:''}))}>
@@ -1537,51 +1707,49 @@ function App() {
           </select>
           <select className="fsel" style={{borderColor:T.border,color:T.text,maxWidth:180}} value={filter.cat} onChange={e=>setFilter(p=>({...p,cat:e.target.value}))}>
             <option value="all">All Categories</option>
-            {cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+            {cats.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
-          <span className="mob-hide flbl">From</span>
-          <input className="mob-hide" type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:7,padding:'5px 9px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}} value={filter.dateFrom} onChange={e=>setFilter(p=>({...p,dateFrom:e.target.value,year:'all'}))}/>
-          <span className="mob-hide flbl">To</span>
-          <input className="mob-hide" type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:7,padding:'5px 9px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}} value={filter.dateTo} onChange={e=>setFilter(p=>({...p,dateTo:e.target.value,year:'all'}))}/>
-          {(filter.dateFrom||filter.dateTo)&&<button className="mob-hide" onClick={()=>setFilter(p=>({...p,dateFrom:'',dateTo:'',year:String(new Date().getFullYear())}))} style={{fontSize:11,background:'transparent',border:`1px solid ${T.border}`,color:T.text,padding:'4px 8px',borderRadius:6,opacity:.6}}>✕</button>}
+          <span className="flbl">From</span>
+          <input type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:7,padding:'5px 9px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}} value={filter.dateFrom} onChange={e=>setFilter(p=>({...p,dateFrom:e.target.value,year:'all'}))}/>
+          <span className="flbl">To</span>
+          <input type="date" style={{background:T.bg4,borderColor:T.border,color:T.text,borderRadius:7,padding:'5px 9px',fontSize:12,border:'1px solid',width:'auto',fontFamily:'inherit'}} value={filter.dateTo} onChange={e=>setFilter(p=>({...p,dateTo:e.target.value,year:'all'}))}/>
+          {(filter.dateFrom||filter.dateTo)&&<button onClick={()=>setFilter(p=>({...p,dateFrom:'',dateTo:'',year:String(new Date().getFullYear())}))} style={{fontSize:11,background:'transparent',border:`1px solid ${T.border}`,color:T.text,padding:'4px 8px',borderRadius:6,opacity:.6}}>✕</button>}
+          <span className="flbl">Sort</span>
           <select className="fsel" style={{borderColor:T.border,color:T.text}} value={filter.sort} onChange={e=>setFilter(p=>({...p,sort:e.target.value}))}>
             <option value="date">Date (newest first)</option>
             <option value="date_asc">Date (oldest first)</option>
             <option value="added">Recently Added</option>
             <option value="amount">Amount (highest)</option>
             <option value="amount_asc">Amount (lowest)</option>
+            <option value="vendor">Vendor (A to Z)</option>
+            <option value="cat">Category</option>
+            <option value="itc">GST ITC (highest)</option>
+            <option value="ded">Deductible (highest)</option>
           </select>
-          <span className="fcount" style={{marginLeft:'auto',fontSize:11,opacity:.4,whiteSpace:'nowrap'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
-          <button type="button" onClick={syncNow} title={syncSt.s==='error'?syncSt.msg:syncSt.s==='syncing'?'Syncing…':syncSt.s==='ok'?'Synced. Tap to sync now.':'Tap to sync'} aria-label="Sync now"
-             style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:34,height:34,marginLeft:8,borderRadius:10,background:T.bg4,border:`1px solid ${syncSt.s==='error'?T.red:T.border}`,flexShrink:0,fontSize:17,color:syncSt.s==='error'?T.red:syncSt.s==='ok'?T.green:syncSt.s==='syncing'?T.amber:T.textMuted}}>
-            <span style={{display:'inline-block',animation:syncSt.s==='syncing'?'kbwspin 1s linear infinite':'none'}}>{syncSt.s==='error'?'⚠':'↻'}</span>
-          </button>
-          <a href="https://drive.google.com/drive/folders/1Vs6c6Txnu5uKC8yS2BVigzya8yJ0h2w9" target="_blank" rel="noopener" title="Open receipts in Google Drive" aria-label="Open Google Drive folder"
-             style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:34,height:34,marginLeft:8,borderRadius:10,background:T.bg4,border:`1px solid ${T.border}`,flexShrink:0}}>
-            <svg width="20" height="20" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
-          </a>
-          <button className="addbtn" title="Scan a receipt" style={{background:T.bg4,color:T.text,border:`1px solid ${T.border}`,marginLeft:12,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>camRef.current&&camRef.current.click()}><Ic n="camera" s={16}/> Scan</button>
-          <button className="addbtn" style={{background:T.accent,color:'#fff',marginLeft:8,whiteSpace:'nowrap',flexShrink:0}} onClick={()=>{setEditId(null);setModal('expense');}}>+ Add Expense</button>
         </div>
       </div>
+      )}
 
-      <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(f){ setStartFile(f); setEditId(null); setModal('expense'); } }}/>
       {/* Main */}
+      <div className="bodyrow">
       <div className="main">
         {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
-        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={(ids,fn)=>{const st=new Set(ids);setExpenses(p=>p.map(e=>st.has(e.id)?{...e,...fn(e)}:e));}} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
+        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={(ids,fn)=>{const st=new Set(ids);setExpenses(p=>p.map(e=>st.has(e.id)?{...e,...fn(e)}:e));}} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
         {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
-
-      {!modal && ['dashboard','expenses','categories','summary'].includes(tab) && (
-        <>
-          <button className="fab2" aria-label="Scan receipt" onClick={()=>camRef.current&&camRef.current.click()}><Ic n="camera" s={20}/></button>
-          <button className="fab" aria-label="Add expense" onClick={()=>{setEditId(null);setModal('expense');}}>+</button>
-        </>
+      {wide && tab==='expenses' && (
+        <aside className="dpane" style={{borderColor:T.border}}>
+          {dExp
+            ? <DetailModal inline expense={dExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onZoom={zoomTo} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{deleteExpenses([id]);setDetailExp(null);}} />
+            : <div className="dempty"><Ic n="receipt" s={40} w={1.2}/><div>Select an expense to see its breakdown</div></div>}
+        </aside>
       )}
+      </div>
+      </div>
+
       {syncSt.s==='error' && (
         <div style={{position:'fixed',left:12,right:12,bottom:'calc(76px + env(safe-area-inset-bottom))',zIndex:9998,display:'flex',justifyContent:'center',pointerEvents:'none'}}>
           <div style={{pointerEvents:'auto',maxWidth:480,width:'100%',background:'#2a1514',color:'#ffd9d6',border:'1px solid rgba(255,69,58,.5)',borderRadius:14,padding:'12px 14px',fontSize:13,display:'flex',gap:10,alignItems:'center'}}>
@@ -1611,7 +1779,7 @@ function App() {
         // Auto-backup to Drive after save
         setTimeout(()=>handleGDriveBackup({...data,id:rid}, tokenP), 500);
       }} onClose={closeModal} onZoom={zoomTo} />}
-      {modal==='detail'   && detailExp && <DetailModal  expense={detailExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={zoomTo} />}
+      {modal==='detail'   && dExp && <DetailModal  expense={dExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={zoomTo} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{setModal(null);setDetailExp(null);deleteExpenses([id]);}} />}
       {modal==='catEdit'  && editCat   && <CatEditModal cat={editCat} T={T} onSave={p=>{setCats(x=>x.map(c=>c.id===editCat.id?{...c,...p}:c));closeModal();}} onClose={closeModal} />}
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
       {modal==='theme'    && <ThemeModal  theme={T} auto={autoTheme} onSave={(t,a)=>{setAutoTheme(!!a);lsSave('themeAuto',!!a);setTheme(t);closeModal();}} onClose={closeModal} />}
@@ -1692,7 +1860,7 @@ function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,on
 }
 
 // ─── EXPENSES ─────────────────────────────────────────────────────────────────
-function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,sortKey,onAdd,onDetail,onEdit,onDelete,onBulkDelete,onBulk,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
+function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,sortKey,selectedId,onAdd,onDetail,onEdit,onDelete,onBulkDelete,onBulk,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
   const fileRef = useRef();
   const PAGE = 60;
   const [limit, setLimit] = useState(PAGE);
@@ -1700,7 +1868,6 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
   const [cl, setCl] = useState('all');
   const [q, setQ] = useState('');
   const [tools, setTools] = useState(false);
-  const [colSort, setColSort] = useState(null);   // {key, dir}
   const [selMode, setSelMode] = useState(false);
   const [sel, setSel] = useState([]);
   const swipe = useRef({}); const swiped = useRef(0);
@@ -1711,7 +1878,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
     const hay = [e.vendor, e.note, getCat(e.category).label, e.date, String(e.amount), (e.clients||[]).join(' '), e.payment?.name, e.payment?.last4, e.payment?.type].join(' ').toLowerCase();
     return qn.split(/\s+/).every(w=>hay.includes(w));
   });
-  const filtered = rcpt==='all' ? filteredAll
+  const rows = rcpt==='all' ? filteredAll
     : rcpt==='with' ? filteredAll.filter(e=>!!e.receipt)
     : rcpt==='missing30' ? filteredAll.filter(e=>!e.receipt && e.amount>=30)
     : filteredAll.filter(e=>!e.receipt);
@@ -1722,42 +1889,20 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
     const pct = (e.bizPct!=null?e.bizPct:100)/100;
     return {bd, itc:+(bd.gstClaimable*pct).toFixed(2), ded:+(bd.deductibleAmount*pct).toFixed(2)};
   };
-  let rows = filtered;
-  if (colSort) {
-    const cache = new Map();
-    const val = e => {
-      if (cache.has(e.id)) return cache.get(e.id);
-      let v;
-      switch (colSort.key) {
-        case 'date': v = e.date; break;
-        case 'vendor': v = (e.vendor||'').toLowerCase(); break;
-        case 'cat': v = getCat(e.category).label.toLowerCase(); break;
-        case 'amount': v = e.amount; break;
-        case 'itc': v = adj(e).itc; break;
-        default: v = adj(e).ded;
-      }
-      cache.set(e.id, v); return v;
-    };
-    rows = [...filtered].sort((a,b)=>{ const va=val(a), vb=val(b); const r = typeof va==='string' ? va.localeCompare(vb) : va-vb; return colSort.dir==='asc' ? r : -r; });
-  }
-  const grouped = !colSort && /^date/.test(sortKey||'date');
+  const grouped = /^date/.test(sortKey||'date');
   const mt = {};
   if (grouped) rows.forEach(e=>{ const k=e.date.slice(0,7); const m=(mt[k]=mt[k]||{n:0,s:0}); m.n++; m.s+=e.amount; });
   const monthLabel = k => { const [y,m]=k.split('-'); return new Date(+y,+m-1,1).toLocaleString('en-CA',{month:'long',year:'numeric'}); };
+  const dayLabel = d => { const [y,m,dd]=d.split('-'); return new Date(+y,+m-1,+dd).toLocaleDateString('en-CA',grouped?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'}); };
   const clientNames = [...new Set([...(clients||[]), ...filteredAll0.flatMap(e=>e.clients||[])])];
   const shown = rows.slice(0, limit);
+  const groupsArr = [];
+  shown.forEach(e=>{ const k = grouped ? e.date.slice(0,7) : 'all'; let g = groupsArr[groupsArr.length-1]; if (!g || g.k!==k) { g = {k, rows:[]}; groupsArr.push(g); } g.rows.push(e); });
   const anyLocalFilter = !!qn || cl!=='all' || rcpt!=='all';
   const clearFilters = () => { setQ(''); setCl('all'); setRcpt('all'); };
   const rlist = () => rows.map(e=>e.receipt).filter(Boolean);
   const toggle = id => setSel(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
   const exitSel = () => { setSelMode(false); setSel([]); };
-  const sortBy = key => setColSort(cs=>{
-    const first = (key==='date'||key==='amount'||key==='itc'||key==='ded') ? 'desc' : 'asc';
-    if (!cs || cs.key!==key) return {key, dir:first};
-    if (cs.dir===first) return {key, dir:first==='asc'?'desc':'asc'};
-    return null;
-  });
-  const arrow = key => colSort && colSort.key===key ? (colSort.dir==='asc'?' ▲':' ▼') : '';
   function bulkExport() {
     const ids = new Set(sel);
     const list = rows.filter(e=>ids.has(e.id));
@@ -1765,13 +1910,13 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
     const out = list.map(e=>{ const c=getCat(e.category), a=adj(e); return [e.date,e.vendor,c.label,c.line,e.amount,a.itc,a.ded,[e.payment?.name||e.payment?.type||'', e.payment?.last4||''].join(' ').trim(),(e.clients||[]).join('; '),e.note||'']; });
     kbwDownload('Selected_Expenses.csv','text/csv',[hdr,...out].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n'));
   }
-  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl, qn, colSort]);
+  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl, qn, sortKey]);
   // Keep sticky month headers just under the app header
   useEffect(()=>{
     const set = ()=>{
-      const h=document.querySelector('.hdr'), f=document.querySelector('.fbar');
-      let top = h ? h.offsetHeight : 0;
-      if (f && getComputedStyle(f).position==='sticky') top += f.offsetHeight;
+      const h=document.querySelector('.hdr');
+      let top = 0;
+      if (h && h.offsetHeight < 200) top = h.offsetHeight;
       document.documentElement.style.setProperty('--stk', top+'px');
     };
     set(); window.addEventListener('resize', set);
@@ -1792,55 +1937,45 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
       const S=swipe.current; if (!S.el) return;
       const t=ev.touches[0], dx=t.clientX-S.x, dy=t.clientY-S.y;
       if (S.lock===null) { if (Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)*1.4) S.lock='h'; else if (Math.abs(dy)>10) S.lock='v'; }
-      if (S.lock==='h') { S.dx=dx; S.el.style.transition='none'; S.el.style.transform=`translateX(${Math.max(-140,Math.min(140,dx))}px)`; S.el.style.background = dx<0 ? 'rgba(255,69,58,.2)' : 'rgba(10,132,255,.2)'; }
+      if (S.lock==='h') { S.dx=dx; S.el.style.transition='none'; S.el.style.transform=`translateX(${Math.max(-140,Math.min(140,dx))}px)`; S.el.style.background = dx<0 ? 'rgba(255,69,58,.28)' : 'rgba(10,132,255,.28)'; }
     },
     onTouchEnd: ()=>{
       const S=swipe.current; if (!S.el) return;
-      const el=S.el; el.style.transition='transform .18s, background .18s'; el.style.transform=''; el.style.background='transparent';
+      const el=S.el; el.style.transition='transform .18s, background .18s'; el.style.transform=''; el.style.background='';
       const id=+el.dataset.id;
       if (S.lock==='h') { swiped.current=Date.now(); if (S.dx<-90) onDelete(id); else if (S.dx>90) onEdit(id); }
       swipe.current={};
     },
   };
-  let prevYm = null;
+  const chips = [
+    ['all','All'],
+    ['with','Has receipt'],
+    ['missing',`No receipt${missingN?` · ${missingN}`:''}`],
+    ['missing30','Missing over $30'+(miss30?` · ${miss30}`:'')],
+  ];
   return(
     <div>
-      <div style={{position:'relative',marginBottom:10}}>
-        <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none',display:'flex'}}><Ic n="search" s={16}/></span>
-        <input id="qsearch" type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search expenses" autoComplete="off" autoCorrect="off" spellCheck={false}
-          style={{background:T.bg2,borderColor:T.border,color:T.text,border:'1px solid',borderRadius:12,padding:'10px 14px 10px 36px',fontSize:15,width:'100%'}}/>
+      <div className="srch">
+        <span className="srch-ic"><Ic n="search" s={16}/></span>
+        <input id="qsearch" type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search" autoComplete="off" autoCorrect="off" spellCheck={false}/>
         {!q && <span className="kbdhint">/</span>}
       </div>
-      <div className="xbar">
-        <button type="button" className="xbtn xmore" style={{borderColor:T.border,color:T.text}} onClick={()=>setTools(t=>!t)}>⋯ Export &amp; import</button>
-        <span className="xcount" style={{fontSize:12,opacity:.5,marginLeft:'auto'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
-        <span className={'xtools'+(tools?' open':'')}>
-        <span style={{fontSize:12,opacity:.5}}>Export:</span>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}><Ic n="file" s={14}/> CSV</button>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}><Ic n="download" s={14}/> Excel</button>
-        <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
-        <span style={{fontSize:12,opacity:.5}}>Import:</span>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}><Ic n="upload" s={14}/> Import CSV</button>
-        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}><Ic n="file" s={14}/> Template</button>
-        </span>
-        <span className="xfilters">
-        <div className="xsep" style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
-        <button className="xbtn" style={{borderColor:selMode?T.accent:T.border,color:selMode?T.accent:T.text}} onClick={()=>selMode?exitSel():setSelMode(true)}><Ic n="select" s={14}/> {selMode?'Done':'Select'}</button>
-        <select value={rcpt} onChange={e=>setRcpt(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
-          <option value="all" style={{color:'#000'}}>All receipts</option>
-          <option value="with" style={{color:'#000'}}>Has receipt</option>
-          <option value="missing" style={{color:'#000'}}>No receipt</option>
-          <option value="missing30" style={{color:'#000'}}>Missing (over $30)</option>
-        </select>
-        <button className="xbtn" style={{borderColor:rcpt==='missing'?T.amber:T.border,color:rcpt==='missing'?T.amber:T.text}} onClick={()=>setRcpt(rcpt==='missing'?'all':'missing')}><Ic n="warn" s={14}/> No receipt ({missingN})</button>
-        {clientNames.length>0 && <span style={{display:'inline-flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
-          <select value={cl} onChange={e=>setCl(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
+      <div className="chips">
+        {chips.map(([k,l])=><button key={k} type="button" className={'chip'+(rcpt===k?' on':'')+(k==='missing30'&&rcpt!==k&&miss30?' warn':'')} style={rcpt!==k&&k==='missing30'&&miss30?{color:T.amber}:undefined} onClick={()=>setRcpt(k)}>{l}</button>)}
+        {clientNames.length>0 && <select value={cl} onChange={e=>setCl(e.target.value)} className="chip chipsel" style={{color:T.text}} aria-label="Client">
             <option value="all" style={{color:'#000'}}>All clients</option>
             {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
-          </select></span>}
-        </span>
-        <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
+          </select>}
+        <button type="button" className={'chip'+(selMode?' on':'')} onClick={()=>selMode?exitSel():setSelMode(true)}><Ic n="select" s={14}/> {selMode?'Done':'Select'}</button>
+        <button type="button" className={'chip'+(tools?' on':'')} onClick={()=>setTools(t=>!t)} aria-label="Export and import"><Ic n="download" s={14}/> Export &amp; import</button>
       </div>
+      {tools && <div className="xtools2">
+        <button className="xbtn" onClick={exportCSV}><Ic n="file" s={14}/> Export CSV</button>
+        <button className="xbtn" onClick={exportXLS}><Ic n="download" s={14}/> Export Excel</button>
+        <button className="xbtn" onClick={()=>fileRef.current.click()}><Ic n="upload" s={14}/> Import CSV</button>
+        <button className="xbtn" onClick={downloadTemplate}><Ic n="file" s={14}/> Template</button>
+      </div>}
+      <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       {rcpt==='all' && miss30>0 && (
         <div className="chipw"><button type="button" style={{border:`1px solid ${T.amber}`,color:T.amber}} onClick={()=>setRcpt('missing30')}><Ic n="warn" s={14}/> {miss30} expense{miss30!==1?'s':''} over $30 {miss30!==1?'have':'has'} no receipt. Review</button></div>
       )}
@@ -1851,96 +1986,59 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
             ? <button type="button" className="eb" onClick={clearFilters}><Ic n="x" s={14}/> Clear filters</button>
             : onAdd && <button type="button" className="eb" onClick={onAdd}><Ic n="plus" s={14}/> Add an expense</button>}
         </div>
-        :<div className="etbl" style={{borderColor:T.border}}>
-          <div className="etbl-hd" style={{borderColor:T.border,background:T.bg2}}>
-            <span className="th"/>
-            <span className={'th sortable'+(colSort&&colSort.key==='date'?' on':'')} onClick={()=>sortBy('date')}>Date{arrow('date')}</span>
-            <span className={'th sortable'+(colSort&&colSort.key==='vendor'?' on':'')} onClick={()=>sortBy('vendor')}>Vendor{arrow('vendor')}</span>
-            <span className={'th sortable'+(colSort&&colSort.key==='cat'?' on':'')} onClick={()=>sortBy('cat')}>Category{arrow('cat')}</span>
-            <span className={'th ra sortable'+(colSort&&colSort.key==='amount'?' on':'')} onClick={()=>sortBy('amount')}>Amount{arrow('amount')}</span>
-            <span className={'th ra sortable'+(colSort&&colSort.key==='itc'?' on':'')} onClick={()=>sortBy('itc')}>GST ITC{arrow('itc')}</span>
-            <span className={'th ra hcol sortable'+(colSort&&colSort.key==='ded'?' on':'')} onClick={()=>sortBy('ded')}>Deductible{arrow('ded')}</span>
-            <span className="th ra">Actions</span>
-          </div>
-          {shown.map(e=>{
-            const c=getCat(e.category);
-            const A=adj(e); const adjITC=A.itc, adjDed=A.ded;
-            const payIcon = <Ic n={e.payment?.type==='Cash'?'cash':'card'} s={13}/>;
-            const receipt = e.receipt;
-            const isPdfReceipt = receipt?.startsWith('__PDF__:');
-            const isSel = sel.includes(e.id);
-            const tint = isSel ? (T.accent+'26') : 'transparent';
-            const ym = e.date.slice(0,7);
-            const head = grouped && ym!==prevYm;
-            prevYm = ym;
-            return(
-              <React.Fragment key={e.id}>
-              {head && <div className="mhead" style={{background:T.bg2,color:T.text}}><span>{monthLabel(ym)}</span><span>{mt[ym].n} expense{mt[ym].n!==1?'s':''} · {cad(mt[ym].s)}</span></div>}
-              <div className="erow" data-id={e.id} style={{borderColor:T.border,background:tint}}
-                {...sw}
-                onMouseEnter={ev=>ev.currentTarget.style.background=T.bg3}
-                onMouseLeave={ev=>ev.currentTarget.style.background=tint}
-                onClick={()=>{ if (Date.now()-swiped.current<400) return; if (selMode) toggle(e.id); else onDetail(e); }}>
-                {/* Thumbnail — always shown */}
-                <div className="r-wrap">
-                {selMode && <span className={'selbox'+(isSel?' on':'')}>{isSel&&<Ic n="check" s={13} w={2.4}/>}</span>}
-                {receipt
-                  ? isPdfReceipt
-                    ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}><Ic n="file" s={20}/></div>
-                    : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt, rlist());}}/>
-                  : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
-                {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt, rlist());}}>✓</span>}
-                </div>
-
-                {/* Desktop: date column */}
-                <div className="hcol" style={{fontSize:12,opacity:.55}}>{e.date}</div>
-
-                {/* Vendor column — desktop shows just vendor+note+payment, mobile shows everything */}
-                <div style={{minWidth:0}}>
-                  {/* Mobile-only: date */}
-                  <div className="mob-only" style={{fontSize:11,opacity:.45,marginBottom:2}}>{e.date}</div>
-                  <div className="vname">{e.vendor}</div>
-                  {(e.recurId||(e.clients&&e.clients.length>0))&&<div style={{fontSize:12,opacity:.6,marginTop:2,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>{e.recurId&&<span><Ic n="repeat" s={12}/> Monthly</span>}{e.clients&&e.clients.length>0&&<span><Ic n="user" s={12}/> {e.clients.join(', ')}</span>}</div>}
-                  {e.note&&<div className="vnote">{e.note.length>300?e.note.slice(0,300)+'…':e.note}</div>}
-                  {e.payment?.type&&<div style={{fontSize:12,opacity:.45,marginTop:2}}>
-                    {payIcon}{' '}{e.payment.name||e.payment.type}{e.payment.last4?` ···· ${e.payment.last4}`:''}
-                    {e.bizPct&&e.bizPct!==100?<span style={{marginLeft:6,color:T.green}}>{e.bizPct}% biz</span>:''}
-                  </div>}
-                  {/* Mobile-only: category badge + amounts */}
-                  <div className="mob-only" style={{marginTop:4}}>
-                    <span className="badge" style={{background:c.color+'22',color:c.color}}>{c.icon} {c.label}</span>
-                    <span className="lnbadge" style={{marginLeft:4}}>L{c.line}</span>
-                  </div>
-                  <div className="mob-only mob-amounts" style={{marginTop:6}}>
-                    <span style={{fontSize:12}}><span style={{opacity:.4,fontSize:10}}>AMT </span><b>{cad(e.amount)}</b></span>
-                    <span style={{fontSize:12}}><span style={{opacity:.4,fontSize:10}}>ITC </span><b style={{color:T.green}}>{cad(adjITC)}</b></span>
-                    <span style={{fontSize:12}}><span style={{opacity:.4,fontSize:10}}>DED </span><b style={{color:T.blue}}>{cad(adjDed)}</b></span>
-                  </div>
-                </div>
-
-                {/* Desktop: category */}
-                <div className="hcol"><span className="badge" style={{background:c.color+'22',color:c.color}}>{c.icon} {c.label}</span><span className="lnbadge">L{c.line}</span></div>
-
-                {/* Desktop: amounts */}
-                <div className="ra mono hcol" style={{fontSize:15,fontWeight:600}}>{cad(e.amount)}</div>
-                <div className="ra mono hcol" style={{color:T.green,fontWeight:600,fontSize:15}}>{cad(adjITC)}</div>
-                <div className="ra mono hcol" style={{color:T.blue,fontSize:15}}>{cad(adjDed)}</div>
-
-                {/* Actions */}
-                <div className="rac" onClick={ev=>ev.stopPropagation()}>
-                  <button className="bsm" style={{borderColor:T.border,color:T.text}} onClick={()=>onEdit(e.id)}>Edit</button>
-                  <button className="bsm" style={{borderColor:'rgba(232,85,85,.25)',color:T.red}} onClick={()=>onDelete(e.id)} aria-label="Delete"><Ic n="x" s={13}/></button>
-                </div>
+        :<div>
+          {groupsArr.map(g=>(
+            <div className="mgroup" key={g.k}>
+              {grouped && <div className="mhead"><span>{monthLabel(g.k)}</span><span>{mt[g.k].n} expense{mt[g.k].n!==1?'s':''} · {cad(mt[g.k].s)}</span></div>}
+              <div className="mcard" style={{background:T.bg2}}>
+                {g.rows.map(e=>{
+                  const c=getCat(e.category);
+                  const A=adj(e);
+                  const receipt = e.receipt;
+                  const isPdfReceipt = receipt?.startsWith('__PDF__:');
+                  const isSel = sel.includes(e.id);
+                  const pay = e.payment;
+                  return(
+                    <div key={e.id} className={'erow'+(isSel?' sel':'')+(selectedId===e.id?' cur':'')} data-id={e.id}
+                      {...sw}
+                      onClick={()=>{ if (Date.now()-swiped.current<400) return; if (selMode) toggle(e.id); else onDetail(e); }}>
+                      <div className="r-wrap">
+                        {selMode && <span className={'selbox'+(isSel?' on':'')}>{isSel&&<Ic n="check" s={13} w={2.4}/>}</span>}
+                        {receipt
+                          ? isPdfReceipt
+                            ? <div className="r-icon" style={{background:T.bg4,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}><Ic n="file" s={20}/></div>
+                            : <img className="r-thumb" src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt, rlist());}}/>
+                          : <div className="r-icon" style={{background:c.color+'26'}}>{c.icon}</div>}
+                        {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt, rlist());}}>✓</span>}
+                      </div>
+                      <div className="rmain">
+                        <div className="vname">{e.vendor}</div>
+                        <div className="rsub">
+                          <span>{dayLabel(e.date)}</span>
+                          <span className="rdot">·</span><i className="cdot" style={{background:c.color}}/><span className="rcat">{c.label}</span>
+                          {pay?.type && <><span className="rdot">·</span><span className="rpay"><Ic n={pay.type==='Cash'?'cash':'card'} s={12}/> {pay.name||pay.type}{pay.last4?` ${pay.last4}`:''}</span></>}
+                          {e.bizPct&&e.bizPct!==100 ? <><span className="rdot">·</span><span style={{color:T.green}}>{e.bizPct}% biz</span></> : null}
+                          {e.recurId && <span className="rtag" title="Monthly"><Ic n="repeat" s={12}/></span>}
+                          {e.clients&&e.clients.length>0 && <span className="rtag" title={e.clients.join(', ')}><Ic n="user" s={12}/><span className="rtn"> {e.clients.length>1?e.clients.length:e.clients[0]}</span></span>}
+                        </div>
+                      </div>
+                      <div className="rright">
+                        <div className="ramt">{cad(e.amount)}</div>
+                        <div className="rnote" style={receipt?undefined:{color:T.amber,opacity:1}}>{receipt ? `ITC ${cad(A.itc)}` : 'No receipt'}</div>
+                      </div>
+                      <div className="rac" onClick={ev=>ev.stopPropagation()}>
+                        <button className="bsm" onClick={()=>onEdit(e.id)}>Edit</button>
+                        <button className="bsm" style={{color:T.red}} onClick={()=>onDelete(e.id)} aria-label="Delete"><Ic n="x" s={13}/></button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              </React.Fragment>
-            );
-          })}
+            </div>
+          ))}
           {rows.length > limit && <div ref={sentinelRef} style={{height:1}}/>}
           {rows.length > limit && (
-            <button onClick={()=>setLimit(l=>l+PAGE)}
-              style={{width:'100%',padding:'14px',background:'transparent',border:'none',borderTop:`1px solid ${T.border}`,color:T.text,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-              Show more ({rows.length - limit} remaining)
-            </button>
+            <button className="showmore" onClick={()=>setLimit(l=>l+PAGE)}>Show more ({rows.length - limit} remaining)</button>
           )}
         </div>}
       {selMode && (
@@ -2578,7 +2676,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
 }
 
 // ─── DETAIL MODAL ─────────────────────────────────────────────────────────────
-function DetailModal({expense,cats,province,T,getCat,calcBD,onClose,onZoom}) {
+function DetailModal({expense,cats,province,T,getCat,calcBD,inline,onClose,onZoom,onEdit,onDelete}) {
   const e=expense, c=getCat(e.category);
   const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
   const pct=(e.bizPct!=null?e.bizPct:100)/100;
@@ -2589,55 +2687,64 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,onClose,onZoom}) {
     ? [pay.name, pay.type, pay.last4?`···· ${pay.last4}`:''].filter(Boolean).join(' ')
     : null;
   const isPdf = e.receipt?.startsWith('__PDF__:');
+  const card = inline ? T.bg2 : T.bg4;
+  const R = (l, v, o={}) => <div className="grow"><span className="gl" style={{color:o.lc}}>{l}</span><span className="gv" style={{color:o.c,fontWeight:o.b?700:500}}>{v}</span></div>;
+  const body = (
+    <div className="dbody">
+      <div className="dhead">
+        <div style={{minWidth:0}}>
+          <div className="dmeta">{e.date} · <i className="cdot" style={{background:c.color}}/> {c.label}</div>
+          <div className="dttl">{e.vendor}</div>
+        </div>
+        <div className="damt">{cad(e.amount)}</div>
+      </div>
+      {e.receipt&&(
+        <div className="rp">
+          {isPdf
+            ? <div style={{background:T.bg4,borderRadius:12,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(e.receipt.slice(8))}>
+                <div style={{display:'flex',justifyContent:'center',marginBottom:6}}><Ic n="file" s={34}/></div>
+                <div style={{fontSize:13,fontWeight:500}}>PDF receipt, tap to open</div>
+              </div>
+            : <img src={viewSrc(e.receipt)} onError={fbImg(e.receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
+          }
+        </div>
+      )}
+      <div className="grp" style={{background:card}}>
+        {R('Pre-tax subtotal', cad(bd.sub))}
+        {bd.tip>0 && R('Tip', cad(bd.tip))}
+        {bd.liquor>0 && R('Liquor / other tax', cad(bd.liquor))}
+        {R('GST/HST paid', cad(bd.gstPaid))}
+        {bd.pstPaid>0 && R('PST paid', cad(bd.pstPaid), {lc:T.amber, c:T.amber})}
+        {R('Receipt total', cad(bd.total), {b:true})}
+      </div>
+      <div className="grp" style={{background:card}}>
+        {R('GST ITC claimable'+(pct<1?` (${e.bizPct}%)`:''), cad(adjITC), {c:T.green, b:true})}
+        {R('CRA deductible'+(pct<1?` (${e.bizPct}%)`:''), cad(adjDed), {c:T.blue, b:true})}
+      </div>
+      <div className="grp" style={{background:card}}>
+        {R('Category', c.icon+' '+c.label)}
+        {R('T2125 line', c.line)}
+        {R('Province', e.province||province)}
+        {payLabel && R('Payment', payLabel)}
+        {e.bizPct!=null&&e.bizPct!==100 && R('Business use', e.bizPct+'%', {c:T.green})}
+        {e.clients&&e.clients.length>0 && R('Clients', e.clients.join(', '))}
+        {e.recurId && R('Repeats', 'Every month')}
+      </div>
+      {e.note&&<div className="grp" style={{background:card,padding:'10px 16px',fontSize:14}}><span style={{fontSize:12,opacity:.55,display:'block',marginBottom:2}}>Business purpose</span>{e.note}</div>}
+      {(onEdit||onDelete) && <div className="dact">
+        {onEdit&&<button type="button" className="pbtn primary" onClick={()=>onEdit(e.id)}>Edit</button>}
+        {onDelete&&<button type="button" className="pbtn ghost" style={{color:T.red}} onClick={()=>onDelete(e.id)}>Delete</button>}
+      </div>}
+    </div>
+  );
+  if (inline) return body;
   return(
     <div className="ov" onClick={onClose}>
-      <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={ev=>ev.stopPropagation()}>
-        <div className="mhdr">
-          <div className="mttl">{e.vendor}</div>
-          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
+      <div className="modal modal-sm" style={{background:T.bg,borderColor:T.border,color:T.text}} onClick={ev=>ev.stopPropagation()}>
+        <div className="mhdr" style={{marginBottom:4,justifyContent:'flex-end'}}>
+          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose} aria-label="Close">✕</button>
         </div>
-        {e.receipt&&(
-          <div className="rp">
-            {isPdf
-              ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(e.receipt.slice(8))}>
-                  <div style={{fontSize:36,marginBottom:6}}>📄</div>
-                  <div style={{fontSize:13,fontWeight:500}}>PDF Receipt — click to open</div>
-                </div>
-              : <img src={viewSrc(e.receipt)} onError={fbImg(e.receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
-            }
-            {!isPdf&&<button className="rp-rm" style={{pointerEvents:'none',opacity:.6}}>🔍 click to expand</button>}
-          </div>
-        )}
-        <div className="dgrid">
-          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">Category</div><div className="dival">{c.icon} {c.label}</div></div>
-          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">T2125 Line</div><div className="dival">{c.line}</div></div>
-          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">Date</div><div className="dival">{e.date}</div></div>
-          <div className="di" style={{borderColor:T.border,background:T.bg4}}><div className="dilbl">Province</div><div className="dival">{e.province}</div></div>
-          {payLabel&&<div className="di" style={{borderColor:T.border,background:T.bg4,gridColumn:'span 2'}}><div className="dilbl">Payment</div><div className="dival">💳 {payLabel}</div></div>}
-          {e.bizPct!=null&&e.bizPct!==100&&(
-            <div className="di" style={{borderColor:T.border,background:'rgba(46,204,138,.08)',gridColumn:'span 2'}}>
-              <div className="dilbl">Business Use</div>
-              <div className="dival" style={{color:T.green}}>{e.bizPct}% business</div>
-            </div>
-          )}
-        </div>
-        <div className="bkbox" style={{background:T.bg3,borderColor:T.border}}>
-          <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Pre-Tax Subtotal</span><span className="bkval">{cad(bd.sub)}</span></div>
-          {bd.tip>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Tip</span><span className="bkval">{cad(bd.tip)}</span></div>}
-          {bd.liquor>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Liquor / other tax</span><span className="bkval">{cad(bd.liquor)}</span></div>}
-          <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">GST/HST paid</span><span className="bkval">{cad(bd.gstPaid)}</span></div>
-          {bd.pstPaid>0&&<div className="bkrow" style={{borderColor:T.border}}><span className="bklbl" style={{color:T.amber}}>PST paid</span><span className="bkval" style={{color:T.amber}}>{cad(bd.pstPaid)}</span></div>}
-          <div className="bkrow" style={{borderColor:T.border}}><span className="bklbl">Receipt Total</span><span className="bkval">{cad(bd.total)}</span></div>
-          <div className="bkrow bkdiv" style={{borderColor:T.border}}>
-            <span className="bklbl">✅ GST ITC Claimable{pct<1?` (${e.bizPct}%)`:''}</span>
-            <span className="bkval" style={{color:T.green}}>{cad(adjITC)}</span>
-          </div>
-          <div className="bkrow" style={{borderColor:T.border}}>
-            <span className="bklbl">✅ CRA Deductible{pct<1?` (${e.bizPct}%)`:''}</span>
-            <span className="bkval" style={{color:T.blue}}>{cad(adjDed)}</span>
-          </div>
-        </div>
-        {e.note&&<div style={{background:T.bg4,borderRadius:8,padding:'9px 12px',fontSize:13,border:`1px solid ${T.border}`}}><span style={{fontSize:10,opacity:.4,display:'block',marginBottom:2}}>Business purpose</span>{e.note}</div>}
+        {body}
       </div>
     </div>
   );
@@ -3938,7 +4045,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24r</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24s</div>
       </div>
     </div>
   );
