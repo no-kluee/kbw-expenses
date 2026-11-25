@@ -323,6 +323,26 @@ function calcBD(amount, province, catId, tax, cats) {
 
 function cad(n) { return '$'+Number(n||0).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 // A receipt stored on this device (data URL or PDF data) rather than a Drive link
+const DRIVE_RECEIPTS = {"2026-05-09|21.08":"1RoNcdzU1wqoPOoZZ29tXtbGwUryeRfcZ","2026-04-15|45.98":"1NtZLLJkG8U6Lw-DiHITBP7soAnFo0uqK","2026-04-30|53.40":"1bS_PuIHLngqJGL-TbOcJXlDDvvP00lxo","2026-03-24|126.75":"1HasD-ZJqig_0P9hfHEqXOEzVB-A6Bqzj","2026-04-25|19.97":"1BWYDHzqlm61IkbMXpnZF1XKeo8i1eBsZ","2026-04-11|14.00":"1PrUV1kOu_jry3eCp8RUrqdsFBaU4Svpo","2026-04-18|56.25":"1ML38yjmCMVc8c1rUE384E_EvKOdV3aAe","2026-04-25|33.17":"1m7aJsYEFQpPFatPANTAtVqm6JRLaZRBs","2026-04-22|56.15":"1AkD8fHfnrDjT5x10idpNHMol4H_wUgRu","2026-04-16|42.95":"1apqsRKj0zQlZHdnb9mF0wkp9v_f29Db1","2026-04-19|44.99":"1hyGJouC2NOot_7ravo5ud83rLB6nFY30","2026-04-23|108.74":"1In_12l4VuhyHGH843jxFZHQCVw_n86xI","2026-04-17|32.75":"1WESR9cxQeWrIZqG4wAfn30lTbuO0G4DG","2026-04-12|43.95":"1718Ij5ybxFAq8SD6odNDCWDwFsvsq6EH","2026-04-11|49.50":"18dAYdb-rl8Va_Cs-S6S4uteN8m6ZLPSw","2026-04-03|44.50":"1CmlXBNVaeRQDtOgyeTXq8SrYTqzUIBOs","2026-04-01|53.00":"15ipmru1GVHBqmq7UJ7WdB8cd2ID_aBLb","2026-03-29|35.33":"1-xTsQf2vLfbU0dcDrCKbk44DR89iEMXC","2026-04-02|31.25":"1GLf0VW1Tek7o_i-J0PuKEj979C04-4B4","2026-03-28|77.00":"1oz9wQZC0OE8ZisyEUNLVC_NfrRgP0X3I","2026-03-29|40.00":"1bVltzBKHXuE3fKbLWTVpVkRlBamRCk4u","2026-03-19|88.83":"1dYRnztCZgGgRqrIxx5vRsbQTptyq27iy","2026-03-26|34.00":"1IO_uVXWyDkM5gm_ao4_mDxPCgbdbJisi","2026-03-25|13.77":"1IV5hc6Jl760hmhKdyGsE5OrVY1mWMKFE","2026-03-22|31.43":"1kIaPqU93KBM1osLhTmZbbPAkoQobQT5m","2026-03-16|40.10":"1rS4lAkCC0qHokaqO5nvmpUukNOMGqjiv","2026-01-24|61.68":"1b2mWccdNLscwujEXE0nNIn0iFrwmPpNX","2026-02-01|246.00":"1Ul6LqJtO4xyCuG1DV6rj0mxCOjjAepLw","2026-02-24|76.50":"1ERsWBVhHpRVTOxJwt-4DV3JphazSr1Hd","2026-03-20|53.50":"1TznnS1nmvU4F0TPaRXBJVkIWryWDCeeI","2026-03-14|17.98":"1PI48ba0QgtLFpq1i6Mry34BrSnBoJTE-","2026-01-03|31.45":"16C5A8ZIxhwd31LeNcOUQcPyOZ0NkIhWZ","2026-03-16|84.67":"1nMbccEYOCN-esSEr93Ug3Efp7MlA7y-2","2026-03-13|9.05":"1dLWN7FRtbhQpfm3O_O7v6DAj5I5QMQNx","2026-03-24|6.89":"1e1n6LkobDevHkfkRiRK6YuOsb5D_3Ghe","2026-03-22|12.37":"1POoLC2lWOtQ3ACTgJfKuSsu_OYLzIngI","2026-03-17|101.49":"1AJcIPoq03_By6LwbPceBn3oCey9-HK8M","2026-04-04|48.30":"1w_HsMPGh4ruZ2EnVzN-6f90k_VZC4zFU","2026-04-05|60.19":"1yMb6Q-q_dbOoGoIc4wtspTXy8mt6x5hL","2026-04-11|33.05":"1RJ9HnhOluJwfu5t6skxiWTkk2NncoVlO","2026-01-22|49.24":"1DYY6GewCTHxExDjNnAuR3ELAuUGiwAXH","2026-01-15|43.05":"1GIxeT7Uf8XkQx9TZLh9dOMA0G7Gbw5qP","2026-02-22|33.04":"1U8xhgXoPuN-JGvYCZ0lPWwuom-HnB0S0","2026-02-06|27.38":"18rwqvPUMBLHXm8rEcvnsnh69pZd_bVXs","2026-03-19|76.19":"1lA517oGXxi1TaL8gxYrsqKcRfktCLBv6","2026-01-19|311.99":"14vltR72XH36W_DCgFb3gJmaM3TGqPOTM","2026-04-09|39.17":"1I1l_fWR4V0FVuVwcQUId9cLJ2vbikx2r","2026-04-11|17.95":"1TzITQRWix7jSVDjhp74mkTW47Ny6yJKF","2026-04-25|41.97":"17eltG0vz5nNbv2vaoCqvy82vIFndiYF4","2026-04-25|9.00":"1qAIqiBJSzZ7WTzIWdwJgtQ7fzBrHD85G","2026-04-04|11.99":"1Er-Z0_RVj8LhivvfnhOL080oIqNsl8OO","2026-02-15|32.95":"1mJ2vT5lSoULEpepB0fy1Z3Z7keJnV4k-","2026-02-17|27.99":"1_g7NSa7uyliWfUITeRX9AveMonaR3faH","2026-01-09|27.92":"11YZn35IGGro_byoE5oKSJ_Lv-bc2PiOM","2026-02-09|25.64":"1PO2PLfsIMCfkDq-VvFNbS67S1sgMiA40","2026-03-15|5.00":"1I6PSBuBj33GPYxnbZGbFIu_1CHECmDJP","2026-04-15|21.99":"1vNzqyyFQg8a9q2IUknpzC0u8NNcV43PX","2026-02-14|32.00":"1XK6Xcr3KFq1rKdp_BGvi7l9IQ9RCT8VW","2026-03-04|47.99":"1DfbgGE0PosLdZlB-gXrkTYORUz00z3UA"};
+const DRIVE_MED_RECEIPTS = {"2026-03-03":"1IuUtRF9mdSmTxr1xMQ8UH97uqu1Md9gh","2026-01-16":"1-bINKWjVcAAxu2CKLdyRsQhLsImZl32L"};
+const driveUrl = id => `https://drive.google.com/uc?export=view&id=${id}`;
+// Re-attach receipts that already live in Google Drive (matched by date + amount). Only fills empty receipts.
+function relinkDriveReceipts(exps, meds) {
+  let n = 0;
+  const e2 = exps.map(e => {
+    if (e.receipt) return e;
+    const id = DRIVE_RECEIPTS[`${e.date}|${Number(e.amount).toFixed(2)}`];
+    if (!id) return e;
+    n++; return { ...e, receipt: driveUrl(id) };
+  });
+  const m2 = meds.map(m => {
+    if (m.receipt) return m;
+    const id = DRIVE_MED_RECEIPTS[m.date];
+    if (!id) return m;
+    n++; return { ...m, receipt: driveUrl(id) };
+  });
+  return { exps: e2, meds: m2, n };
+}
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
 // Small thumbnail for Drive-hosted receipts so lists never download full-size photos
 function thumbSrc(r) {
@@ -859,6 +879,15 @@ function App() {
           mergedMed = [...mergedMed, ...onlyLocalM];
         }
         setMedical(mergedMed); lsSave('medical', mergedMed); outMed = mergedMed;
+      }
+      // Re-attach receipts already in Google Drive (fills empty ones only)
+      {
+        const rl = relinkDriveReceipts(outExp || lsLoad('expenses', []), outMed || lsLoad('medical', []));
+        if (rl.n > 0) {
+          setExpenses(rl.exps); lsSave('expenses', rl.exps); outExp = rl.exps;
+          setMedical(rl.meds); lsSave('medical', rl.meds); outMed = rl.meds;
+          extra += rl.n;
+        }
       }
       window._ghReady = true;   // only now is it safe to save changes back
       lsSave('ghSynced', true);
