@@ -512,6 +512,20 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 /* modal fields */
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
+
+/* ---- v2026.11.24t polish ---- */
+.mcancel{display:none}
+@media(max-width:900px){
+  .modal::before{margin:-6px auto 4px!important}
+  .mhdr{margin-top:0!important;padding-top:4px!important;margin-bottom:6px!important}
+  .mhdr .mclose-x{display:none}
+  .mhdr .mcancel{display:block;order:-1;background:none;border:none;color:#4da3ff;font-size:17px;padding:8px 0;min-width:64px;text-align:left;cursor:pointer}
+  body[data-mode=light] .mhdr .mcancel{color:#0066d6}
+  .mhdr .mttl{flex:1;text-align:center;font-size:17px;font-weight:600}
+  .mhdr .msave{min-width:64px;text-align:right;background:none!important;border:none!important;color:#4da3ff!important;font-size:17px;font-weight:600;padding:8px 0;box-shadow:none!important}
+  body[data-mode=light] .mhdr .msave{color:#0066d6!important}
+  .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
+}
 </style>
 </head>
 <body>
@@ -2447,9 +2461,10 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
     <div className="ov" onClick={onClose}>
       <div className="modal" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
         <div className="mhdr">
-          <div className="mttl">{editId?'Edit Expense':'Add Expense'}</div>
+          <button type="button" className="mcancel" onClick={onClose}>Cancel</button>
+          <div className="mttl">{editId?'Edit Expense':'New Expense'}</div>
           <button type="button" className="msave" onClick={submit}>Save</button>
-          <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
+          <button className="mclose mclose-x" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
         </div>
 
         {/* Receipt */}
@@ -4045,7 +4060,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24s</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24t</div>
       </div>
     </div>
   );
