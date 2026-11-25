@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25b polish ---- */
+/* ---- v2026.11.25c polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25b ---- */
+/* ---- v2026.11.25c ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -2046,7 +2046,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
                         {selMode && <span className={'selbox'+(isSel?' on':'')}>{isSel&&<Ic n="check" s={13} w={2.4}/>}</span>}
                         {receipt
                           ? isPdfReceipt
-                            ? <div className="r-icon" style={{background:T.bg4,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}><Ic n="file" s={20}/></div>
+                            ? <PdfPreview src={receipt.slice(8)} width={120} className="r-thumb" style={{objectFit:'cover',objectPosition:'top left',background:'#fff',cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}} fallback={<div className="r-icon" style={{background:T.bg4,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}><Ic n="file" s={20}/></div>}/>
                             : <img className="r-thumb" src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt, rlist());}}/>
                           : <div className="r-icon" style={{background:T.bg4,color:T.amber}} title="No receipt"><Ic n="file" s={20}/></div>}
                         {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt, rlist());}}>✓</span>}
@@ -2506,11 +2506,11 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
           ):receipt?(
             <div className="rp">
               {receipt.startsWith('__PDF__:')
-                ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'20px 16px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(receipt.slice(8))}>
+                ? <PdfPreview src={receipt.slice(8)} width={600} style={{width:'100%',height:220,objectFit:'cover',objectPosition:'top',borderRadius:10,border:`1px solid ${T.border}`,background:'#fff',cursor:'pointer',display:'block'}} onClick={()=>onZoom(receipt.slice(8))} fallback={<div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'20px 16px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(receipt.slice(8))}>
                     <div style={{fontSize:40,marginBottom:8}}>📄</div>
                     <div style={{fontSize:13,fontWeight:500}}>PDF Receipt</div>
                     <div style={{fontSize:11,opacity:.4,marginTop:3}}>Click to open full PDF</div>
-                  </div>
+                  </div>}/>
                 : <img src={viewSrc(receipt)} onError={fbImg(receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(receipt)}/>
               }
               <button className="rp-rm" onClick={()=>{setReceipt(null);setScanErr('');}}>Remove</button>
@@ -2745,10 +2745,10 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,inline,onClose,onZoo
       {e.receipt&&(
         <div className="rp">
           {isPdf
-            ? <div style={{background:T.bg4,borderRadius:12,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(e.receipt.slice(8))}>
+            ? <PdfPreview src={e.receipt.slice(8)} width={720} style={{width:'100%',height:300,objectFit:'cover',objectPosition:'top',borderRadius:12,background:'#fff',cursor:'pointer',display:'block'}} onClick={()=>onZoom(e.receipt.slice(8))} fallback={<div style={{background:T.bg4,borderRadius:12,padding:'18px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(e.receipt.slice(8))}>
                 <div style={{display:'flex',justifyContent:'center',marginBottom:6}}><Ic n="file" s={34}/></div>
                 <div style={{fontSize:13,fontWeight:500}}>PDF receipt, tap to open</div>
-              </div>
+              </div>}/>
             : <img src={viewSrc(e.receipt)} onError={fbImg(e.receipt,1600)} referrerPolicy="no-referrer" alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
           }
         </div>
@@ -3250,6 +3250,44 @@ function kbwDownload(name, mime, text) {
     setTimeout(()=>URL.revokeObjectURL(url), 4000);
   } catch(e) { alert('Could not download: ' + e.message); }
 }
+// ---- PDF first-page preview (pdf.js is loaded on demand, only when a PDF receipt is shown) ----
+const PDFJS_V='3.11.174', PDF_CACHE=new Map();
+let _pdfjsP=null;
+function loadPdfjs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(_pdfjsP) return _pdfjsP;
+  _pdfjsP=new Promise((res,rej)=>{
+    const sc=document.createElement('script');
+    sc.src=`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_V}/pdf.min.js`;
+    sc.onload=()=>{ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc=`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_V}/pdf.worker.min.js`; res(window.pdfjsLib);}catch(e){rej(e);} };
+    sc.onerror=()=>{_pdfjsP=null;rej(new Error('pdfjs'));};
+    document.head.appendChild(sc);
+  });
+  return _pdfjsP;
+}
+async function pdfFirstPage(dataUrl, width){
+  const key=dataUrl.length+':'+dataUrl.slice(-64)+':'+width;
+  if(PDF_CACHE.has(key)) return PDF_CACHE.get(key);
+  const lib=await loadPdfjs();
+  const b64=dataUrl.slice(dataUrl.indexOf(',')+1), bin=atob(b64), u8=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  const doc=await lib.getDocument({data:u8}).promise;
+  const page=await doc.getPage(1);
+  const v0=page.getViewport({scale:1}), sc=width/v0.width, vp=page.getViewport({scale:sc});
+  const cv=document.createElement('canvas'); cv.width=Math.ceil(vp.width); cv.height=Math.ceil(vp.height);
+  await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+  const out=cv.toDataURL('image/jpeg',0.8); PDF_CACHE.set(key,out); try{doc.destroy();}catch(e){}
+  return out;
+}
+function PdfPreview({src, width, className, style, fallback, onClick, alt}){
+  const [img,setImg]=useState(null);
+  useEffect(()=>{ let dead=false; setImg(null);
+    if(src&&src.startsWith('data:')) pdfFirstPage(src,width||240).then(u=>{if(!dead)setImg(u);}).catch(()=>{});
+    return ()=>{dead=true;};
+  },[src,width]);
+  return img ? <img className={className} style={style} src={img} alt={alt||'PDF preview'} onClick={onClick}/> : fallback;
+}
+
 function kbwEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
@@ -4091,7 +4129,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25b</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25c</div>
       </div>
     </div>
   );
