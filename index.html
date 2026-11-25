@@ -513,7 +513,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
 .modal input,.modal select,.modal textarea{border-color:transparent!important}
 .modal .dz{border-radius:14px}
 
-/* ---- v2026.11.25a polish ---- */
+/* ---- v2026.11.25b polish ---- */
 .mcancel{display:none}
 @media(max-width:900px){
   .modal::before{margin:-6px auto 4px!important}
@@ -527,7 +527,7 @@ select.chip{width:auto;padding:0 28px 0 14px;appearance:none;-webkit-appearance:
   .modal input:not([type=checkbox]):not([type=radio]):not([type=file]),.modal select,.modal textarea{border-radius:12px;border-color:transparent;min-height:44px;font-size:16px}
 }
 
-/* ---- v2026.11.25a ---- */
+/* ---- v2026.11.25b ---- */
 .tmore{display:none!important}.morebg{display:none}
 @media(max-width:480px){
   .rsub .rpay,.rsub .rcl{display:none}
@@ -1494,25 +1494,25 @@ function App() {
   }
 
   function exportCSV() {
-    const hdr=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose','Clients'];
+    const hdr=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose','Clients','Order / Ref #'];
     const rows=filtered.map(e=>{
       const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
       const pct=(e.bizPct!=null?e.bizPct:100)/100;
       const c=getCat(e.category);
-      return[e.date,e.vendor,c.label,c.line,e.province||province,`${e.bizPct??100}%`,e.amount,bd.tip,bd.gstPaid,bd.pstPaid,bd.liquor,bd.total,+(bd.gstClaimable*pct).toFixed(2),+(bd.deductibleAmount*pct).toFixed(2),e.payment?.type||'',e.payment?.name||'',e.payment?.last4||'',e.note||'',(e.clients||[]).join('; ')];
+      return[e.date,e.vendor,c.label,c.line,e.province||province,`${e.bizPct??100}%`,e.amount,bd.tip,bd.gstPaid,bd.pstPaid,bd.liquor,bd.total,+(bd.gstClaimable*pct).toFixed(2),+(bd.deductibleAmount*pct).toFixed(2),e.payment?.type||'',e.payment?.name||'',e.payment?.last4||'',e.note||'',(e.clients||[]).join('; '),e.orderNo||''];
     });
     const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     dl('CRA_Expenses.csv','text/csv',csv);
   }
 
   function exportXLS() {
-    const cols=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose','Clients'];
+    const cols=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose','Clients','Order / Ref #'];
     let tbl='<table><tr>'+cols.map(h=>`<th>${h}</th>`).join('')+'</tr>';
     filtered.forEach(e=>{
       const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
       const pct=(e.bizPct!=null?e.bizPct:100)/100;
       const c=getCat(e.category);
-      tbl+=`<tr><td>${e.date}</td><td>${e.vendor}</td><td>${c.label}</td><td>${c.line}</td><td>${e.province||province}</td><td>${e.bizPct??100}%</td><td>${e.amount}</td><td>${bd.tip}</td><td>${bd.gstPaid}</td><td>${bd.pstPaid}</td><td>${bd.liquor}</td><td>${bd.total}</td><td>${+(bd.gstClaimable*pct).toFixed(2)}</td><td>${+(bd.deductibleAmount*pct).toFixed(2)}</td><td>${e.payment?.type||''}</td><td>${e.payment?.name||''}</td><td>${e.payment?.last4||''}</td><td>${e.note||''}</td><td>${(e.clients||[]).join('; ')}</td></tr>`;
+      tbl+=`<tr><td>${e.date}</td><td>${e.vendor}</td><td>${c.label}</td><td>${c.line}</td><td>${e.province||province}</td><td>${e.bizPct??100}%</td><td>${e.amount}</td><td>${bd.tip}</td><td>${bd.gstPaid}</td><td>${bd.pstPaid}</td><td>${bd.liquor}</td><td>${bd.total}</td><td>${+(bd.gstClaimable*pct).toFixed(2)}</td><td>${+(bd.deductibleAmount*pct).toFixed(2)}</td><td>${e.payment?.type||''}</td><td>${e.payment?.name||''}</td><td>${e.payment?.last4||''}</td><td>${e.note||''}</td><td>${(e.clients||[]).join('; ')}</td><td>${kbwEsc(e.orderNo||'')}</td></tr>`;
     });
     tbl+='</table>';
     const xls=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>CRA Expenses</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>${tbl}</body></html>`;
@@ -1915,7 +1915,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
   const filteredAll = filteredAll0.filter(e=>{
     if (cl!=='all' && !(e.clients||[]).includes(cl)) return false;
     if (!qn) return true;
-    const hay = [e.vendor, e.note, getCat(e.category).label, e.date, String(e.amount), (e.clients||[]).join(' '), e.payment?.name, e.payment?.last4, e.payment?.type].join(' ').toLowerCase();
+    const hay = [e.vendor, e.note, getCat(e.category).label, e.date, String(e.amount), (e.clients||[]).join(' '), e.payment?.name, e.payment?.last4, e.payment?.type, e.orderNo].join(' ').toLowerCase();
     return qn.split(/\s+/).every(w=>hay.includes(w));
   });
   const rows = rcpt==='all' ? filteredAll
@@ -1946,8 +1946,8 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,s
   function bulkExport() {
     const ids = new Set(sel);
     const list = rows.filter(e=>ids.has(e.id));
-    const hdr = ['Date','Vendor','Category','T2125 Line','Receipt Total','GST ITC Claimable','CRA Deductible','Payment','Clients','Note'];
-    const out = list.map(e=>{ const c=getCat(e.category), a=adj(e); return [e.date,e.vendor,c.label,c.line,e.amount,a.itc,a.ded,[e.payment?.name||e.payment?.type||'', e.payment?.last4||''].join(' ').trim(),(e.clients||[]).join('; '),e.note||'']; });
+    const hdr = ['Date','Vendor','Category','T2125 Line','Receipt Total','GST ITC Claimable','CRA Deductible','Payment','Clients','Note','Order / Ref #'];
+    const out = list.map(e=>{ const c=getCat(e.category), a=adj(e); return [e.date,e.vendor,c.label,c.line,e.amount,a.itc,a.ded,[e.payment?.name||e.payment?.type||'', e.payment?.last4||''].join(' ').trim(),(e.clients||[]).join('; '),e.note||'',e.orderNo||'']; });
     kbwDownload('Selected_Expenses.csv','text/csv',[hdr,...out].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\n'));
   }
   useEffect(()=>{ setLimit(PAGE); },[rcpt, cl, qn, sortKey]);
@@ -2257,6 +2257,7 @@ function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clien
   const [cat,     setCat]     = useState(expense?.category||'advertising');
   const [province,setProv]    = useState(expense?.province||defaultProvince);
   const [note,    setNote]    = useState(expense?.note    ||'');
+  const [orderNo, setOrderNo] = useState(expense?.orderNo ||'');
   const [receipt, setReceipt] = useState(expense?.receipt ||null);
   const [scanning,setScanning]= useState(false);
   const [scanErr, setScanErr] = useState('');
@@ -2478,7 +2479,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
     const savedTax={gst:parseFloat(gst)||0,pst:parseFloat(pst)||0,hasPst,tip:parseFloat(tip)||0,liquor:parseFloat(liquor)||0,other:0,gasMode:isGas,gasTotal:parseFloat(gasTotal)||0};
     const payment={type:payType,last4:payLast4.trim(),name:payName.trim()};
     const pct = Math.min(100, Math.max(0, parseFloat(bizPct)||100));
-    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),receipt,tax:savedTax,payment,bizPct:pct,clients:clientSel}, {repeat});
+    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),orderNo:orderNo.trim(),receipt,tax:savedTax,payment,bizPct:pct,clients:clientSel}, {repeat});
   }
 
   const inp={background:T.bg4,borderColor:T.border,color:T.text};
@@ -2705,6 +2706,8 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
         <div className="fg">
           <label className="fl">Business Purpose <span style={{opacity:.4,fontWeight:400}}>CRA requires this for audits</span></label>
           <textarea rows={2} style={inp} placeholder="Who, what, why — e.g. 'Client lunch with ABC Corp to discuss Q2 campaign'" value={note} onChange={e=>setNote(e.target.value)}/>
+          <label className="fl" style={{marginTop:12}}>Order / reference # <span style={{opacity:.4,fontWeight:400}}>optional · invoice, order or confirmation number</span></label>
+          <input style={inp} placeholder="e.g. #A123-4567 or INV-0042" value={orderNo} onChange={e=>setOrderNo(e.target.value)} autoComplete="off"/>
         </div>
 
         <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:6}}>
@@ -2771,6 +2774,7 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,inline,onClose,onZoo
         {e.clients&&e.clients.length>0 && R('Clients', e.clients.join(', '))}
         {e.recurId && R('Repeats', 'Every month')}
       </div>
+      {e.orderNo&&<div className="grp" style={{background:card,padding:'10px 16px',fontSize:14}}><span style={{fontSize:12,opacity:.55,display:'block',marginBottom:2}}>Order / reference #</span>{e.orderNo}</div>}
       {e.note&&<div className="grp" style={{background:card,padding:'10px 16px',fontSize:14}}><span style={{fontSize:12,opacity:.55,display:'block',marginBottom:2}}>Business purpose</span>{e.note}</div>}
       {(onEdit||onDelete) && <div className="dact">
         {onEdit&&<button type="button" className="pbtn primary" onClick={()=>onEdit(e.id)}>Edit</button>}
@@ -4087,7 +4091,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25a</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.25b</div>
       </div>
     </div>
   );
