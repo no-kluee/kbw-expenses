@@ -538,7 +538,7 @@ function App() {
   const [editCat,  setEditCat]  = useState(null);
   const [editStat, setEditStat] = useState(null);
   const [apiKey,    setApiKey]   = useState(()=>lsLoad('apiKey', ''));
-  const [gClientId, setGClientId]= useState(()=>lsLoad('gClientId',''));
+  const [gClientId, setGClientId]= useState(()=>lsLoad('gClientId','') || DEFAULT_GCID);
   const [ghToken,   setGhToken]  = useState(()=>lsLoad('ghToken',''));
 
   const GH_OWNER = 'no-kluee';
@@ -1070,7 +1070,7 @@ function App() {
       document.head.appendChild(s);
     }
     // Token and Google client ID come only from Settings (stored per device in localStorage)
-    const clientId = lsLoad('gClientId','');
+    const clientId = lsLoad('gClientId','') || DEFAULT_GCID;
     if (clientId) setGClientId(clientId);
     pullFromGitHub(lsLoad('ghToken',''));
   }, []);
@@ -2366,6 +2366,7 @@ function LogoModal({logo,T,onSave,onClose}) {
 }
 
 // ─── SETTINGS MODAL ───────────────────────────────────────────────────────────
+const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
 function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
@@ -2422,25 +2423,11 @@ function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrat
             📁 KBW Expenses / Business Expenses / 2026 / expenses_2026.json
           </div>
 
-          <div style={{fontSize:12,color:T.blue,fontWeight:600,marginBottom:8}}>
-            Setup (free, 5 min):
-          </div>
-          <div style={{fontSize:11,opacity:.7,lineHeight:2,marginBottom:12}}>
-            1. Go to <a href="https://console.cloud.google.com" target="_blank" style={{color:T.blue}}>console.cloud.google.com</a> → sign in with your Google account<br/>
-            2. Click <b>Select a project</b> → <b>New Project</b> → name it "KBW Expenses" → <b>Create</b><br/>
-            3. Search <b>"Google Drive API"</b> → click it → click <b>Enable</b><br/>
-            4. Go to <b>APIs &amp; Services → Credentials</b> → <b>Create Credentials → OAuth client ID</b><br/>
-            5. Application type: <b>Web application</b><br/>
-            6. Under <b>Authorized JavaScript origins</b> add: <code style={{background:T.bg4,padding:'1px 5px',borderRadius:3}}>http://localhost:8080</code><br/>
-            7. Click <b>Create</b> → copy the <b>Client ID</b> → paste below
-          </div>
-
           <label style={{fontSize:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px',opacity:.6,display:'block',marginBottom:5}}>Google OAuth Client ID</label>
           <div style={{display:'flex',gap:8}}>
             <input type={showGId?'text':'password'} style={inp} placeholder="123456789-abc.apps.googleusercontent.com" value={gId} onChange={e=>setGId(e.target.value)} spellCheck={false}/>
             <button style={{background:T.bg4,border:`1px solid ${T.border}`,color:T.text,padding:'9px 12px',borderRadius:8,flexShrink:0,fontSize:12}} onClick={()=>setShowGId(s=>!s)}>{showGId?'Hide':'Show'}</button>
           </div>
-          {gId&&<div style={{fontSize:11,opacity:.5,marginTop:6}}>⚠ Also add your current URL to Authorized JavaScript origins if not on localhost</div>}
 
           {/* Using someone else's device? Remove everything from it */}
           <div style={{marginBottom:14,padding:'12px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.bg3,fontSize:13}}>
@@ -2455,7 +2442,7 @@ function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrat
               <div style={{fontWeight:600,marginBottom:4}}>Face ID / Touch ID</div>
               {window.kbwBio.enrolled
                 ? <div style={{opacity:.7}}>On for this device. Use the unlock screen button to sign in.</div>
-                : window.kbwBio.supported
+                : (window.kbwBio.supported || window.PublicKeyCredential)
                   ? <button style={{width:'100%',padding:'10px',borderRadius:9,background:T.accent,color:'#fff',fontWeight:600,fontSize:13,cursor:'pointer',border:'none'}}
                       onClick={()=>{onClose();window.kbwBio.enable();}}>Turn on Face ID / Touch ID</button>
                   : <div style={{opacity:.6,lineHeight:1.5}}>Not available in this browser. Try Safari on iPhone, or Chrome / Safari on a Mac with Touch ID.</div>}
@@ -3017,7 +3004,7 @@ function AppWrapper() {
       }});
       if (cred) { sessionStorage.setItem('kbw_unlocked','1'); setUnlocked(true); setPinError(''); }
     } catch (e) {
-      if (auto !== true) setPinError('Face ID / Touch ID did not work. Use your PIN.');
+      if (auto !== true) setPinError('Touch ID did not work (' + (e && e.name || 'error') + '). Use your PIN, then turn it on again in Settings.');
     }
   }
 
@@ -3039,8 +3026,8 @@ function AppWrapper() {
       }
     } catch (e) {
       setOfferBio(false);
-      setBioMsg('Could not turn on Face ID / Touch ID.');
-      setTimeout(()=>setBioMsg(''), 3500);
+      setBioMsg('Could not turn on Touch ID (' + (e && e.name || 'error') + ').');
+      setTimeout(()=>setBioMsg(''), 6000);
     }
   }
 
@@ -3171,7 +3158,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24e</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24f</div>
       </div>
     </div>
   );
