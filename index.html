@@ -3624,13 +3624,24 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const drafts = yInv.filter(i=>invStatus(i)==='Draft').length;
 
   const upd = (id,patch)=>setInvoices(p=>p.map(i=>i.id===id?{...i,...patch}:i));
+  // Next billing date for a client: the next 1st / 15th (your days) after their latest invoice
+  const nextDue = cust=>{
+    const days=((P.recur.days&&P.recur.days.length)?[...P.recur.days]:[1,15]).map(Number).sort((a,b)=>a-b);
+    const last=invoices.filter(i=>i.customer===cust).map(i=>i.date).sort().pop();
+    if(!last) return localToday();
+    let [y,m,d]=last.split('-').map(Number);
+    const nd=days.find(x=>x>d);
+    if(nd){ const dim=new Date(y,m,0).getDate(); d=Math.min(nd,dim); }
+    else { m++; if(m>12){m=1;y++;} const dim=new Date(y,m,0).getDate(); d=Math.min(days[0],dim); }
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  };
   const newInvoice = ()=>{
     if(!P.customers.length){ setShowSet(true); setMsg('Add your details and a client first.'); return; }
-    setEdit({id:Date.now(),num:nextNum(),date:localToday(),due:localToday(),customer:P.customers[0].name,items:[{desc:'',amount:''}],gstRate:+P.gstRate||0,notes:P.notes||'',_new:true});
+    { const c=(P.recur.customer&&P.customers.some(x=>x.name===P.recur.customer))?P.recur.customer:P.customers[0].name; const dt=nextDue(c); setEdit({id:Date.now(),num:nextNum(),date:dt,due:dt,customer:c,items:[{desc:c===P.recur.customer?(P.recur.desc||''):'',amount:c===P.recur.customer&&P.recur.amount?P.recur.amount:''}],gstRate:+P.gstRate||0,notes:P.notes||'',_new:true}); }
   };
   const dupInvoice = i=>{
     const items=(i.items||[]).map(x=>({desc:i.imported?(P.recur.desc||'Monthly Marketing Services'):x.desc,amount:x.amount}));
-    setEdit({id:Date.now(),num:nextNum(),date:localToday(),due:localToday(),customer:i.customer,items,gstRate:i.gstRate!=null?i.gstRate:(+P.gstRate||0),notes:i.notes||P.notes||'',_new:true});
+    { const dt=nextDue(i.customer); setEdit({id:Date.now(),num:nextNum(),date:dt,due:dt,customer:i.customer,items,gstRate:i.gstRate!=null?i.gstRate:(+P.gstRate||0),notes:i.notes||P.notes||'',_new:true}); }
     setMsg('');
   };
   function saveEdit(){
@@ -3808,7 +3819,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="mhdr"><div className="mttl">Invoice {edit.num}</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={()=>setEdit(null)}>✕</button></div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <div className="fg"><label className="fl">Number</label><input style={inp} value={edit.num} onChange={e=>setE('num',e.target.value)}/></div>
-              <div className="fg"><label className="fl">Client</label><select style={inp} value={edit.customer} onChange={e=>{ if(e.target.value==='__new'){ setQc({name:'',contact:'',addr:'',phone:'',email:''}); } else setE('customer',e.target.value); }}>{[...new Set([edit.customer,...P.customers.map(c=>c.name)])].filter(Boolean).map(n=><option key={n}>{n}</option>)}<option value="__new">+ New client…</option></select></div>
+              <div className="fg"><label className="fl">Client</label><select style={inp} value={edit.customer} onChange={e=>{ if(e.target.value==='__new'){ setQc({name:'',contact:'',addr:'',phone:'',email:''}); } else if(edit._new){ const dt=nextDue(e.target.value); setEdit(x=>({...x,customer:e.target.value,date:dt,due:dt})); } else setE('customer',e.target.value); }}>{[...new Set([edit.customer,...P.customers.map(c=>c.name)])].filter(Boolean).map(n=><option key={n}>{n}</option>)}<option value="__new">+ New client…</option></select></div>
               <div className="fg"><label className="fl">Invoice date</label><input type="date" style={{...inp,height:34}} value={edit.date} onChange={e=>setEdit(x=>({...x,date:e.target.value,due:x.due===x.date?e.target.value:x.due}))}/></div>
               <div className="fg"><label className="fl">Due</label><input type="date" style={{...inp,height:34}} value={edit.due||edit.date} onChange={e=>setE('due',e.target.value)}/></div>
             </div>
@@ -4814,7 +4825,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26f</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26g</div>
       </div>
     </div>
   );
