@@ -3507,7 +3507,7 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
 }
 
 // ─── INCOME / INVOICES ────────────────────────────────────────────────────────
-const INV_DEF = {name:'',addr:'',phone:'',gstNo:'',gstRate:5,notes:'',startNum:1,customers:[],
+const INV_DEF = {name:'',addr:'',phone:'',gstNo:'',gstRate:5,notes:'',startNum:1,customers:[],mail:{accounts:[]},
   recur:{on:false,customer:'',desc:'',amount:'',days:[1,15],since:'',skip:[]}};
 const JSPDF_URL='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 function loadJsPdf(){
@@ -3639,24 +3639,25 @@ async function makeInvoicePdfClassic(inv, prof, logoImg) {
 }
 
 // ─── Send invoices by email through the user's own Gmail (gmail.send scope only) ───
-let _gmTok={t:'',exp:0};
-function gmailToken(clientId){ // call straight from a tap so Safari allows the Google popup
+let _gmTok={};
+function gmailToken(clientId,hint){ // call straight from a tap so Safari allows the Google popup
   return new Promise((res,rej)=>{
-    if(_gmTok.t && Date.now()<_gmTok.exp) return res(_gmTok.t);
+    const k=clientId+'|'+(hint||''); const ct=_gmTok[k];
+    if(ct && ct.t && Date.now()<ct.exp) return res(ct.t);
     if(!window.google?.accounts?.oauth2) return rej(new Error('Google sign-in did not load. Check your connection and try again.'));
-    const c=window.google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/gmail.send',
-      callback:r=>{ if(r.error) return rej(new Error(r.error==='access_denied'?'Gmail access was not allowed.':String(r.error))); _gmTok={t:r.access_token,exp:Date.now()+((+r.expires_in||3600)-120)*1000}; res(r.access_token); },
+    const c=window.google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/gmail.send',hint:hint||undefined,
+      callback:r=>{ if(r.error) return rej(new Error(r.error==='access_denied'?'Gmail access was not allowed.':String(r.error))); _gmTok[k]={t:r.access_token,exp:Date.now()+((+r.expires_in||3600)-120)*1000}; res(r.access_token); },
       error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'The Google window was closed.':'Could not open Google sign-in.'))});
     c.requestAccessToken();
   });
 }
 const blobB64 = b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(b); });
-async function gmailSendMail(token,{to,cc,subject,body,fname,pdf64}){
+async function gmailSendMail(token,{to,cc,subject,body,fname,pdf64,tokKey}){
   const u8=x=>btoa(unescape(encodeURIComponent(x))), wrap=x=>x.replace(/(.{76})/g,'$1\r\n'), bd='kbw'+Date.now().toString(36);
   const mime=`To: ${to}\r\n`+(cc?`Cc: ${cc}\r\n`:'')+`Subject: =?UTF-8?B?${u8(subject)}?=\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="${bd}"\r\n\r\n--${bd}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(u8(body))}\r\n--${bd}\r\nContent-Type: application/pdf; name="${fname}"\r\nContent-Disposition: attachment; filename="${fname}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(pdf64)}\r\n--${bd}--`;
   const raw=btoa(mime).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({raw})});
-  if(!r.ok){ if(r.status===401) _gmTok={t:'',exp:0}; let m=''; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(r.status===403?'Gmail is not switched on for this app yet. '+m:'Gmail said no ('+r.status+'). '+m); }
+  if(!r.ok){ if(r.status===401&&tokKey) delete _gmTok[tokKey]; let m=''; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(r.status===403?'Gmail is not switched on for this app yet. '+m:'Gmail said no ('+r.status+'). '+m); }
 }
 
 function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl, logoImg, gClientId}) {
@@ -3759,7 +3760,8 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     const first=(c.contact||'').split(' ')[0]||'there';
     const body=`Hi ${first},\n\nPlease find invoice ${i.num} attached for ${cad(invTot(i))}, due ${longDate(i.due||i.date)}.\n\n${(P.notes||'').split('\n')[0]}\n\nThanks,\n${P.name||''}`;
     let pdf64=''; try{ pdf64=await blobB64(b); }catch(e){}
-    setCmp({i,b,to:c.email||'',cc:'',subject,body,fname:invFile(i),pdf64,busy:0,err:''});
+    const accts=(P.mail&&P.mail.accounts)||[]; const ac=accts.find(a=>a.email&&a.email===c.from)||accts.find(a=>a.email)||null;
+    setCmp({i,b,to:c.email||'',cc:'',subject,body,fname:invFile(i),pdf64,from:ac?ac.email:'',busy:0,err:''});
   }
   async function shareIt(){
     const {i,b,subject,body,to}=cmp; const file=new File([b],invFile(i),{type:'application/pdf'});
@@ -3770,13 +3772,15 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     }catch(e){ if(e&&e.name!=='AbortError') setCmp(x=>({...x,err:'Could not open the share sheet. Use PDF download instead.'})); }
   }
   function doGmail(){
-    if(!gClientId){ setCmp(x=>({...x,err:'Add your Google Client ID in Settings first.'})); return; }
+    const accts=(P.mail&&P.mail.accounts)||[]; const ac=accts.find(a=>a.email===cmp.from); const cid=(ac&&ac.clientId)||gClientId;
+    if(!cid){ setCmp(x=>({...x,err:'Add your Google Client ID in Settings first.'})); return; }
     if(!cmp.to.trim()){ setCmp(x=>({...x,err:'Add who it is going to.'})); return; }
     if(!cmp.pdf64){ setCmp(x=>({...x,err:'The PDF is not ready. Close this and try again.'})); return; }
     const m=cmp; setCmp(x=>({...x,busy:1,err:''}));
-    gmailToken(gClientId).then(async tok=>{
-      await gmailSendMail(tok,{to:m.to.trim(),cc:m.cc.trim(),subject:m.subject,body:m.body,fname:m.fname,pdf64:m.pdf64});
-      upd(m.i.id,{sent:true,emailedTo:m.to.trim(),emailedAt:localToday()}); setCmp(null); setMsg('Sent to '+m.to.trim()+' from your Gmail.');
+    const hint=m.from||undefined, tokKey=cid+'|'+(hint||'');
+    gmailToken(cid,hint).then(async tok=>{
+      await gmailSendMail(tok,{to:m.to.trim(),cc:m.cc.trim(),subject:m.subject,body:m.body,fname:m.fname,pdf64:m.pdf64,tokKey});
+      upd(m.i.id,{sent:true,emailedTo:m.to.trim(),emailedFrom:m.from||'',emailedAt:localToday()}); setCmp(null); setMsg('Sent to '+m.to.trim()+(m.from?' from '+m.from:'')+'.');
     }).catch(e=>setCmp(x=>x&&({...x,busy:0,err:(e&&e.message)||'Could not send.'})));
   }
   function exportCSV(){
@@ -3857,6 +3861,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                 <input style={inp} placeholder="Phone" value={c.phone||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,phone:e.target.value}:x))}/>
                 <input style={inp} placeholder="Email (for sending)" value={c.email||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,email:e.target.value}:x))}/>
               </div>
+              {((P.mail&&P.mail.accounts)||[]).filter(a=>a.email).length>0 && <div style={{marginTop:8}}><label className="fl">Send invoices from</label><select style={inp} value={c.from||''} onChange={e=>setP('customers',P.customers.map((x,j)=>j===n?{...x,from:e.target.value}:x))}><option value="">First account</option>{P.mail.accounts.filter(a=>a.email).map(a=><option key={a.email} value={a.email}>{a.email}</option>)}</select></div>}
               <button style={{background:'none',border:'none',color:T.red,fontSize:12,marginTop:6}} onClick={()=>{ if(window.confirm('Remove this client? Existing invoices keep their name.')) setP('customers',P.customers.filter((_,j)=>j!==n)); }}>Remove client</button>
             </div>))}
           <button style={bs} onClick={()=>setP('customers',[...P.customers,{name:'',contact:'',addr:'',phone:'',email:''}])}>+ Add client</button>
@@ -3873,6 +3878,13 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="fg"><label className="fl">GST number</label><input style={inp} value={P.gstNo} onChange={e=>setP('gstNo',e.target.value)}/></div>
             <div className="fg"><label className="fl">GST rate %</label><input type="number" style={inp} value={P.gstRate} onChange={e=>setP('gstRate',e.target.value)}/></div>
             <div className="fg"><label className="fl">Next invoice # (if none yet)</label><input type="number" style={inp} value={P.startNum} onChange={e=>setP('startNum',e.target.value)}/></div>
+            <div className="fg" style={{gridColumn:'1/-1'}}><label className="fl">Email accounts (for Send)</label>
+              {(((P.mail&&P.mail.accounts)||[])).map((a,n)=>(<div key={n} style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:6,marginBottom:6}}>
+                <input style={inp} placeholder="you@example.com" value={a.email||''} onChange={e=>setP('mail',{accounts:P.mail.accounts.map((x,j)=>j===n?{...x,email:e.target.value}:x)})}/>
+                <input style={inp} placeholder="Google client ID (blank = Drive one)" value={a.clientId||''} onChange={e=>setP('mail',{accounts:P.mail.accounts.map((x,j)=>j===n?{...x,clientId:e.target.value.trim()}:x)})}/>
+                <button style={{background:'none',border:'none',color:T.red,fontSize:16}} onClick={()=>setP('mail',{accounts:P.mail.accounts.filter((_,j)=>j!==n)})}>✕</button></div>))}
+              <button style={bs} onClick={()=>setP('mail',{accounts:[...(((P.mail&&P.mail.accounts)||[])),{email:'',clientId:''}]})}>+ Add email account</button>
+            </div>
             <div className="fg"><label className="fl">PDF style</label><select style={inp} value={P.invStyle==='classic'?'classic':'clean'} onChange={e=>setP('invStyle',e.target.value)}><option value="clean">Clean (new)</option><option value="classic">Classic (like Wave)</option></select></div>
           </div>
           <div className="fg"><label className="fl">Notes / terms on each invoice</label><textarea style={{...inp,minHeight:64}} value={P.notes} onChange={e=>setP('notes',e.target.value)}/></div>
@@ -3937,6 +3949,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
         <div className="ov" onClick={()=>!cmp.busy&&setCmp(null)}>
           <div className="modal modal-sm" style={{background:T.bg2,borderColor:T.border,color:T.text}} onClick={e=>e.stopPropagation()}>
             <div className="mhdr"><div className="mttl">Email invoice {cmp.i.num}</div><button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={()=>setCmp(null)}>✕</button></div>
+            {((P.mail&&P.mail.accounts)||[]).filter(a=>a.email).length>0 && <div className="fg"><label className="fl">From</label><select style={inp} value={cmp.from} onChange={e=>setCmp(x=>({...x,from:e.target.value}))}>{P.mail.accounts.filter(a=>a.email).map(a=><option key={a.email} value={a.email}>{a.email}</option>)}</select></div>}
             <div className="fg"><label className="fl">To</label><input style={inp} type="email" value={cmp.to} onChange={e=>setCmp(x=>({...x,to:e.target.value}))} placeholder="client@email.com"/></div>
             <div className="fg"><label className="fl">Cc (optional)</label><input style={inp} type="email" value={cmp.cc} onChange={e=>setCmp(x=>({...x,cc:e.target.value}))}/></div>
             <div className="fg"><label className="fl">Subject</label><input style={inp} value={cmp.subject} onChange={e=>setCmp(x=>({...x,subject:e.target.value}))}/></div>
@@ -3944,7 +3957,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div style={{fontSize:12,opacity:.6,margin:'2px 0 10px'}}>Attached: {cmp.fname}</div>
             {cmp.err && <div style={{color:T.red,fontSize:12.5,marginBottom:10}}>{cmp.err}</div>}
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-              <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={doGmail}>{cmp.busy?'Sending…':'Send from my Gmail'}</button>
+              <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={doGmail}>{cmp.busy?'Sending…':(cmp.from?'Send from '+cmp.from.split('@')[0]:'Send from my Gmail')}</button>
               <button style={bs} disabled={cmp.busy} onClick={()=>preview(cmp.i)}>Preview PDF</button>
               <button style={bs} disabled={cmp.busy} onClick={shareIt}>Share / other app</button>
             </div>
@@ -4963,7 +4976,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26l</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26m</div>
       </div>
     </div>
   );
