@@ -464,6 +464,9 @@ function cleanRecords(list, fields) {
   return { list: out, changed };
 }
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
+function driveId(r){ const m = typeof r==='string' && r.match(/^https:\/\/drive\.google\.com\/(?:uc\?.*[?&]id=|file\/d\/)([\w-]+)/); return m?m[1]:null; }
+function viewSrc(r){ const id=driveId(r); return id?`https://drive.google.com/thumbnail?id=${id}&sz=w1600`:r; }
+function drivePage(r){ const id=driveId(r); return id?`https://drive.google.com/file/d/${id}/view`:r; }
 // Small thumbnail for Drive-hosted receipts so lists never download full-size photos
 function thumbSrc(r) {
   const m = typeof r === 'string' && r.match(/^https:\/\/drive\.google\.com\/uc\?.*[?&]id=([\w-]+)/);
@@ -522,6 +525,8 @@ function App() {
   const [theme,    setTheme]    = useState(()=>fixTheme(lsLoad('theme', DARK)));
   const [logo,     setLogo]     = useState(()=>fixLogo(lsLoad('logo', DEFAULT_LOGO)));
   const [cats,     setCats]     = useState(()=>lsLoad('cats',  DEFAULT_CATS));
+  const [cards,    setCards]    = useState(()=>lsLoad('cards', []));
+  window.kbwCards = cards;
   const [expenses, setExpenses] = useState(()=>lsLoad('expenses', []));
   const [province, setProvince] = useState(()=>lsLoad('province', 'BC'));
   const [statCards,setStatCards]= useState(()=>lsLoad('statCards', [
@@ -958,6 +963,7 @@ function App() {
   useEffect(()=>{ lsSave('statCards',statCards); },[statCards]);
   useEffect(()=>{ lsSave('apiKey',   apiKey);    },[apiKey]);
   useEffect(()=>{ lsSave('gClientId',gClientId); },[gClientId]);
+  useEffect(()=>{ lsSave('cards',cards); },[cards]);
   useEffect(()=>{ lsSave('gToken',   gToken);    },[gToken]);
   useEffect(()=>{ lsSave('medical', medical); },[medical]);
   useEffect(()=>{ sessionStorage.setItem('kbw_tab', tab); },[tab]);
@@ -972,10 +978,10 @@ function App() {
   useEffect(()=>{ latestMedical.current = medical; },[medical]);
   const firstSettings = useRef(true);
   useEffect(()=>{
-    latestSettings.current = { theme, logo, cats, province, statCards, gClientId };
+    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards };
     if (firstSettings.current) { firstSettings.current = false; return; }
     if (window._ghReady && !window._ghLoading) settingsDirty.current = true;
-  },[theme, logo, cats, province, statCards, gClientId]);
+  },[theme, logo, cats, province, statCards, gClientId, cards]);
 
   // Load saved data from GitHub (startup, and right after a token is saved in Settings)
   async function pullFromGitHub(token) {
@@ -1031,6 +1037,7 @@ function App() {
         if (Array.isArray(st.cats) && st.cats.length) setCats(st.cats);
         if (typeof st.province === 'string' && st.province) setProvince(st.province);
         if (Array.isArray(st.statCards) && st.statCards.length) setStatCards(st.statCards);
+        if (Array.isArray(st.cards)) { setCards(st.cards); lsSave('cards', st.cards); }
         if (typeof st.gClientId === 'string' && st.gClientId) { setGClientId(st.gClientId); lsSave('gClientId', st.gClientId); }
       }
       // Re-attach receipts already in Google Drive (fills empty ones only)
@@ -1060,7 +1067,7 @@ function App() {
     if (window._ghLoading || !window._ghReady) return;
     clearTimeout(ghSaveTimer.current);
     ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
-  },[expenses, medical, theme, logo, cats, province, statCards, gClientId]);
+  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards]);
 
   // Load config + GitHub data on startup
   useEffect(()=>{
@@ -1347,7 +1354,7 @@ function App() {
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
       {modal==='theme'    && <ThemeModal  theme={T} onSave={t=>{setTheme(t);closeModal();}} onClose={closeModal} />}
       {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
-      {modal==='settings' && <SettingsModal apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
+      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
         const tokenChanged = gh && gh !== lsLoad('ghToken','');
         setApiKey(k);setGClientId(g);setGhToken(gh);lsSave('ghToken', gh);closeModal();
         if (gh && (tokenChanged || !window._ghReady)) {
@@ -1488,7 +1495,7 @@ function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,o
                     ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in',fontSize:20}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}>📄</div>
                     : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
                   : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
-                {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(receipt,'_blank','noopener'); else onZoom(receipt);}}>✓</span>}
+                {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt);}}>✓</span>}
                 </div>
 
                 {/* Desktop: date column */}
@@ -1902,7 +1909,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
                     <div style={{fontSize:13,fontWeight:500}}>PDF Receipt</div>
                     <div style={{fontSize:11,opacity:.4,marginTop:3}}>Click to open full PDF</div>
                   </div>
-                : <img src={receipt} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(receipt)}/>
+                : <img src={viewSrc(receipt)} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(receipt)}/>
               }
               <button className="rp-rm" onClick={()=>{setReceipt(null);setScanErr('');}}>Remove</button>
             </div>
@@ -2057,6 +2064,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
               </button>
             ))}
           </div>
+          {(payType==='Credit Card'||payType==='Debit Card')&&<CardPicker payType={payType} payName={payName} payLast4={payLast4} setPayType={setPayType} setPayName={setPayName} setPayLast4={setPayLast4} T={T} inp={inp}/>}
           {(payType==='Credit Card'||payType==='Debit Card')&&(
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <div>
@@ -2112,7 +2120,7 @@ function DetailModal({expense,cats,province,T,getCat,calcBD,onClose,onZoom}) {
                   <div style={{fontSize:36,marginBottom:6}}>📄</div>
                   <div style={{fontSize:13,fontWeight:500}}>PDF Receipt — click to open</div>
                 </div>
-              : <img src={e.receipt} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
+              : <img src={viewSrc(e.receipt)} alt="receipt" style={{borderColor:T.border}} onClick={()=>onZoom(e.receipt)}/>
             }
             {!isPdf&&<button className="rp-rm" style={{pointerEvents:'none',opacity:.6}}>🔍 click to expand</button>}
           </div>
@@ -2366,8 +2374,57 @@ function LogoModal({logo,T,onSave,onClose}) {
 }
 
 // ─── SETTINGS MODAL ───────────────────────────────────────────────────────────
+
+function cardLabel(c){ return `${c.name||c.type||'Card'} •••• ${c.last4||''}`; }
+function CardPicker({payType,payName,payLast4,setPayType,setPayName,setPayLast4,T,inp}) {
+  const cards = window.kbwCards || [];
+  if (!cards.length) return null;
+  const cur = cards.findIndex(c=>c.last4===payLast4 && (c.name||'')===payName);
+  return (
+    <div style={{marginBottom:10}}>
+      <label className="fl" style={{fontSize:10}}>Saved Cards</label>
+      <select style={inp} value={cur>=0?String(cur):''} onChange={e=>{
+        if (e.target.value==='') return;
+        const c = cards[+e.target.value]; if (!c) return;
+        setPayType(c.type||'Credit Card'); setPayName(c.name||''); setPayLast4(c.last4||'');
+      }}>
+        <option value="">Choose a saved card…</option>
+        {cards.map((c,i)=><option key={i} value={String(i)}>{cardLabel(c)}</option>)}
+      </select>
+    </div>
+  );
+}
+function SavedCardsEditor({cards, setCards, T, inp}) {
+  const [name,setName]=useState(''), [last4,setLast4]=useState(''), [type,setType]=useState('Credit Card');
+  const ok = name.trim() && /^\d{4}$/.test(last4);
+  return (
+    <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Saved cards</div>
+      <div style={{fontSize:11,opacity:.5,marginBottom:12}}>Only a nickname and the last 4 digits. They sync to all your devices and appear as a dropdown when you add an expense.</div>
+      {cards.length===0 && <div style={{fontSize:12,opacity:.5,marginBottom:10}}>No cards yet.</div>}
+      {cards.map((c,i)=>(
+        <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:`1px solid ${T.border}`,fontSize:13}}>
+          <span>{c.type==='Debit Card'?'🏧':'💳'}</span>
+          <span style={{flex:1}}>{cardLabel(c)}</span>
+          <button type="button" style={{background:'none',border:'none',color:T.red,fontSize:13,cursor:'pointer'}} onClick={()=>setCards(cards.filter((_,j)=>j!==i))}>Remove</button>
+        </div>
+      ))}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 90px',gap:8,marginTop:12}}>
+        <input type="text" style={inp} placeholder="Nickname, e.g. AMEX" value={name} onChange={e=>setName(e.target.value)}/>
+        <input type="text" inputMode="numeric" style={inp} placeholder="Last 4" maxLength={4} value={last4} onChange={e=>setLast4(e.target.value.replace(/\D/g,''))}/>
+      </div>
+      <div style={{display:'flex',gap:8,marginTop:8}}>
+        <select style={inp} value={type} onChange={e=>setType(e.target.value)}>
+          <option>Credit Card</option><option>Debit Card</option>
+        </select>
+        <button type="button" disabled={!ok} style={{padding:'0 18px',borderRadius:9,background:ok?T.accent:T.bg4,color:ok?'#fff':T.textMuted,fontWeight:600,fontSize:13,border:'none',cursor:ok?'pointer':'default',flexShrink:0}}
+          onClick={()=>{ setCards([...cards,{name:name.trim(),last4,type}]); setName(''); setLast4(''); }}>Add card</button>
+      </div>
+    </div>
+  );
+}
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
-function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
+function SettingsModal({cards, setCards, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
   const [gId,     setGId]     = useState(gClientId||'');
@@ -2403,6 +2460,9 @@ function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrat
           <div className="mttl">⚙️ Settings</div>
           <button className="mclose" style={{borderColor:T.border,color:T.text}} onClick={onClose}>✕</button>
         </div>
+
+        {/* ── SAVED CARDS ── */}
+        <SavedCardsEditor cards={cards||[]} setCards={setCards} T={T} inp={inp} />
 
         {/* ── GOOGLE DRIVE SECTION ── */}
         <div style={{background:'rgba(66,133,244,.08)',border:'1px solid rgba(66,133,244,.25)',borderRadius:12,padding:'16px',marginBottom:18}}>
@@ -2609,7 +2669,7 @@ function MedicalTab({medical, setMedical, T, onZoom, onDriveBackup, gClientId}) 
                     : <img src={thumbSrc(m.receipt)} loading="lazy" style={{width:40,height:40,borderRadius:7,objectFit:'cover',border:`1px solid ${T.border}`,cursor:'zoom-in'}} alt="" onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}/>
                   : <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🧾</div>
                 }
-                {m.receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(m.receipt)) window.open(m.receipt,'_blank','noopener'); else onZoom(m.receipt);}}>✓</span>}
+                {m.receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(m.receipt)) window.open(drivePage(m.receipt),'_blank','noopener'); else onZoom(m.receipt);}}>✓</span>}
                 </div>
                 {/* Description + mobile amounts */}
                 <div style={{minWidth:0}}>
@@ -2734,7 +2794,7 @@ function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup
                   ? <div style={{background:T.bg4,borderRadius:10,border:`1px solid ${T.border}`,padding:'16px',textAlign:'center',cursor:'pointer'}} onClick={()=>onZoom(receipt.slice(8))}>
                       <div style={{fontSize:32,marginBottom:6}}>📄</div><div style={{fontSize:13}}>PDF — click to view</div>
                     </div>
-                  : <img src={receipt} style={{width:'100%',borderRadius:10,border:`1px solid ${T.border}`,maxHeight:180,objectFit:'cover',cursor:'zoom-in'}} alt="" onClick={()=>onZoom(receipt)}/>
+                  : <img src={viewSrc(receipt)} style={{width:'100%',borderRadius:10,border:`1px solid ${T.border}`,maxHeight:180,objectFit:'cover',cursor:'zoom-in'}} alt="" onClick={()=>onZoom(receipt)}/>
                 }
                 <button className="rp-rm" onClick={()=>setReceipt(null)}>Remove</button>
               </div>
@@ -2822,6 +2882,7 @@ function MedicalModal({editId, record, T, onSave, onClose, onZoom, onDriveBackup
               </button>
             ))}
           </div>
+          {(payType==='Credit Card'||payType==='Debit Card')&&<CardPicker payType={payType} payName={payName} payLast4={payLast4} setPayType={setPayType} setPayName={setPayName} setPayLast4={setPayLast4} T={T} inp={inp}/>}
           {(payType==='Credit Card'||payType==='Debit Card')&&(
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <div>
@@ -2909,7 +2970,7 @@ function ReceiptLightbox({src, onClose}) {
   );
 
   // Drive URL — load directly from Google Drive
-  const displayUrl = isDriveUrl ? raw : blobUrl;
+  const displayUrl = isDriveUrl ? viewSrc(raw) : blobUrl;
 
   return (
     <div className="rfs" onClick={onClose} style={{cursor:'zoom-out'}}>
@@ -2918,14 +2979,18 @@ function ReceiptLightbox({src, onClose}) {
           🖼 Receipt — click outside or Esc to close
         </span>
         <div style={{display:'flex',gap:8,pointerEvents:'all'}}>
-          {displayUrl&&<a href={displayUrl} download="receipt.jpg" target="_blank" rel="noreferrer"
-             style={{background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'}}
-             onClick={e=>e.stopPropagation()}>⬇ Download</a>}
+          {isDriveUrl
+            ? <a href={drivePage(raw)} target="_blank" rel="noreferrer"
+                style={{background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'}}
+                onClick={e=>e.stopPropagation()}>Open in Drive ↗</a>
+            : displayUrl&&<a href={displayUrl} download="receipt.jpg" target="_blank" rel="noreferrer"
+                style={{background:'rgba(255,255,255,.15)',color:'#fff',padding:'6px 13px',borderRadius:7,fontSize:12,textDecoration:'none'}}
+                onClick={e=>e.stopPropagation()}>⬇ Download</a>}
           <button className="rfs-close" onClick={onClose}>✕</button>
         </div>
       </div>
       {displayUrl
-        ? <img src={displayUrl} alt="Receipt"
+        ? <img src={displayUrl} alt="Receipt" onError={e=>{ if(isDriveUrl && !e.target.dataset.fb){ e.target.dataset.fb='1'; e.target.src=raw; } }}
             style={{maxWidth:'90vw',maxHeight:'86vh',objectFit:'contain',borderRadius:12,boxShadow:'0 0 80px rgba(0,0,0,.9)',cursor:'default',display:'block'}}
             onClick={e=>e.stopPropagation()}/>
         : <div style={{color:'rgba(255,255,255,.5)',fontSize:14}}>Loading…</div>
@@ -3158,7 +3223,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24f</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24g</div>
       </div>
     </div>
   );
