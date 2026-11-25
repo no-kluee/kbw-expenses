@@ -3651,16 +3651,28 @@ function gmailToken(clientId,hint){ // call straight from a tap so Safari allows
     const k=clientId+'|'+(hint||''); const ct=_gmTok[k];
     if(ct && ct.t && Date.now()<ct.exp) return res(ct.t);
     if(!window.google?.accounts?.oauth2) return rej(new Error('Google sign-in did not load. Check your connection and try again.'));
-    const c=window.google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/gmail.send',hint:hint||undefined,
+    const c=window.google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.settings.basic',hint:hint||undefined,
       callback:r=>{ if(r.error) return rej(new Error(r.error==='access_denied'?'Gmail access was not allowed.':String(r.error))); _gmTok[k]={t:r.access_token,exp:Date.now()+((+r.expires_in||3600)-120)*1000}; res(r.access_token); },
       error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'The Google window was closed.':'Could not open Google sign-in.'))});
     c.requestAccessToken();
   });
 }
 const blobB64 = b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(b); });
-async function gmailSendMail(token,{to,cc,subject,body,fname,pdf64,tokKey}){
-  const u8=x=>btoa(unescape(encodeURIComponent(x))), wrap=x=>x.replace(/(.{76})/g,'$1\r\n'), bd='kbw'+Date.now().toString(36);
-  const mime=`To: ${to}\r\n`+(cc?`Cc: ${cc}\r\n`:'')+`Subject: =?UTF-8?B?${u8(subject)}?=\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="${bd}"\r\n\r\n--${bd}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(u8(body))}\r\n--${bd}\r\nContent-Type: application/pdf; name="${fname}"\r\nContent-Disposition: attachment; filename="${fname}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(pdf64)}\r\n--${bd}--`;
+async function gmailSignature(token,from){
+  try{
+    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/settings/sendAs',{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok) return '';
+    const l=(await r.json()).sendAs||[]; const a=l.find(x=>from&&x.sendAsEmail===from)||l.find(x=>x.isDefault)||l[0];
+    return (a&&a.signature)||'';
+  }catch(e){ return ''; }
+}
+async function gmailSendMail(token,{to,cc,subject,body,fname,pdf64,tokKey,sigHtml}){
+  const u8=x=>btoa(unescape(encodeURIComponent(x))), wrap=x=>x.replace(/(.{76})/g,'$1\r\n'), bd='kbw'+Date.now().toString(36), bd2=bd+'a';
+  const esc=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const html='<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222">'+esc(body).replace(/\n/g,'<br>')+'</div>'+(sigHtml?'<br><div style="font-family:Arial,Helvetica,sans-serif;font-size:13px">'+sigHtml+'</div>':'');
+  const sigTxt=sigHtml?sigHtml.replace(/<br\s*\/?>|<\/(div|p|tr)>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\n{3,}/g,'\n\n').trim():'';
+  const text=body+(sigTxt?'\n\n'+sigTxt:'');
+  const mime=`To: ${to}\r\n`+(cc?`Cc: ${cc}\r\n`:'')+`Subject: =?UTF-8?B?${u8(subject)}?=\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="${bd}"\r\n\r\n--${bd}\r\nContent-Type: multipart/alternative; boundary="${bd2}"\r\n\r\n--${bd2}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(u8(text))}\r\n--${bd2}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(u8(html))}\r\n--${bd2}--\r\n--${bd}\r\nContent-Type: application/pdf; name="${fname}"\r\nContent-Disposition: attachment; filename="${fname}"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap(pdf64)}\r\n--${bd}--`;
   const raw=btoa(mime).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({raw})});
   if(!r.ok){ if(r.status===401&&tokKey) delete _gmTok[tokKey]; let m=''; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(r.status===403?'Gmail is not switched on for this app yet. '+m:'Gmail said no ('+r.status+'). '+m); }
@@ -3793,7 +3805,8 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     const m=cmp; setCmp(x=>({...x,busy:1,err:''}));
     const hint=m.from||undefined, tokKey=cid+'|'+(hint||'');
     gmailToken(cid,hint).then(async tok=>{
-      await gmailSendMail(tok,{to:m.to.trim(),cc:m.cc.trim(),subject:m.subject,body:m.body,fname:m.fname,pdf64:m.pdf64,tokKey});
+      const sigHtml=m.sig!==false?await gmailSignature(tok,m.from):'';
+      await gmailSendMail(tok,{to:m.to.trim(),cc:m.cc.trim(),subject:m.subject,body:m.body,fname:m.fname,pdf64:m.pdf64,tokKey,sigHtml});
       upd(m.i.id,{sent:true,emailedTo:m.to.trim(),emailedFrom:m.from||'',emailedAt:localToday()}); setCmp(null); setMsg('Sent to '+m.to.trim()+(m.from?' from '+m.from:'')+'.');
     }).catch(e=>setCmp(x=>x&&({...x,busy:0,err:(e&&e.message)||'Could not send.'})));
   }
@@ -3969,7 +3982,8 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="fg"><label className="fl">Cc (optional)</label><input style={inp} type="email" value={cmp.cc} onChange={e=>setCmp(x=>({...x,cc:e.target.value}))}/></div>
             <div className="fg"><label className="fl">Subject</label><input style={inp} value={cmp.subject} onChange={e=>setCmp(x=>({...x,subject:e.target.value}))}/></div>
             <div className="fg"><label className="fl">Message</label><textarea style={{...inp,minHeight:140,fontFamily:'inherit'}} value={cmp.body} onChange={e=>setCmp(x=>({...x,body:e.target.value}))}/></div>
-            <div style={{fontSize:12,opacity:.6,margin:'2px 0 10px'}}>Attached: {cmp.fname}</div>
+            <div style={{fontSize:12,opacity:.6,margin:'2px 0 6px'}}>Attached: {cmp.fname}</div>
+            <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,margin:'0 0 10px',cursor:'pointer'}}><input type="checkbox" checked={cmp.sig!==false} onChange={e=>setCmp(x=>({...x,sig:e.target.checked}))}/> Add my Gmail signature when sent</label>
             {cmp.err && <div style={{color:T.red,fontSize:12.5,marginBottom:10}}>{cmp.err}</div>}
             <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
               <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={doGmail}>{cmp.busy?'Sending…':(cmp.from?'Send from '+cmp.from.split('@')[0]:'Send from my Gmail')}</button>
@@ -4991,7 +5005,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26p</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26q</div>
       </div>
     </div>
   );
