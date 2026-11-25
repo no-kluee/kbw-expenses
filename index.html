@@ -1546,7 +1546,14 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
   const [limit, setLimit] = useState(PAGE);
   const [rcpt, setRcpt] = useState('all');   // all | with | missing
   const [cl, setCl] = useState('all');
-  const filteredAll = cl==='all' ? filteredAll0 : filteredAll0.filter(e=>(e.clients||[]).includes(cl));
+  const [q, setQ] = useState('');
+  const qn = q.trim().toLowerCase();
+  const filteredAll = filteredAll0.filter(e=>{
+    if (cl!=='all' && !(e.clients||[]).includes(cl)) return false;
+    if (!qn) return true;
+    const hay = [e.vendor, e.note, getCat(e.category).label, e.date, String(e.amount), (e.clients||[]).join(' '), e.payment?.name, e.payment?.last4, e.payment?.type].join(' ').toLowerCase();
+    return qn.split(/\s+/).every(w=>hay.includes(w));
+  });
   const filtered = rcpt==='all' ? filteredAll : filteredAll.filter(e => rcpt==='with' ? !!e.receipt : !e.receipt);
   const missingN = filteredAll.filter(e=>!e.receipt).length;
   const clientNames = [...new Set([...(clients||[]), ...filteredAll0.flatMap(e=>e.clients||[])])];
@@ -1560,9 +1567,14 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
     io.observe(el);
     return ()=>io.disconnect();
   },[limit, filtered.length]);
-  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl]);
+  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl, qn]);
   return(
     <div>
+      <div style={{position:'relative',marginBottom:10}}>
+        <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none',fontSize:15}}>🔍</span>
+        <input type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vendor, note, category, amount, client, card…" autoComplete="off" autoCorrect="off" spellCheck={false}
+          style={{background:T.bg2,borderColor:T.border,color:T.text,border:'1px solid',borderRadius:12,padding:'10px 14px 10px 36px',fontSize:15,width:'100%'}}/>
+      </div>
       <div className="xbar">
         <span style={{fontSize:12,opacity:.5}}>Export:</span>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}>📄 CSV</button>
@@ -1579,12 +1591,12 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
           <option value="missing" style={{color:'#000'}}>No receipt</option>
         </select>
         <button className="xbtn" style={{borderColor:rcpt==='missing'?T.amber:T.border,color:rcpt==='missing'?T.amber:T.text}} onClick={()=>setRcpt(rcpt==='missing'?'all':'missing')}>⚠ No receipt ({missingN})</button>
-        {clientNames.length>0 && <>
+        {clientNames.length>0 && <span style={{display:'inline-flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
           <span style={{fontSize:12,opacity:.5}}>Client:</span>
           <select value={cl} onChange={e=>setCl(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
             <option value="all" style={{color:'#000'}}>All</option>
             {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
-          </select></>}
+          </select></span>}
         <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       </div>
       {filtered.length===0
@@ -3541,7 +3553,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24l</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24m</div>
       </div>
     </div>
   );
