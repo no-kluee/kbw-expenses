@@ -648,11 +648,19 @@ function App() {
           const token = resp.access_token;
           setGToken(token);
           lsSave('gToken', token);
+          lsSave('gTokenExp', Date.now() + ((+resp.expires_in||3600) - 120) * 1000);
           resolve(token);
         },
       });
       client.requestAccessToken();
     });
+  }
+
+  // Must be called straight from a tap (no awaits before it) so iPhone Safari allows the Google popup
+  function driveTokenNow() {
+    const tok = lsLoad('gToken',''), exp = lsLoad('gTokenExp', 0);
+    if (tok && exp > Date.now()) return Promise.resolve(tok);
+    return gSignIn();
   }
 
   async function gGetOrCreateFolder(name, parentId, token) {
@@ -916,15 +924,19 @@ function App() {
     }
   }
 
-  async function handleGDriveBackup(expense) {
+  async function handleGDriveBackup(expense, tokenP) {
     if (!gClientId) return;
     setGSyncing(true); setGStatus('🔗 Connecting…');
     try {
       let token = gToken;
-      try {
-        const test = await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:`Bearer ${token}`}});
-        if (!test.ok) throw new Error('expired');
-      } catch { token = await gSignIn(); }
+      if (tokenP) {
+        try { token = await tokenP; } catch(e) { throw new Error('Google sign-in was cancelled. The receipt is saved on this device. Use Settings, Move receipts to Google Drive, to retry.'); }
+      } else {
+        try {
+          const test = await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:`Bearer ${token}`}});
+          if (!test.ok) throw new Error('expired');
+        } catch { token = await gSignIn(); }
+      }
       const year = expense?.date?.split('-')[0] || String(new Date().getFullYear());
       if (expense?.receipt && !expense.receipt.startsWith('https://drive.google.com')) {
         const driveUrl = await gUploadReceipt(expense, token);
@@ -1449,15 +1461,18 @@ function App() {
       )}
       {/* Modals */}
       {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} clients={clients} allExpenses={expenses} onSave={(data,opts)=>{
+        const rid = editId || Date.now();
+        // Start the Google sign-in right here, inside the tap, so phones do not block the popup
+        const tokenP = (data.receipt && isLocalReceipt(data.receipt) && gClientId) ? driveTokenNow() : null;
         if(editId) setExpenses(p=>p.map(e=>e.id===editId?{...e,...data}:e));
-        else setExpenses(p=>[...p,{id:Date.now(),...data}]);
+        else setExpenses(p=>[...p,{id:rid,...data}]);
         if(!editId && opts && opts.repeat){
           const day = +data.date.slice(8,10);
           setRecurring(r=>[...r,{id:Date.now(), day, next:addMonth(data.date, day), tpl:{...data, receipt:null}}]);
         }
         closeModal();
         // Auto-backup to Drive after save
-        setTimeout(()=>handleGDriveBackup(data), 500);
+        setTimeout(()=>handleGDriveBackup({...data,id:rid}, tokenP), 500);
       }} onClose={closeModal} onZoom={setFullImg} />}
       {modal==='detail'   && detailExp && <DetailModal  expense={detailExp} cats={cats} province={province} T={T} getCat={getCat} calcBD={calcBD} onClose={closeModal} onZoom={setFullImg} />}
       {modal==='catEdit'  && editCat   && <CatEditModal cat={editCat} T={T} onSave={p=>{setCats(x=>x.map(c=>c.id===editCat.id?{...c,...p}:c));closeModal();}} onClose={closeModal} />}
@@ -3551,7 +3566,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24n</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24o</div>
       </div>
     </div>
   );
