@@ -64,6 +64,7 @@ button{cursor:pointer;font-size:14px;border-radius:8px;border:none;transition:al
 .th{font-size:11px;font-family:'Poppins',sans-serif;text-transform:uppercase;letter-spacing:.3px;opacity:.4}
 .erow{padding:11px 17px;border-bottom:1px solid;display:grid;grid-template-columns:48px 100px 1fr 210px 90px 90px 90px 115px;gap:10px;align-items:center;cursor:pointer;transition:background .1s}
 .erow:last-child{border-bottom:none}
+.erow{content-visibility:auto;contain-intrinsic-size:auto 66px}
 .r-thumb{width:40px;height:40px;border-radius:7px;object-fit:cover;border:1px solid;cursor:zoom-in;display:block}
 .r-thumb:hover{filter:brightness(1.15)}
 .r-icon{width:40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid}
@@ -321,6 +322,13 @@ function calcBD(amount, province, catId, tax, cats) {
 }
 
 function cad(n) { return '$'+Number(n||0).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// A receipt stored on this device (data URL or PDF data) rather than a Drive link
+function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
+// Small thumbnail for Drive-hosted receipts so lists never download full-size photos
+function thumbSrc(r) {
+  const m = typeof r === 'string' && r.match(/^https:\/\/drive\.google\.com\/uc\?.*[?&]id=([\w-]+)/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w120` : r;
+}
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK  = {mode:'dark', bg:'#0c0e14',bg2:'#12151f',bg3:'#181c29',bg4:'#1f2436',accent:'#e8412a',text:'#e8ecf8',textMuted:'#8b93b0',border:'rgba(255,255,255,0.09)',green:'#2ecc8a',blue:'#4b8ef5',amber:'#f0a033',red:'#e85555',fontId:'dm'};
@@ -599,17 +607,27 @@ function App() {
     const er = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(eq)}&fields=files(id)`,{headers:{Authorization:`Bearer ${token}`}});
     const ed = await er.json();
     setGStatus('☁️ Uploading medical receipt…');
+    let fileId;
     if (ed.files?.length>0) {
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${ed.files[0].id}?uploadType=media`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':mime},body:bytes});
+      fileId = ed.files[0].id;
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`,'Content-Type':mime},body:bytes});
     } else {
       const bd='kbw_med'; const meta=JSON.stringify({name:fileName,parents:[typeId]});
       const p1=new TextEncoder().encode(`--${bd}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${bd}\r\nContent-Type: ${mime}\r\n\r\n`);
       const p2=new TextEncoder().encode(`\r\n--${bd}--`);
       const body=new Uint8Array(p1.length+bytes.length+p2.length);
       body.set(p1);body.set(bytes,p1.length);body.set(p2,p1.length+bytes.length);
-      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':`multipart/related; boundary=${bd}`},body});
+      const up = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':`multipart/related; boundary=${bd}`},body});
+      fileId = (await up.json()).id;
     }
-    return fileName;
+    if (fileId) {
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method:'POST', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+        body: JSON.stringify({role:'reader', type:'anyone'})
+      });
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+    return null;
   }
 
   async function handleMedicalDriveBackup(record) {
@@ -621,7 +639,10 @@ function App() {
         const test = await fetch('https://www.googleapis.com/drive/v3/about?fields=user',{headers:{Authorization:`Bearer ${token}`}});
         if (!test.ok) throw new Error('expired');
       } catch { token = await gSignIn(); }
-      if (record?.receipt) await gUploadMedicalReceipt(record, token);
+      if (record?.receipt && isLocalReceipt(record.receipt)) {
+        const url = await gUploadMedicalReceipt(record, token);
+        if (url && url.startsWith('https://')) setMedical(prev => prev.map(m => m.id===record.id ? {...m, receipt:url} : m));
+      }
       setGStatus('✅ Medical receipt saved to Drive!');
       setTimeout(()=>setGStatus(''), 3000);
     } catch(err) {
@@ -737,6 +758,43 @@ function App() {
       console.error(err);
       setGStatus('❌ ' + (err.message||'Drive error'));
       setTimeout(()=>setGStatus(''), 5000);
+    }
+    setGSyncing(false);
+  }
+
+  // One-time (or any time): move receipt photos stored on this device into Drive, keeping only the link.
+  // NOTE: called straight from a button tap so the Google sign-in popup is allowed (no awaits before gSignIn).
+  async function moveReceiptsToDrive() {
+    if (!gClientId) { alert('Add your Google Client ID in Settings first.'); return; }
+    const todoE = expenses.filter(e=>isLocalReceipt(e.receipt));
+    const todoM = medical.filter(m=>isLocalReceipt(m.receipt));
+    if (!todoE.length && !todoM.length) { alert('All receipts are already in Google Drive.'); return; }
+    setGSyncing(true); setGStatus('🔗 Signing in to Google…');
+    let moved = 0, failed = 0;
+    try {
+      let token;
+      try { token = await gSignIn(); } catch(e) { throw new Error('Google sign-in cancelled. Try again.'); }
+      const total = todoE.length + todoM.length;
+      for (const e of todoE) {
+        try {
+          const url = await gUploadReceipt(e, token);
+          if (url && url.startsWith('https://')) { setExpenses(p=>p.map(x=>x.id===e.id?{...x,receipt:url}:x)); moved++; } else failed++;
+        } catch(err) { console.error(err); failed++; }
+        setGStatus(`☁️ Moving receipts ${moved+failed}/${total}…`);
+      }
+      for (const m of todoM) {
+        try {
+          const url = await gUploadMedicalReceipt(m, token);
+          if (url && url.startsWith('https://')) { setMedical(p=>p.map(x=>x.id===m.id?{...x,receipt:url}:x)); moved++; } else failed++;
+        } catch(err) { console.error(err); failed++; }
+        setGStatus(`☁️ Moving receipts ${moved+failed}/${total}…`);
+      }
+      setGStatus(failed ? `⚠️ Moved ${moved}, ${failed} failed. Tap again to retry.` : `✅ Moved ${moved} receipts to Drive`);
+      setTimeout(()=>setGStatus(''), 6000);
+    } catch(err) {
+      console.error(err);
+      setGStatus('❌ ' + (err.message||'Drive error'));
+      setTimeout(()=>setGStatus(''), 6000);
     }
     setGSyncing(false);
   }
@@ -1118,7 +1176,7 @@ function App() {
             else alert('Could not reach GitHub. Check your connection and try Save again.');
           });
         }
-      }} onClose={closeModal} onSync={gSyncFromDrive} />}
+      }} onClose={closeModal} onMigrate={moveReceiptsToDrive} localReceipts={expenses.filter(e=>isLocalReceipt(e.receipt)).length + medical.filter(m=>isLocalReceipt(m.receipt)).length} />}
 
       {/* Lightbox receipt viewer */}
       {fullImg && <ReceiptLightbox src={fullImg} onClose={()=>setFullImg(null)} />}
@@ -1185,6 +1243,9 @@ function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,on
 // ─── EXPENSES ─────────────────────────────────────────────────────────────────
 function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
   const fileRef = useRef();
+  const PAGE = 60;
+  const [limit, setLimit] = useState(PAGE);
+  const shown = filtered.slice(0, limit);
   return(
     <div>
       <div className="xbar">
@@ -1205,7 +1266,7 @@ function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDele
             <span className="th ra">Amount</span><span className="th ra">GST ITC</span>
             <span className="th ra hcol">Deductible</span><span className="th ra">Actions</span>
           </div>
-          {filtered.map(e=>{
+          {shown.map(e=>{
             const c=getCat(e.category);
             const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
             const pct=(e.bizPct!=null?e.bizPct:100)/100;
@@ -1223,7 +1284,7 @@ function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDele
                 {receipt
                   ? isPdfReceipt
                     ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in',fontSize:20}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}>📄</div>
-                    : <img className="r-thumb" style={{borderColor:T.border}} src={receipt} alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
+                    : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
                   : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
 
                 {/* Desktop: date column */}
@@ -1267,6 +1328,12 @@ function Expenses({filtered,cats,province,T,getCat,calcBD,onDetail,onEdit,onDele
               </div>
             );
           })}
+          {filtered.length > limit && (
+            <button onClick={()=>setLimit(l=>l+PAGE)}
+              style={{width:'100%',padding:'14px',background:'transparent',border:'none',borderTop:`1px solid ${T.border}`,color:T.text,fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+              Show more ({filtered.length - limit} remaining)
+            </button>
+          )}
         </div>}
     </div>
   );
@@ -2094,7 +2161,7 @@ function LogoModal({logo,T,onSave,onClose}) {
 }
 
 // ─── SETTINGS MODAL ───────────────────────────────────────────────────────────
-function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onSync}) {
+function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
   const [gId,     setGId]     = useState(gClientId||'');
@@ -2170,14 +2237,26 @@ function SettingsModal({apiKey, gClientId, ghToken, T, onSave, onClose, onSync})
           </div>
           {gId&&<div style={{fontSize:11,opacity:.5,marginTop:6}}>⚠ Also add your current URL to Authorized JavaScript origins if not on localhost</div>}
 
-          {/* Sync button — shown when Drive is already connected */}
+          {/* Face ID / Touch ID for this device */}
+          {window.kbwBio && (
+            <div style={{marginBottom:14,padding:'12px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.bg3,fontSize:13}}>
+              <div style={{fontWeight:600,marginBottom:4}}>Face ID / Touch ID</div>
+              {window.kbwBio.enrolled
+                ? <div style={{opacity:.7}}>On for this device. Use the unlock screen button to sign in.</div>
+                : window.kbwBio.supported
+                  ? <button style={{width:'100%',padding:'10px',borderRadius:9,background:T.accent,color:'#fff',fontWeight:600,fontSize:13,cursor:'pointer',border:'none'}}
+                      onClick={()=>{onClose();window.kbwBio.enable();}}>Turn on Face ID / Touch ID</button>
+                  : <div style={{opacity:.6,lineHeight:1.5}}>Not available in this browser. Try Safari on iPhone, or Chrome / Safari on a Mac with Touch ID.</div>}
+            </div>
+          )}
+          {/* Move receipt photos stored on this device into Google Drive (keeps only the link) */}
           {gClientId && (
             <button style={{width:'100%',marginTop:12,padding:'11px',borderRadius:9,background:'rgba(46,204,138,.1)',border:'1px solid rgba(46,204,138,.3)',color:T.green,fontWeight:600,fontSize:13,cursor:'pointer'}}
-              onClick={()=>{onClose();setTimeout(()=>onSync(),300);}}>
-              🔄 Sync Expenses from Drive → This Device
+              onClick={()=>{onClose();onMigrate();}}>
+              ☁️ Move receipts to Google Drive{localReceipts>0?` (${localReceipts} on this device)`:''}
             </button>
           )}
-          <div style={{fontSize:11,opacity:.45,marginTop:8,lineHeight:1.6}}>Use this to load your expenses onto a new device (e.g. phone). Pulls all expense data from Drive and replaces what's currently on this device.</div>
+          <div style={{fontSize:11,opacity:.45,marginTop:8,lineHeight:1.6}}>New receipts upload to Drive automatically and only the link is kept. Use this once to move older photos stored on this device, so they show on every device and the app stays fast.</div>
         </div>
 
         {/* ── API KEY SECTION ── */}
@@ -2759,6 +2838,9 @@ function AppWrapper() {
     if (!declined) setOfferBio(true);
   },[unlocked, bioSupported, bioId]);
 
+  // Lets Settings show an "Enable Face ID / Touch ID" button any time
+  window.kbwBio = { supported: bioSupported, enrolled: !!bioId, enable: enableBio };
+
   const prompt = hasPin ? 'Enter your PIN to continue' : (firstPin ? 'Confirm your new 6-digit PIN' : 'Choose a 6-digit PIN for this device');
   if (!unlocked) return <PinScreen pinInput={pinInput} setPinInput={setPinInput} pinError={pinError} onSubmit={verifyPin} prompt={prompt} bioReady={hasPin && !!bioId && bioSupported} onBio={unlockWithBio} />;
   return (
@@ -2804,6 +2886,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
   useEffect(()=>{
     const onKey = e => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target && e.target.tagName === 'INPUT') return;   // the hidden PIN input handles its own typing
       if (/^[0-9]$/.test(e.key)) { e.preventDefault(); if (pinRef.current.length < 6) setPinInput(p=>p+e.key); }
       else if (e.key === 'Backspace') { e.preventDefault(); setPinInput(p=>p.slice(0,-1)); }
       else if (e.key === 'Enter' && pinRef.current.length >= 4) { e.preventDefault(); onSubmit(pinRef.current); }
@@ -2826,10 +2909,16 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
         <div style={{fontSize:13,opacity:.4,marginBottom:32}}>{prompt||'Enter your PIN to continue'}</div>
 
         {/* PIN dots */}
-        <div style={{display:'flex',gap:12,justifyContent:'center',marginBottom:24}}>
+        <div style={{display:'flex',gap:12,justifyContent:'center',marginBottom:24,position:'relative'}}>
           {[0,1,2,3,4,5].map(i=>(
             <div key={i} style={{width:14,height:14,borderRadius:'50%',background:i<pinInput.length?'#e8412a':'rgba(255,255,255,.15)',transition:'background .1s'}}/>
           ))}
+          {/* Invisible input over the dots: tap the dots to use your phone's own number pad */}
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" autoComplete="off" aria-label="PIN"
+            value={pinInput}
+            onChange={e=>setPinInput(e.target.value.replace(/\D/g,'').slice(0,6))}
+            onKeyDown={e=>{ if(e.key==='Enter' && pinInput.length>=4) onSubmit(pinInput); }}
+            style={{position:'absolute',inset:'-10px 0',width:'100%',height:'calc(100% + 20px)',opacity:0,fontSize:16,border:'none',background:'transparent',color:'transparent',caretColor:'transparent'}}/>
         </div>
 
         {pinError&&<div style={{color:'#e85555',fontSize:13,marginBottom:16}}>{pinError}</div>}
@@ -2858,7 +2947,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>PIN resets when you close the app</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · PIN resets when you close the app</div>
       </div>
     </div>
   );
