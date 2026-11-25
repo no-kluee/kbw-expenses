@@ -602,7 +602,7 @@ function App() {
         expenses: exp.map(e=>({...e, receipt: syncReceipt(e.receipt)})),
         medical:  med.map(m=>({...m, receipt: syncReceipt(m.receipt)})),
         settings: {
-          ...(settingsDirty.current ? latestSettings.current : (existing?.data?.settings || {})),
+          ...((settingsDirty.current || !existing?.data?.settings?.cats) ? latestSettings.current : (existing?.data?.settings || {})),
           pinHash: existing?.data?.settings?.pinHash || (()=>{ try { return localStorage.getItem('cra_tracker_v1_pinHash')||undefined; } catch { return undefined; } })()
         }
       }, null, 2))));
@@ -3541,7 +3541,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24k</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24l</div>
       </div>
     </div>
   );
