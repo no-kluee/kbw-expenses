@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="format-detection" content="telephone=no">
 <title>KBW Expense Tracker</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -463,6 +466,13 @@ function cleanRecords(list, fields) {
   });
   return { list: out, changed };
 }
+function addMonth(d, day) {
+  const [y,m] = d.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m, 1));                       // first of next month
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth()+1, 0)).getUTCDate();
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth()+1).padStart(2,'0')}-${String(Math.min(day,last)).padStart(2,'0')}`;
+}
+function localToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
 function driveId(r){ const m = typeof r==='string' && r.match(/^https:\/\/drive\.google\.com\/(?:uc\?.*[?&]id=|file\/d\/)([\w-]+)/); return m?m[1]:null; }
 function viewSrc(r){ const id=driveId(r); return id?`https://drive.google.com/thumbnail?id=${id}&sz=w1600`:r; }
@@ -527,6 +537,10 @@ function App() {
   const [cats,     setCats]     = useState(()=>lsLoad('cats',  DEFAULT_CATS));
   const [cards,    setCards]    = useState(()=>lsLoad('cards', []));
   window.kbwCards = cards;
+  const [clients,  setClients]  = useState(()=>lsLoad('clients', []));
+  const [recurring,setRecurring]= useState(()=>lsLoad('recurring', []));
+  const [mileage,  setMileage]  = useState(()=>lsLoad('mileage', []));
+  window.kbwClients = clients;
   const [expenses, setExpenses] = useState(()=>lsLoad('expenses', []));
   const [province, setProvince] = useState(()=>lsLoad('province', 'BC'));
   const [statCards,setStatCards]= useState(()=>lsLoad('statCards', [
@@ -964,6 +978,9 @@ function App() {
   useEffect(()=>{ lsSave('apiKey',   apiKey);    },[apiKey]);
   useEffect(()=>{ lsSave('gClientId',gClientId); },[gClientId]);
   useEffect(()=>{ lsSave('cards',cards); },[cards]);
+  useEffect(()=>{ lsSave('clients',clients); },[clients]);
+  useEffect(()=>{ lsSave('recurring',recurring); },[recurring]);
+  useEffect(()=>{ lsSave('mileage',mileage); },[mileage]);
   useEffect(()=>{ lsSave('gToken',   gToken);    },[gToken]);
   useEffect(()=>{ lsSave('medical', medical); },[medical]);
   useEffect(()=>{ sessionStorage.setItem('kbw_tab', tab); },[tab]);
@@ -978,10 +995,10 @@ function App() {
   useEffect(()=>{ latestMedical.current = medical; },[medical]);
   const firstSettings = useRef(true);
   useEffect(()=>{
-    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards };
+    latestSettings.current = { theme, logo, cats, province, statCards, gClientId, cards, clients, recurring, mileage };
     if (firstSettings.current) { firstSettings.current = false; return; }
     if (window._ghReady && !window._ghLoading) settingsDirty.current = true;
-  },[theme, logo, cats, province, statCards, gClientId, cards]);
+  },[theme, logo, cats, province, statCards, gClientId, cards, clients, recurring, mileage]);
 
   // Load saved data from GitHub (startup, and right after a token is saved in Settings)
   async function pullFromGitHub(token) {
@@ -1038,6 +1055,9 @@ function App() {
         if (typeof st.province === 'string' && st.province) setProvince(st.province);
         if (Array.isArray(st.statCards) && st.statCards.length) setStatCards(st.statCards);
         if (Array.isArray(st.cards)) { setCards(st.cards); lsSave('cards', st.cards); }
+        if (Array.isArray(st.clients)) { setClients(st.clients); lsSave('clients', st.clients); }
+        if (Array.isArray(st.recurring)) { setRecurring(st.recurring); lsSave('recurring', st.recurring); }
+        if (Array.isArray(st.mileage)) { setMileage(st.mileage); lsSave('mileage', st.mileage); }
         if (typeof st.gClientId === 'string' && st.gClientId) { setGClientId(st.gClientId); lsSave('gClientId', st.gClientId); }
       }
       // Re-attach receipts already in Google Drive (fills empty ones only)
@@ -1067,7 +1087,30 @@ function App() {
     if (window._ghLoading || !window._ghReady) return;
     clearTimeout(ghSaveTimer.current);
     ghSaveTimer.current = setTimeout(()=>{ ghSave(latestExpenses.current, latestMedical.current); }, 2000);
-  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards]);
+  },[expenses, medical, theme, logo, cats, province, statCards, gClientId, cards, clients, recurring, mileage]);
+
+  // Monthly recurring expenses: add any that are due (only once sync has finished)
+  const recurringRef = useRef(recurring); recurringRef.current = recurring;
+  useEffect(()=>{
+    function tick(){
+      if (!(window._ghReady || !lsLoad('ghToken',''))) return;
+      const list = recurringRef.current; if (!list || !list.length) return;
+      const today = localToday();
+      const add = [];
+      const upd = list.map(r=>{
+        let nx = r.next, n = 0;
+        while (nx && nx <= today && n < 24) {
+          if (!latestExpenses.current.some(e=>e.recurId===r.id && e.date===nx)) add.push({ id: Date.now()+add.length, ...r.tpl, date: nx, recurId: r.id, receipt: null });
+          nx = addMonth(nx, r.day); n++;
+        }
+        return nx !== r.next ? { ...r, next: nx } : r;
+      });
+      if (add.length) setExpenses(p=>[...p, ...add]);
+      if (upd.some((r,i)=>r!==list[i])) setRecurring(upd);
+    }
+    const t1 = setTimeout(tick, 5000), t2 = setInterval(tick, 60000);
+    return ()=>{ clearTimeout(t1); clearInterval(t2); };
+  },[]);
 
   // Load config + GitHub data on startup
   useEffect(()=>{
@@ -1137,25 +1180,25 @@ function App() {
   }
 
   function exportCSV() {
-    const hdr=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose'];
+    const hdr=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose','Clients'];
     const rows=filtered.map(e=>{
       const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
       const pct=(e.bizPct!=null?e.bizPct:100)/100;
       const c=getCat(e.category);
-      return[e.date,e.vendor,c.label,c.line,e.province||province,`${e.bizPct??100}%`,e.amount,bd.tip,bd.gstPaid,bd.pstPaid,bd.liquor,bd.total,+(bd.gstClaimable*pct).toFixed(2),+(bd.deductibleAmount*pct).toFixed(2),e.payment?.type||'',e.payment?.name||'',e.payment?.last4||'',e.note||''];
+      return[e.date,e.vendor,c.label,c.line,e.province||province,`${e.bizPct??100}%`,e.amount,bd.tip,bd.gstPaid,bd.pstPaid,bd.liquor,bd.total,+(bd.gstClaimable*pct).toFixed(2),+(bd.deductibleAmount*pct).toFixed(2),e.payment?.type||'',e.payment?.name||'',e.payment?.last4||'',e.note||'',(e.clients||[]).join('; ')];
     });
     const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     dl('CRA_Expenses.csv','text/csv',csv);
   }
 
   function exportXLS() {
-    const cols=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose'];
+    const cols=['Date','Vendor','Category','T2125 Line','Province','Business %','Pre-Tax Subtotal','Tip','GST/HST Paid','PST Paid','Other Tax','Receipt Total','GST ITC Claimable','CRA Deductible','Payment Type','Card Name','Card Last 4','Business Purpose','Clients'];
     let tbl='<table><tr>'+cols.map(h=>`<th>${h}</th>`).join('')+'</tr>';
     filtered.forEach(e=>{
       const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats);
       const pct=(e.bizPct!=null?e.bizPct:100)/100;
       const c=getCat(e.category);
-      tbl+=`<tr><td>${e.date}</td><td>${e.vendor}</td><td>${c.label}</td><td>${c.line}</td><td>${e.province||province}</td><td>${e.bizPct??100}%</td><td>${e.amount}</td><td>${bd.tip}</td><td>${bd.gstPaid}</td><td>${bd.pstPaid}</td><td>${bd.liquor}</td><td>${bd.total}</td><td>${+(bd.gstClaimable*pct).toFixed(2)}</td><td>${+(bd.deductibleAmount*pct).toFixed(2)}</td><td>${e.payment?.type||''}</td><td>${e.payment?.name||''}</td><td>${e.payment?.last4||''}</td><td>${e.note||''}</td></tr>`;
+      tbl+=`<tr><td>${e.date}</td><td>${e.vendor}</td><td>${c.label}</td><td>${c.line}</td><td>${e.province||province}</td><td>${e.bizPct??100}%</td><td>${e.amount}</td><td>${bd.tip}</td><td>${bd.gstPaid}</td><td>${bd.pstPaid}</td><td>${bd.liquor}</td><td>${bd.total}</td><td>${+(bd.gstClaimable*pct).toFixed(2)}</td><td>${+(bd.deductibleAmount*pct).toFixed(2)}</td><td>${e.payment?.type||''}</td><td>${e.payment?.name||''}</td><td>${e.payment?.last4||''}</td><td>${e.note||''}</td><td>${(e.clients||[]).join('; ')}</td></tr>`;
     });
     tbl+='</table>';
     const xls=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>CRA Expenses</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>${tbl}</body></html>`;
@@ -1288,9 +1331,9 @@ function App() {
             </div>
           </div>
           <div className="nav">
-            {['dashboard','expenses','categories','medical','summary'].map(t=>(
+            {['dashboard','expenses','categories','medical','summary','mileage'].map(t=>(
               <button key={t} className={`nb${tab===t?' on':''}`} style={{color:T.text,background:t==='medical'&&tab==='medical'?'rgba(236,72,153,.12)':undefined}} onClick={()=>setTab(t)}>
-                <span className="nb-i">{({dashboard:'📊',expenses:'🧾',categories:'🗂️',medical:'🏥',summary:'📈'})[t]}</span><span>{t[0].toUpperCase()+t.slice(1)}</span>
+                <span className="nb-i">{({dashboard:'📊',expenses:'🧾',categories:'🗂️',medical:'🏥',summary:'📈',mileage:'🚗'})[t]}</span><span>{t[0].toUpperCase()+t.slice(1)}</span>
               </button>
             ))}
           </div>
@@ -1338,16 +1381,21 @@ function App() {
       {/* Main */}
       <div className="main">
         {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
-        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{const exp=expenses.find(e=>e.id===id);setExpenses(p=>p.filter(e=>e.id!==id));if(exp?.receipt)setTimeout(()=>gDeleteFile(exp),300);}} onZoom={setFullImg} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
+        {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} onDelete={id=>{const exp=expenses.find(e=>e.id===id);setExpenses(p=>p.filter(e=>e.id!==id));if(exp?.receipt)setTimeout(()=>gDeleteFile(exp),300);}} onZoom={setFullImg} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={setFullImg} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
+        {tab==='mileage'    && <Mileage mileage={mileage} setMileage={setMileage} clients={clients} T={T} dl={dl} />}
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
 
       {/* Modals */}
-      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} onSave={data=>{
+      {modal==='expense'  && <ExpenseModal editId={editId} expense={expenses.find(e=>e.id===editId)} cats={cats} defaultProvince={province} T={T} calcBD={calcBD} apiKey={apiKey} clients={clients} allExpenses={expenses} onSave={(data,opts)=>{
         if(editId) setExpenses(p=>p.map(e=>e.id===editId?{...e,...data}:e));
         else setExpenses(p=>[...p,{id:Date.now(),...data}]);
+        if(!editId && opts && opts.repeat){
+          const day = +data.date.slice(8,10);
+          setRecurring(r=>[...r,{id:Date.now(), day, next:addMonth(data.date, day), tpl:{...data, receipt:null}}]);
+        }
         closeModal();
         // Auto-backup to Drive after save
         setTimeout(()=>handleGDriveBackup(data), 500);
@@ -1357,7 +1405,7 @@ function App() {
       {modal==='statEdit' && editStat  && <StatEditModal stat={editStat} T={T} onSave={p=>{setStatCards(x=>x.map(s=>s.key===editStat.key?{...s,...p}:s));closeModal();}} onClose={closeModal} />}
       {modal==='theme'    && <ThemeModal  theme={T} onSave={t=>{setTheme(t);closeModal();}} onClose={closeModal} />}
       {modal==='logo'     && <LogoModal   logo={logo} T={T} onSave={l=>{setLogo(l);closeModal();}} onClose={closeModal} />}
-      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
+      {modal==='settings' && <SettingsModal cards={cards} setCards={setCards} clients={clients} setClients={setClients} recurring={recurring} setRecurring={setRecurring} apiKey={apiKey} gClientId={gClientId} ghToken={ghToken} T={T} onSave={(k,g,gh)=>{
         const tokenChanged = gh && gh !== lsLoad('ghToken','');
         setApiKey(k);setGClientId(g);setGhToken(gh);lsSave('ghToken', gh);closeModal();
         if (gh && (tokenChanged || !window._ghReady)) {
@@ -1433,12 +1481,16 @@ function Dashboard({filtered,statVals,statCards,cats,province,T,getCat,calcBD,on
 }
 
 // ─── EXPENSES ─────────────────────────────────────────────────────────────────
-function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
+function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,onDetail,onEdit,onDelete,onZoom,exportCSV,exportXLS,importCSV,downloadTemplate,dedupeExpenses}) {
   const fileRef = useRef();
   const PAGE = 60;
   const [limit, setLimit] = useState(PAGE);
   const [rcpt, setRcpt] = useState('all');   // all | with | missing
+  const [cl, setCl] = useState('all');
+  const filteredAll = cl==='all' ? filteredAll0 : filteredAll0.filter(e=>(e.clients||[]).includes(cl));
   const filtered = rcpt==='all' ? filteredAll : filteredAll.filter(e => rcpt==='with' ? !!e.receipt : !e.receipt);
+  const missingN = filteredAll.filter(e=>!e.receipt).length;
+  const clientNames = [...new Set([...(clients||[]), ...filteredAll0.flatMap(e=>e.clients||[])])];
   const shown = filtered.slice(0, limit);
   // Load more rows automatically as you scroll to the bottom
   const sentinelRef = useRef(null);
@@ -1449,7 +1501,7 @@ function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,o
     io.observe(el);
     return ()=>io.disconnect();
   },[limit, filtered.length]);
-  useEffect(()=>{ setLimit(PAGE); },[rcpt]);
+  useEffect(()=>{ setLimit(PAGE); },[rcpt, cl]);
   return(
     <div>
       <div className="xbar">
@@ -1467,6 +1519,13 @@ function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,o
           <option value="with" style={{color:'#000'}}>✓ Has receipt</option>
           <option value="missing" style={{color:'#000'}}>No receipt</option>
         </select>
+        <button className="xbtn" style={{borderColor:rcpt==='missing'?T.amber:T.border,color:rcpt==='missing'?T.amber:T.text}} onClick={()=>setRcpt(rcpt==='missing'?'all':'missing')}>⚠ No receipt ({missingN})</button>
+        {clientNames.length>0 && <>
+          <span style={{fontSize:12,opacity:.5}}>Client:</span>
+          <select value={cl} onChange={e=>setCl(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
+            <option value="all" style={{color:'#000'}}>All</option>
+            {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
+          </select></>}
         <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       </div>
       {filtered.length===0
@@ -1509,6 +1568,7 @@ function Expenses({filtered:filteredAll,cats,province,T,getCat,calcBD,onDetail,o
                   {/* Mobile-only: date */}
                   <div className="mob-only" style={{fontSize:11,opacity:.45,marginBottom:2}}>{e.date}</div>
                   <div className="vname">{e.vendor}</div>
+                  {(e.recurId||(e.clients&&e.clients.length>0))&&<div style={{fontSize:12,opacity:.6,marginTop:2}}>{e.recurId?'🔁 Monthly ':''}{e.clients&&e.clients.length>0?'👤 '+e.clients.join(', '):''}</div>}
                   {e.note&&<div className="vnote">{e.note.length>300?e.note.slice(0,300)+'…':e.note}</div>}
                   {e.payment?.type&&<div style={{fontSize:12,opacity:.45,marginTop:2}}>
                     {payIcon}{' '}{e.payment.name||e.payment.type}{e.payment.last4?` ···· ${e.payment.last4}`:''}
@@ -1663,6 +1723,7 @@ function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,expo
           </tfoot>
         </table>
       </div>
+      <SummaryExtras filtered={filtered} cats={cats} province={province} T={T} calcBD={calcBD} />
       <div className="two">
         <div className="card" style={{background:T.bg2,borderColor:T.border,borderLeft:`3px solid ${T.green}`}}>
           <div style={{fontWeight:700,color:T.green,marginBottom:8}}>📥 GST34 Return — Line 108</div>
@@ -1680,7 +1741,7 @@ function Summary({filtered,statVals,statCards,cats,province,T,getCat,calcBD,expo
 }
 
 // ─── EXPENSE MODAL ────────────────────────────────────────────────────────────
-function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,onSave,onClose,onZoom}) {
+function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,clients,allExpenses,onSave,onClose,onZoom}) {
   const today=new Date().toISOString().split('T')[0];
   const [date,    setDate]    = useState(expense?.date    ||today);
   const [vendor,  setVendor]  = useState(expense?.vendor  ||'');
@@ -1690,6 +1751,9 @@ function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,onSav
   const [receipt, setReceipt] = useState(expense?.receipt ||null);
   const [scanning,setScanning]= useState(false);
   const [scanErr, setScanErr] = useState('');
+  const [clientSel, setClientSel] = useState(expense?.clients || []);
+  const [repeat,  setRepeat]  = useState(false);
+  const [memoMsg, setMemoMsg] = useState('');
   // Payment method
   const [payType,  setPayType]  = useState(expense?.payment?.type  ||'Credit Card');
   const [payLast4, setPayLast4] = useState(expense?.payment?.last4 ||'');
@@ -1710,6 +1774,21 @@ function ExpenseModal({editId,expense,cats,defaultProvince,T,calcBD,apiKey,onSav
   const [amount, setAmount] = useState(expense?.amount!=null?String(expense.amount):'');
 
   const fileRef = useRef();
+  // Vendor memory: reuse category, business %, card and clients from your last expense with this vendor
+  const memoRef = useRef('');
+  useEffect(()=>{
+    if (editId) return;
+    const v = vendor.trim().toLowerCase();
+    if (v.length < 3 || memoRef.current === v) return;
+    const prev = (allExpenses||[]).filter(e=>(e.vendor||'').trim().toLowerCase()===v).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id)[0];
+    if (!prev) return;
+    memoRef.current = v;
+    if (prev.category) setCat(prev.category);
+    if (prev.bizPct != null) setBizPct(String(prev.bizPct));
+    if (prev.payment && !payLast4) { setPayType(prev.payment.type||'Credit Card'); setPayName(prev.payment.name||''); setPayLast4(prev.payment.last4||''); }
+    if (Array.isArray(prev.clients) && prev.clients.length) setClientSel(prev.clients);
+    setMemoMsg('Filled in from your last '+prev.vendor+' expense');
+  },[vendor]);
   const catObj  = cats.find(c=>c.id===cat)||cats[cats.length-1];
   const isGas   = cat==='gas';
 
@@ -1774,7 +1853,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
         : { type:'image',    source:{ type:'base64', media_type: mime.startsWith('image/') ? mime : 'image/jpeg', data:base64 } };
 
       const body = JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-5-5',
         max_tokens: 800,
         messages: [{ role:'user', content:[ fileBlock, { type:'text', text:PROMPT_TEXT } ] }]
       });
@@ -1785,6 +1864,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
         const headers = { 'Content-Type':'application/json', 'anthropic-version':'2023-06-01' };
         if (apiKey) {
           headers['x-api-key'] = apiKey;
+          headers['anthropic-dangerous-direct-browser-access'] = 'true';
         } else {
           headers['anthropic-dangerous-direct-browser-ipc'] = 'true';
         }
@@ -1844,6 +1924,7 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
       reader.onload = ev => {
         setReceipt('__PDF__:' + ev.target.result);
         setScanErr('');
+        if (apiKey) { setScanning(true); doScan(ev.target.result, 'application/pdf'); }
       };
       reader.readAsDataURL(file);
       return;
@@ -1865,6 +1946,8 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
       const compressed = canvas.toDataURL('image/jpeg', 0.75);
       setReceipt(compressed);
       setScanErr('');
+      if (apiKey) { setScanning(true); doScan(compressed, 'image/jpeg'); }
+      else setScanErr('Tip: add an Anthropic API key in Settings and the form will fill itself in from the photo.');
     };
     img.onerror = () => {
       // Fallback: store original
@@ -1879,10 +1962,13 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
     if(!vendor.trim()){alert('Please enter a vendor name.');return;}
     if(isGas && !(parseFloat(gasTotal)>0)){alert('Please enter the total amount paid at the pump.');return;}
     if(!isGas && !(parseFloat(amount)>0)){alert('Please enter a pre-tax amount.');return;}
+    if (!editId && (allExpenses||[]).some(e=>(e.vendor||'').trim().toLowerCase()===vendor.trim().toLowerCase() && e.date===date && Math.abs((e.amount||0)-(parseFloat(amount)||0))<0.005)) {
+      if (!window.confirm('You already have an expense for '+vendor.trim()+' on '+date+' for this amount. Add it anyway?')) return;
+    }
     const savedTax={gst:parseFloat(gst)||0,pst:parseFloat(pst)||0,hasPst,tip:parseFloat(tip)||0,liquor:parseFloat(liquor)||0,other:0,gasMode:isGas,gasTotal:parseFloat(gasTotal)||0};
     const payment={type:payType,last4:payLast4.trim(),name:payName.trim()};
     const pct = Math.min(100, Math.max(0, parseFloat(bizPct)||100));
-    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),receipt,tax:savedTax,payment,bizPct:pct});
+    onSave({date,vendor:vendor.trim(),category:cat,amount:parseFloat(amount),province,note:note.trim(),receipt,tax:savedTax,payment,bizPct:pct,clients:clientSel}, {repeat});
   }
 
   const inp={background:T.bg4,borderColor:T.border,color:T.text};
@@ -1943,7 +2029,8 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
 
         {/* Vendor */}
         <div className="fg"><label className="fl">Vendor / Business Name</label>
-          <input type="text" style={inp} placeholder="e.g. Esso, The Keg, WestJet" value={vendor} onChange={e=>setVendor(e.target.value)}/>
+          <input type="text" style={inp} placeholder="e.g. Esso, The Keg, WestJet" value={vendor} onChange={e=>{setVendor(e.target.value);setMemoMsg('');}}/>
+          {memoMsg && <div style={{fontSize:11,color:T.green,marginTop:4}}>✓ {memoMsg}</div>}
         </div>
 
         {/* Category */}
@@ -2081,6 +2168,26 @@ Rules: gas receipts → total=full pump amount inc. GST. PST only if explicitly 
             </div>
           )}
         </div>
+
+        {/* Clients */}
+        <div className="fg">
+          <label className="fl">Client / met with <span style={{opacity:.5,fontWeight:400}}>(optional)</span></label>
+          {(clients||[]).length===0
+            ? <div style={{fontSize:12,opacity:.5}}>Add your clients in Settings to tag expenses to them.</div>
+            : <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                {(clients||[]).map(c=>{ const on=clientSel.includes(c); return (
+                  <button key={c} type="button" onClick={()=>setClientSel(on?clientSel.filter(x=>x!==c):[...clientSel,c])}
+                    style={{padding:'6px 12px',borderRadius:999,border:`1px solid ${on?T.blue:T.border}`,background:on?'rgba(10,132,255,.18)':T.bg4,color:T.text,fontSize:13,fontWeight:on?600:400}}>{on?'✓ ':''}{c}</button>); })}
+              </div>}
+        </div>
+
+        {/* Repeat monthly */}
+        {!editId && (
+          <label style={{display:'flex',alignItems:'center',gap:10,fontSize:13,margin:'4px 0 14px',cursor:'pointer'}}>
+            <input type="checkbox" checked={repeat} onChange={e=>setRepeat(e.target.checked)} style={{width:18,height:18,flexShrink:0}}/>
+            <span>🔁 Repeat monthly <span style={{opacity:.5}}>(adds this expense on the same day each month)</span></span>
+          </label>
+        )}
 
         {/* Note */}
         <div className="fg">
@@ -2426,8 +2533,155 @@ function SavedCardsEditor({cards, setCards, T, inp}) {
     </div>
   );
 }
+
+function ClientsEditor({clients, setClients, T, inp}) {
+  const [name,setName]=useState('');
+  const add=()=>{ const n=name.trim(); if(!n||clients.includes(n)) return; setClients([...clients,n]); setName(''); };
+  return (
+    <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Clients</div>
+      <div style={{fontSize:11,opacity:.5,marginBottom:12}}>Tag expenses and mileage with who you met. Syncs to all your devices.</div>
+      {clients.length===0 && <div style={{fontSize:12,opacity:.5,marginBottom:10}}>No clients yet.</div>}
+      {clients.map((c,i)=>(
+        <div key={c} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:`1px solid ${T.border}`,fontSize:13}}>
+          <span>👤</span><span style={{flex:1}}>{c}</span>
+          <button type="button" style={{background:'none',border:'none',color:T.red,fontSize:13}} onClick={()=>setClients(clients.filter((_,j)=>j!==i))}>Remove</button>
+        </div>
+      ))}
+      <div style={{display:'flex',gap:8,marginTop:12}}>
+        <input type="text" style={inp} placeholder="Client name, e.g. Pur Pharma" value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();add();}}}/>
+        <button type="button" disabled={!name.trim()} style={{padding:'0 18px',borderRadius:9,background:name.trim()?T.accent:T.bg4,color:name.trim()?'#fff':T.textMuted,fontWeight:600,fontSize:13,flexShrink:0}} onClick={add}>Add</button>
+      </div>
+    </div>
+  );
+}
+function RecurringEditor({recurring, setRecurring, T}) {
+  if (!recurring.length) return null;
+  return (
+    <div style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:18}}>
+      <div style={{fontWeight:600,fontSize:14,marginBottom:2}}>Monthly recurring expenses</div>
+      <div style={{fontSize:11,opacity:.5,marginBottom:10}}>These add themselves each month. Remove one to stop it (past expenses stay).</div>
+      {recurring.map((r,i)=>(
+        <div key={r.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:`1px solid ${T.border}`,fontSize:13}}>
+          <span>🔁</span>
+          <span style={{flex:1}}>{r.tpl.vendor} · {cad(r.tpl.amount)}<span style={{opacity:.5}}> · day {r.day} · next {r.next}</span></span>
+          <button type="button" style={{background:'none',border:'none',color:T.red,fontSize:13}} onClick={()=>setRecurring(recurring.filter((_,j)=>j!==i))}>Remove</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+function SummaryExtras({filtered, cats, province, T, calcBD}) {
+  const num = {fontFamily:"-apple-system,BlinkMacSystemFont,SF Pro Display,SF Pro Text,Inter,system-ui,sans-serif"};
+  const qMap = {}, cMap = {};
+  filtered.forEach(e=>{
+    const bd = calcBD(e.amount, e.province||province, e.category, e.tax, cats);
+    const pct = (e.bizPct!=null?e.bizPct:100)/100;
+    const q = e.date.slice(0,4)+' Q'+(Math.floor((+e.date.slice(5,7)-1)/3)+1);
+    const o = qMap[q] || (qMap[q] = {n:0, gst:0, itc:0});
+    o.n++; o.gst += bd.gstPaid; o.itc += bd.gstClaimable*pct;
+    (e.clients||[]).forEach(c=>{ const x = cMap[c] || (cMap[c]={n:0,g:0,d:0}); x.n++; x.g += e.amount; x.d += bd.deductibleAmount*pct; });
+  });
+  const qs = Object.keys(qMap).sort().reverse(), cs = Object.keys(cMap).sort();
+  const th = {borderColor:T.border};
+  return (
+    <div>
+      <div className="etbl" style={{borderColor:T.border,marginBottom:16}}>
+        <div style={{padding:'13px 17px',borderBottom:`1px solid ${T.border}`,fontSize:15,fontWeight:700,background:T.bg2}}>GST/HST by quarter</div>
+        <table className="stbl">
+          <thead><tr style={{background:T.bg3}}><th style={th}>Quarter</th><th style={th}>Expenses</th><th style={th}>GST/HST paid</th><th style={th}>ITC to claim</th></tr></thead>
+          <tbody>{qs.map(q=>(
+            <tr key={q} style={{borderColor:T.border,background:T.bg2}}>
+              <td style={th}>{q}</td><td style={th}>{qMap[q].n}</td>
+              <td style={{...th,...num}}>{cad(qMap[q].gst)}</td><td style={{...th,...num,color:T.green}}>{cad(qMap[q].itc)}</td>
+            </tr>))}</tbody>
+        </table>
+      </div>
+      {cs.length>0 && (
+        <div className="etbl" style={{borderColor:T.border,marginBottom:16}}>
+          <div style={{padding:'13px 17px',borderBottom:`1px solid ${T.border}`,fontSize:15,fontWeight:700,background:T.bg2}}>By client <span style={{fontSize:11,opacity:.5,fontWeight:400}}>(an expense with two clients counts under both)</span></div>
+          <table className="stbl">
+            <thead><tr style={{background:T.bg3}}><th style={th}>Client</th><th style={th}>Expenses</th><th style={th}>Spent (pre-tax)</th><th style={th}>Deductible</th></tr></thead>
+            <tbody>{cs.map(c=>(
+              <tr key={c} style={{borderColor:T.border,background:T.bg2}}>
+                <td style={th}>👤 {c}</td><td style={th}>{cMap[c].n}</td>
+                <td style={{...th,...num}}>{cad(cMap[c].g)}</td><td style={{...th,...num,color:T.blue}}>{cad(cMap[c].d)}</td>
+              </tr>))}</tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+function Mileage({mileage, setMileage, clients, T, dl}) {
+  const inp={background:T.bg4,borderColor:T.border,color:T.text};
+  const thisYear = String(new Date().getFullYear());
+  const [year,setYear]=useState(thisYear);
+  const [date,setDate]=useState(localToday());
+  const [purpose,setPurpose]=useState('');
+  const [client,setClient]=useState('');
+  const [km,setKm]=useState('');
+  const trips = mileage.filter(m=>m.kind!=='total');
+  const years = [...new Set([thisYear, ...trips.map(m=>m.date.slice(0,4)), ...mileage.filter(m=>m.kind==='total').map(m=>String(m.year))])].sort().reverse();
+  const yTrips = trips.filter(m=>m.date.startsWith(year)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  const bizKm = yTrips.reduce((s,m)=>s+(+m.km||0),0);
+  const totRec = mileage.find(m=>m.kind==='total' && String(m.year)===year);
+  const totKm = totRec ? +totRec.km : 0;
+  const pct = totKm>0 ? Math.min(100, bizKm/totKm*100) : null;
+  function setTotal(v){
+    const n = parseFloat(v)||0;
+    setMileage(p=>{ const rest=p.filter(m=>!(m.kind==='total' && String(m.year)===year)); return n>0?[...rest,{id:Date.now(),kind:'total',year,km:n}]:rest; });
+  }
+  function add(){
+    const k=parseFloat(km); if(!(k>0)||!purpose.trim()){ alert('Enter where you went and the kilometres.'); return; }
+    setMileage(p=>[...p,{id:Date.now(),date,purpose:purpose.trim(),client,km:k}]);
+    setPurpose(''); setKm('');
+  }
+  function exportTrips(){
+    const rows=[['Date','Purpose / destination','Client','Kilometres'],...yTrips.slice().reverse().map(m=>[m.date,m.purpose,m.client||'',m.km])];
+    dl('Mileage_'+year+'.csv','text/csv',rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'));
+  }
+  const num={fontFamily:"-apple-system,BlinkMacSystemFont,SF Pro Display,SF Pro Text,Inter,system-ui,sans-serif"};
+  return (
+    <div>
+      <div className="sgrid" style={{marginBottom:18}}>
+        <div className="sc" style={{background:T.bg2,borderColor:T.border}}><div className="sc-bar" style={{background:T.blue}}/><div className="sc-lbl">Business km</div><div className="sc-val" style={{color:T.blue,...num}}>{bizKm.toLocaleString(undefined,{maximumFractionDigits:1})}</div><div className="sc-sub">{yTrips.length} trip{yTrips.length!==1?'s':''} in {year}</div></div>
+        <div className="sc" style={{background:T.bg2,borderColor:T.border}}><div className="sc-bar" style={{background:T.green}}/><div className="sc-lbl">Business use</div><div className="sc-val" style={{color:T.green,...num}}>{pct==null?'—':pct.toFixed(1)+'%'}</div><div className="sc-sub">{pct==null?'Enter total km below':'of '+totKm.toLocaleString()+' km driven'}</div></div>
+      </div>
+      <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:16}}>
+        <div style={{fontWeight:700,marginBottom:10}}>Log a trip</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+          <div><label className="fl">Date</label><input type="date" style={{...inp,height:34}} value={date} onChange={e=>setDate(e.target.value)}/></div>
+          <div><label className="fl">Kilometres</label><input type="number" inputMode="decimal" style={inp} placeholder="e.g. 24" value={km} onChange={e=>setKm(e.target.value)}/></div>
+        </div>
+        <div className="fg"><label className="fl">Where / why</label><input type="text" style={inp} placeholder="e.g. Meeting at client office, Vancouver" value={purpose} onChange={e=>setPurpose(e.target.value)}/></div>
+        {clients.length>0 && <div className="fg"><label className="fl">Client (optional)</label>
+          <select style={inp} value={client} onChange={e=>setClient(e.target.value)}><option value="">None</option>{clients.map(c=><option key={c}>{c}</option>)}</select></div>}
+        <button style={{width:'100%',padding:'11px',borderRadius:9,background:T.accent,color:'#fff',fontWeight:600,fontSize:14}} onClick={add}>Add trip</button>
+      </div>
+      <div className="xbar">
+        <span style={{fontSize:12,opacity:.5}}>Year:</span>
+        <select value={year} onChange={e=>setYear(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>{years.map(y=><option key={y} style={{color:'#000'}}>{y}</option>)}</select>
+        <span style={{fontSize:12,opacity:.5,marginLeft:8}}>Total km driven in {year} (all uses):</span>
+        <input type="number" inputMode="decimal" key={year+':'+totKm} defaultValue={totKm||''} onBlur={e=>setTotal(e.target.value)} placeholder="e.g. 12000" style={{...inp,width:120}}/>
+        <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportTrips}>📄 CSV</button>
+      </div>
+      {yTrips.length===0
+        ? <div className="empty"><div style={{fontSize:44,marginBottom:12}}>🚗</div><div>No trips logged for {year}</div></div>
+        : <div className="etbl" style={{borderColor:T.border}}>
+            {yTrips.map(m=>(
+              <div key={m.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',borderBottom:`1px solid ${T.border}`,background:T.bg2,fontSize:13}}>
+                <div style={{width:84,opacity:.6,flexShrink:0}}>{m.date}</div>
+                <div style={{flex:1,minWidth:0}}>{m.purpose}{m.client&&<div style={{fontSize:12,opacity:.55}}>👤 {m.client}</div>}</div>
+                <div style={{fontWeight:600,...num}}>{m.km} km</div>
+                <button style={{background:'none',border:'none',color:T.red,fontSize:13}} onClick={()=>{ if(window.confirm('Delete this trip?')) setMileage(p=>p.filter(x=>x.id!==m.id)); }}>✕</button>
+              </div>))}
+          </div>}
+    </div>
+  );
+}
 const DEFAULT_GCID = '327805872148-a83nq1eavafva41bf3qcelerv2jbpv1i.apps.googleusercontent.com';
-function SettingsModal({cards, setCards, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
+function SettingsModal({cards, setCards, clients, setClients, recurring, setRecurring, apiKey, gClientId, ghToken, T, onSave, onClose, onMigrate, localReceipts}) {
   const [key,     setKey]     = useState(apiKey||'');
   const [showKey, setShowKey] = useState(false);
   const [gId,     setGId]     = useState(gClientId||'');
@@ -2466,6 +2720,8 @@ function SettingsModal({cards, setCards, apiKey, gClientId, ghToken, T, onSave, 
 
         {/* ── SAVED CARDS ── */}
         <SavedCardsEditor cards={cards||[]} setCards={setCards} T={T} inp={inp} />
+        <ClientsEditor clients={clients||[]} setClients={setClients} T={T} inp={inp} />
+        <RecurringEditor recurring={recurring||[]} setRecurring={setRecurring} T={T} />
 
         {/* ── GOOGLE DRIVE SECTION ── */}
         <div style={{background:'rgba(66,133,244,.08)',border:'1px solid rgba(66,133,244,.25)',borderRadius:12,padding:'16px',marginBottom:18}}>
@@ -3226,13 +3482,18 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24h</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24i</div>
       </div>
     </div>
   );
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<AppWrapper/>);
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
 </script>
 </body>
 </html>
