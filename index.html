@@ -309,6 +309,37 @@ select.xbtn{width:auto;padding:8px 30px 8px 12px}
   .mclose{width:34px;height:34px}
   button,.nb,.erow{-webkit-tap-highlight-color:transparent}
 }
+
+/* ── MOBILE CLEAN-UP (iPhone) ── */
+.xtools,.xfilters{display:contents}
+.xmore,.fab,.xcount{display:none}
+@media(max-width:480px){
+  .hdr-in{flex-wrap:nowrap!important;overflow:visible!important;gap:8px!important}
+  .logo-area{flex:1 1 auto;min-width:0}
+  .logo-area>div:last-child{min-width:0}
+  .logo-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px!important}
+  .psel{max-width:66px;font-size:14px!important;padding:6px 6px!important}
+  .tbtn{padding:6px 9px!important;font-size:15px!important;flex-shrink:0}
+  .gstat{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));background:#1c1c1e;padding:8px 14px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.5);z-index:400;max-width:90vw!important;font-size:12px!important}
+  .fbar{position:static!important}
+  .fbar-in{display:flex!important;flex-wrap:wrap!important;gap:8px!important;padding:10px 12px!important}
+  .fbar-in>select:nth-of-type(1){flex:0 0 auto}
+  .fbar-in>select:nth-of-type(2){flex:1 1 140px;max-width:none!important}
+  .fbar-in>select:nth-of-type(3){flex:1 1 140px}
+  .fbar-in .fcount,.fbar-in .addbtn{display:none!important}
+  .fbar-in>button,.fbar-in>a{margin-left:0!important}
+  .fab{display:flex;position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;background:#0a84ff;color:#fff;font-size:30px;line-height:1;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(10,132,255,.45);z-index:250;border:none;padding:0 0 3px}
+  .xbar{gap:8px;margin-bottom:12px}
+  .xmore{display:inline-flex}
+  .xcount{display:inline}
+  .xtools{display:none}
+  .xtools.open{display:flex;flex-wrap:wrap;gap:8px;width:100%;align-items:center}
+  .xfilters{display:flex;gap:8px;width:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+  .xfilters::-webkit-scrollbar{display:none}
+  .xfilters>*{flex-shrink:0}
+  .xfilters .xsep{display:none}
+  .xtools .xsep,.xtools>div{display:none}
+}
 </style>
 </head>
 <body>
@@ -478,6 +509,7 @@ function localToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d
 function isLocalReceipt(r) { return typeof r === 'string' && r.length > 0 && !/^https?:\/\//.test(r); }
 function driveId(r){ const m = typeof r==='string' && r.match(/^https:\/\/drive\.google\.com\/(?:uc\?.*[?&]id=|file\/d\/)([\w-]+)/); return m?m[1]:null; }
 function viewSrc(r){ const id=driveId(r); return id?`https://drive.google.com/thumbnail?id=${id}&sz=w1600`:r; }
+function fbImg(r, sz){ return e=>{ const id=driveId(r); if(id && !e.target.dataset.fb){ e.target.dataset.fb='1'; e.target.src=`https://lh3.googleusercontent.com/d/${id}=w${sz}`; } }; }
 function drivePage(r){ const id=driveId(r); return id?`https://drive.google.com/file/d/${id}/view`:r; }
 // Small thumbnail for Drive-hosted receipts so lists never download full-size photos
 function thumbSrc(r) {
@@ -1399,9 +1431,9 @@ function App() {
           <select className="psel" style={{borderColor:T.border,color:T.text}} value={province} onChange={e=>setProvince(e.target.value)}>
             {PROVS.map(p=><option key={p.code} value={p.code}>{p.code}</option>)}
           </select>
-          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')}>🎨 Theme</button>
+          <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('theme')} aria-label="Theme">🎨<span className="mob-hide"> Theme</span></button>
           <button className="tbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>setModal('settings')}><span className="mob-hide">⚙️ Settings</span><span className="mob-only">⚙️</span></button>
-          {gStatus&&<span style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
+          {gStatus&&<span className="gstat" style={{fontSize:11,color:gStatus.startsWith('❌')?T.red:gStatus.startsWith('✅')?T.green:T.blue,maxWidth:200,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{gStatus}</span>}
         </div>
       </div>
 
@@ -1428,7 +1460,7 @@ function App() {
             <option value="amount">Amount (highest)</option>
             <option value="amount_asc">Amount (lowest)</option>
           </select>
-          <span style={{marginLeft:'auto',fontSize:11,opacity:.4,whiteSpace:'nowrap'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
+          <span className="fcount" style={{marginLeft:'auto',fontSize:11,opacity:.4,whiteSpace:'nowrap'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
           <button type="button" onClick={syncNow} title={syncSt.s==='error'?syncSt.msg:syncSt.s==='syncing'?'Syncing…':syncSt.s==='ok'?'Synced. Tap to sync now.':'Tap to sync'} aria-label="Sync now"
              style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:34,height:34,marginLeft:8,borderRadius:10,background:T.bg4,border:`1px solid ${syncSt.s==='error'?T.red:T.border}`,flexShrink:0,fontSize:17,color:syncSt.s==='error'?T.red:syncSt.s==='ok'?T.green:syncSt.s==='syncing'?T.amber:T.textMuted}}>
             <span style={{display:'inline-block',animation:syncSt.s==='syncing'?'kbwspin 1s linear infinite':'none'}}>{syncSt.s==='error'?'⚠':'↻'}</span>
@@ -1451,6 +1483,9 @@ function App() {
         {tab==='summary'    && <Summary    {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} exportCSV={exportCSV} exportXLS={exportXLS} />}
       </div>
 
+      {!modal && ['dashboard','expenses','categories','summary'].includes(tab) && (
+        <button className="fab" aria-label="Add expense" onClick={()=>{setEditId(null);setModal('expense');}}>+</button>
+      )}
       {syncSt.s==='error' && (
         <div style={{position:'fixed',left:12,right:12,bottom:'calc(76px + env(safe-area-inset-bottom))',zIndex:9998,display:'flex',justifyContent:'center',pointerEvents:'none'}}>
           <div style={{pointerEvents:'auto',maxWidth:480,width:'100%',background:'#2a1514',color:'#ffd9d6',border:'1px solid rgba(255,69,58,.5)',borderRadius:14,padding:'12px 14px',fontSize:13,display:'flex',gap:10,alignItems:'center'}}>
@@ -1562,6 +1597,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
   const [rcpt, setRcpt] = useState('all');   // all | with | missing
   const [cl, setCl] = useState('all');
   const [q, setQ] = useState('');
+  const [tools, setTools] = useState(false);
   const qn = q.trim().toLowerCase();
   const filteredAll = filteredAll0.filter(e=>{
     if (cl!=='all' && !(e.clients||[]).includes(cl)) return false;
@@ -1587,10 +1623,13 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
     <div>
       <div style={{position:'relative',marginBottom:10}}>
         <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',opacity:.45,pointerEvents:'none',fontSize:15}}>🔍</span>
-        <input type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vendor, note, category, amount, client, card…" autoComplete="off" autoCorrect="off" spellCheck={false}
+        <input type="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search expenses" autoComplete="off" autoCorrect="off" spellCheck={false}
           style={{background:T.bg2,borderColor:T.border,color:T.text,border:'1px solid',borderRadius:12,padding:'10px 14px 10px 36px',fontSize:15,width:'100%'}}/>
       </div>
       <div className="xbar">
+        <button type="button" className="xbtn xmore" style={{borderColor:T.border,color:T.text}} onClick={()=>setTools(t=>!t)}>⋯ Export &amp; import</button>
+        <span className="xcount" style={{fontSize:12,opacity:.5,marginLeft:'auto'}}>{filtered.length} expense{filtered.length!==1?'s':''}</span>
+        <span className={'xtools'+(tools?' open':'')}>
         <span style={{fontSize:12,opacity:.5}}>Export:</span>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportCSV}>📄 CSV</button>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={exportXLS}>📊 Excel</button>
@@ -1598,7 +1637,9 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
         <span style={{fontSize:12,opacity:.5}}>Import:</span>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={()=>fileRef.current.click()}>⬆ Import CSV</button>
         <button className="xbtn" style={{borderColor:T.border,color:T.text}} onClick={downloadTemplate}>📋 Template</button>
-        <div style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
+        </span>
+        <span className="xfilters">
+        <div className="xsep" style={{width:1,height:20,background:T.border,margin:'0 4px'}}/>
         <select value={rcpt} onChange={e=>setRcpt(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
           <option value="all" style={{color:'#000'}}>All receipts</option>
           <option value="with" style={{color:'#000'}}>✓ Has receipt</option>
@@ -1610,6 +1651,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
             <option value="all" style={{color:'#000'}}>All clients</option>
             {clientNames.map(c=><option key={c} value={c} style={{color:'#000'}}>{c}</option>)}
           </select></span>}
+        </span>
         <input ref={fileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files[0])importCSV(e.target.files[0]);e.target.value='';}}/>
       </div>
       {filtered.length===0
@@ -1639,7 +1681,7 @@ function Expenses({filtered:filteredAll0,clients,cats,province,T,getCat,calcBD,o
                 {receipt
                   ? isPdfReceipt
                     ? <div className="r-icon" style={{borderColor:T.border,background:T.bg4,cursor:'zoom-in',fontSize:20}} onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}>📄</div>
-                    : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
+                    : <img className="r-thumb" style={{borderColor:T.border}} src={thumbSrc(receipt)} onError={fbImg(receipt,120)} referrerPolicy="no-referrer" loading="lazy" decoding="async" alt="" onClick={ev=>{ev.stopPropagation();onZoom(receipt);}}/>
                   : <div className="r-icon" style={{borderColor:T.border,background:T.bg4}}>{c.icon}</div>}
                 {receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(receipt)) window.open(drivePage(receipt),'_blank','noopener'); else onZoom(receipt);}}>✓</span>}
                 </div>
@@ -3009,7 +3051,7 @@ function MedicalTab({medical, setMedical, T, onZoom, onDriveBackup, gClientId}) 
                 {m.receipt
                   ? m.receipt.startsWith('__PDF__:')
                     ? <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,cursor:'zoom-in'}} onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}>📄</div>
-                    : <img src={thumbSrc(m.receipt)} loading="lazy" style={{width:40,height:40,borderRadius:7,objectFit:'cover',border:`1px solid ${T.border}`,cursor:'zoom-in'}} alt="" onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}/>
+                    : <img src={thumbSrc(m.receipt)} onError={fbImg(m.receipt,120)} referrerPolicy="no-referrer" loading="lazy" style={{width:40,height:40,borderRadius:7,objectFit:'cover',border:`1px solid ${T.border}`,cursor:'zoom-in'}} alt="" onClick={ev=>{ev.stopPropagation();onZoom(m.receipt);}}/>
                   : <div style={{width:40,height:40,borderRadius:7,background:T.bg4,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🧾</div>
                 }
                 {m.receipt && <span className="r-tick" title="Receipt saved" onClick={ev=>{ev.stopPropagation(); if(/^https?:/.test(m.receipt)) window.open(drivePage(m.receipt),'_blank','noopener'); else onZoom(m.receipt);}}>✓</span>}
@@ -3333,7 +3375,7 @@ function ReceiptLightbox({src, onClose}) {
         </div>
       </div>
       {displayUrl
-        ? <img src={displayUrl} alt="Receipt" onError={e=>{ if(isDriveUrl && !e.target.dataset.fb){ e.target.dataset.fb='1'; e.target.src=raw; } }}
+        ? <img src={displayUrl} alt="Receipt" onError={e=>{ if(isDriveUrl){ const n=+e.target.dataset.fb||0; e.target.dataset.fb=String(n+1); const id=driveId(raw); if(n===0&&id) e.target.src=`https://lh3.googleusercontent.com/d/${id}=w1600`; else if(n===1) e.target.src=raw; } }} referrerPolicy="no-referrer"
             style={{maxWidth:'90vw',maxHeight:'86vh',objectFit:'contain',borderRadius:12,boxShadow:'0 0 80px rgba(0,0,0,.9)',cursor:'default',display:'block'}}
             onClick={e=>e.stopPropagation()}/>
         : <div style={{color:'rgba(255,255,255,.5)',fontSize:14}}>Loading…</div>
@@ -3566,7 +3608,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24o</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.24p</div>
       </div>
     </div>
   );
