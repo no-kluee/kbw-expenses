@@ -3531,8 +3531,8 @@ async function makeInvoicePdfClean(inv, prof, logoImg) {
   const txt=(t,x,y,o={})=>{ d.setFont('helvetica',o.b?'bold':'normal'); d.setFontSize(o.s||10); d.setTextColor(...(o.c||INK)); d.text(String(t),x,y,{align:o.a||'left',charSpace:o.cs||0}); };
   const hr=(y,x1=M,x2=R,c=LINE)=>{ d.setDrawColor(...c); d.setLineWidth(.6); d.line(x1,y,x2,y); };
   // top row: logo + invoice number
-  if (logoImg) { try { const f=/^data:image\/(png|jpe?g)/i.exec(logoImg); d.addImage(logoImg,f?f[1].toUpperCase().replace('JPG','JPEG'):'PNG',M,M-6,34,34); } catch(e){} }
-  txt('Invoice No. '+inv.num,R,M+15,{s:10.5,a:'right',c:GRY});
+  if (logoImg) { try { const f=/^data:image\/(png|jpe?g)/i.exec(logoImg); d.addImage(logoImg,f?f[1].toUpperCase().replace('JPG','JPEG'):'PNG',M-9,M-14,58,58); } catch(e){} }
+  txt('Invoice No. '+inv.num,R,M+19,{s:10.5,a:'right',c:GRY});
   // title + hero amount
   txt('Invoice',M,150,{b:1,s:34});
   const label=paid?'Paid in full':'Amount due';
@@ -4888,7 +4888,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26i</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26j</div>
       </div>
     </div>
   );
