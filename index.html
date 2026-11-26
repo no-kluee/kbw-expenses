@@ -3985,15 +3985,21 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
             <div className="fg"><label className="fl">Cc (optional)</label><input style={inp} type="email" value={cmp.cc} onChange={e=>setCmp(x=>({...x,cc:e.target.value}))}/></div>
             <div className="fg"><label className="fl">Subject</label><input style={inp} value={cmp.subject} onChange={e=>setCmp(x=>({...x,subject:e.target.value}))}/></div>
             <div className="fg"><label className="fl">Message</label><textarea style={{...inp,minHeight:140,fontFamily:'inherit'}} value={cmp.body} onChange={e=>setCmp(x=>({...x,body:e.target.value}))}/></div>
-            <div style={{fontSize:12,opacity:.6,margin:'2px 0 6px'}}>Attached: {cmp.fname}</div>
-            <label style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,margin:'0 0 10px',cursor:'pointer'}}><input type="checkbox" checked={cmp.sig!==false} onChange={e=>setCmp(x=>({...x,sig:e.target.checked}))}/> Add my Gmail signature when sent</label>
+            <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',border:'1px solid '+T.border,borderRadius:10,margin:'4px 0 12px'}}>
+              <div style={{width:34,height:40,borderRadius:6,background:'rgba(255,69,58,.14)',color:'#ff453a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,flex:'none'}}>PDF</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13.5,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cmp.fname}</div>
+                <div style={{fontSize:11.5,opacity:.55}}>Attached to the email</div>
+              </div>
+              <button style={{...bs,padding:'7px 12px',flex:'none'}} disabled={cmp.busy} onClick={()=>preview(cmp.i)}>Preview</button>
+            </div>
+            <label style={{display:'flex',alignItems:'center',justifyContent:'flex-start',gap:10,fontSize:13,margin:'0 0 14px',cursor:'pointer',width:'auto'}}><input type="checkbox" style={{width:18,height:18,flex:'none',margin:0,padding:0}} checked={cmp.sig!==false} onChange={e=>setCmp(x=>({...x,sig:e.target.checked}))}/><span>Add my Gmail signature when sent</span></label>
             {cmp.ok && <div style={{color:T.green,fontSize:12.5,marginBottom:10}}>{cmp.ok}</div>}
             {cmp.err && <div style={{color:T.red,fontSize:12.5,marginBottom:10}}>{cmp.err}</div>}
-            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-              <button style={{...bs,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={()=>doGmail(false)}>{cmp.busy?'Sending…':(cmp.from?'Send from '+cmp.from.split('@')[0]:'Send from my Gmail')}</button>
-              <button style={bs} disabled={cmp.busy} onClick={()=>doGmail(true)}>Send test to me</button>
-              <button style={bs} disabled={cmp.busy} onClick={()=>preview(cmp.i)}>Preview PDF</button>
-              <button style={bs} disabled={cmp.busy} onClick={shareIt}>Share / other app</button>
+            <button style={{...bs,width:'100%',padding:'13px 16px',fontSize:15,fontWeight:600,background:T.blue,color:'#fff',borderColor:T.blue}} disabled={cmp.busy} onClick={()=>doGmail(false)}>{cmp.busy?'Sending…':(cmp.from?'Send from '+cmp.from:'Send from my Gmail')}</button>
+            <div style={{display:'flex',gap:8,marginTop:8}}>
+              <button style={{...bs,flex:1}} disabled={cmp.busy} onClick={()=>doGmail(true)}>Send test to me</button>
+              <button style={{...bs,flex:1}} disabled={cmp.busy} onClick={shareIt}>Share / other app</button>
             </div>
           </div>
         </div>
@@ -5010,7 +5016,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26s</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26t</div>
       </div>
     </div>
   );
