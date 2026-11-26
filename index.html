@@ -1114,7 +1114,7 @@ function App() {
     } catch(err) {
       console.error(err);
       setGStatus('❌ ' + (err.message||'Drive error'));
-      setTimeout(()=>setGStatus(''), 5000);
+      setTimeout(()=>setGStatus(''), 20000);
     }
     setGSyncing(false);
   }
@@ -1227,7 +1227,7 @@ function App() {
     } catch(err) {
       console.error(err);
       setGStatus('❌ ' + (err.message||'Drive error'));
-      setTimeout(()=>setGStatus(''), 5000);
+      setTimeout(()=>setGStatus(''), 20000);
     }
     setGSyncing(false);
   }
@@ -1264,7 +1264,7 @@ function App() {
     } catch(err) {
       console.error(err);
       setGStatus('❌ ' + (err.message||'Drive error'));
-      setTimeout(()=>setGStatus(''), 6000);
+      setTimeout(()=>setGStatus(''), 20000);
     }
     setGSyncing(false);
   }
@@ -1861,7 +1861,13 @@ function App() {
       {/* Main */}
       <div className="bodyrow">
       <div className={"main"+(tab!=='expenses'?" fluid":"")}>
-        {tab==='dashboard'  && <Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
+        {gClientId && (()=>{ const nLoc=expenses.filter(e=>isLocalReceipt(e.receipt)).length+medical.filter(m=>isLocalReceipt(m.receipt)).length; return nLoc>0 && (
+          <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',padding:'10px 14px',borderRadius:12,marginBottom:14,background:'rgba(255,159,10,.14)',border:'1px solid rgba(255,159,10,.35)',fontSize:13}}>
+            <div style={{flex:1,minWidth:200}}><b>{nLoc} receipt{nLoc>1?'s are':' is'} only on this device.</b> {nLoc>1?'They':'It'} won't show on your other devices until uploaded to Google Drive.</div>
+            <button style={{padding:'8px 14px',borderRadius:9,background:T.accent,color:'#fff',fontWeight:600,fontSize:13,border:'none'}} disabled={gSyncing} onClick={moveReceiptsToDrive}>{gSyncing?'Uploading…':'Upload now'}</button>
+          </div>); })()}
+        {gStatus && gStatus.startsWith('❌') && <div style={{padding:'10px 14px',borderRadius:12,marginBottom:14,background:'rgba(255,69,58,.14)',border:'1px solid rgba(255,69,58,.35)',fontSize:13}}>{gStatus.slice(2).trim()}</div>}
+        {tab==='dashboard'  &&<Dashboard  {...{filtered,statVals,statCards,cats,province,T,getCat,calcBD}} onDetail={e=>{setDetailExp(e);setModal('detail');}} onEditStat={s=>{setEditStat(s);setModal('statEdit');}} />}
         {tab==='expenses'   && <Expenses   {...{filtered,cats,province,T,getCat,calcBD,clients}} selectedId={dExp?dExp.id:null} onDetail={e=>{setDetailExp(e); if(!wide) setModal('detail');}} onEdit={id=>{setEditId(id);setModal('expense');}} sortKey={filter.sort} onAdd={()=>{setEditId(null);setModal('expense');}} onDelete={id=>deleteExpenses([id])} onBulkDelete={ids=>deleteExpenses(ids)} onBulk={bulkApply} onReview={()=>setReviewOpen(true)} onZoom={zoomTo} exportCSV={exportCSV} exportXLS={exportXLS} importCSV={importCSV} downloadTemplate={downloadTemplate} dedupeExpenses={dedupeExpenses} />}
         {tab==='categories' && <Categories {...{filtered,cats,province,T,getCat,calcBD}} onEditCat={c=>{setEditCat(c);setModal('catEdit');}} />}
         {tab==='medical'    && <MedicalTab medical={medical} setMedical={setMedical} T={T} onZoom={zoomTo} onDriveBackup={handleMedicalDriveBackup} gClientId={gClientId} />}
@@ -3755,9 +3761,10 @@ function calcTax26(net,other,rrsp){
   const bcTax = Math.max(0, brkTax(netInc,bc.brk)-(bc.bpa+credPart)*bc.low-red);
   return {se,cpp1,cpp2,cppTotal:cpp1+cpp2,netInc,fedTax,bcTax,incomeTax:fedTax+bcTax,total:fedTax+bcTax+cpp1+cpp2};
 }
-function TaxCard({invoices,expenses,province,cats,year,tax,setTax,T,num,bs,inp}){
+function TaxCard({invoices,expenses,province,cats,year,tax,setTax,T,num,bs,inp,dl,days}){
   const t=tax||{};
   const [open,setOpen]=useState(false);
+  const [sv,setSv]=useState('');
   const thisY=String(new Date().getFullYear());
   const isCur=year===thisY;
   const mode=t.mode||(isCur?'proj':'ytd');
@@ -3777,6 +3784,30 @@ function TaxCard({invoices,expenses,province,cats,year,tax,setTax,T,num,bs,inp})
   const pct=rev>0?c.total/rev*100:0;
   const row=(l,v,o={})=><React.Fragment><div style={{opacity:o.dim?0.55:0.75,paddingLeft:o.ind?12:0,fontWeight:o.b?700:400,borderTop:o.line?`1px solid ${T.border}`:'none',paddingTop:o.line?8:0}}>{l}</div><div style={{textAlign:'right',fontWeight:o.b?700:400,color:o.c,borderTop:o.line?`1px solid ${T.border}`:'none',paddingTop:o.line?8:0}}>{v}</div></React.Fragment>;
   const set=(k,v)=>setTax({...t,[k]:v});
+  // Saved-for-taxes tracker: what you have moved aside vs the bill due April 30 of next year
+  const saved=Array.isArray(t.saved)?t.saved:[];
+  const savedTot=saved.reduce((s,x)=>s+(+x.amount||0),0);
+  const bill=c.total+Math.max(0,gstNet);
+  const left=bill-savedTot;
+  const dueD=new Date(+year+1,3,30), t0=new Date(); t0.setHours(0,0,0,0);
+  const payDays=((days&&days.length)?days:[1,15]).map(Number);
+  let nPay=0; if(dueD>=t0){ for(let d=new Date(t0);d<=dueD;d.setDate(d.getDate()+1)) if(payDays.includes(d.getDate())) nPay++; }
+  const addSaved=()=>{ const a=parseFloat(sv); if(!(a>0)) return; set('saved',[...saved,{id:Date.now(),date:localToday(),amount:a}]); setSv(''); };
+  function exportYear(){
+    const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+    const yi=invoices.filter(i=>i.date.startsWith(year)&&(i.sent||i.paid)&&!i.void);
+    const rows=[['KBW year-end summary',year],['Estimate only, not tax advice'],[]];
+    rows.push(['INCOME'],['Month','Invoiced before GST','GST charged']);
+    for(let m=1;m<=12;m++){ const k=year+'-'+String(m).padStart(2,'0'); const l=yi.filter(i=>i.date.startsWith(k)); if(l.length) rows.push([k,l.reduce((s,i)=>s+invSub(i),0).toFixed(2),l.reduce((s,i)=>s+invGst(i),0).toFixed(2)]); }
+    rows.push(['Total',r.rev.toFixed(2),r.gstC.toFixed(2)],[]);
+    rows.push(['EXPENSES BY T2125 LINE'],['Line','Category','Count','Amount before tax','Deductible','GST credit (ITC)']);
+    const byCat={}; expenses.filter(e=>e.date.startsWith(year)).forEach(e=>{ const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats); const p=(e.bizPct!=null?e.bizPct:100)/100; const o=(byCat[e.category]=byCat[e.category]||{n:0,g:0,d:0,i:0}); o.n++; o.g+=e.amount*p; o.d+=bd.deductibleAmount*p; o.i+=bd.gstClaimable*p; });
+    Object.keys(byCat).map(id=>({c:cats.find(x=>x.id===id)||{id,label:id,line:''},o:byCat[id]})).sort((a,b)=>String(a.c.line).localeCompare(String(b.c.line))).forEach(({c:ct,o})=>rows.push([ct.line,ct.label,o.n,o.g.toFixed(2),o.d.toFixed(2),o.i.toFixed(2)]));
+    rows.push(['','Total','','',r.ded.toFixed(2),r.itc.toFixed(2)],[]);
+    const f1=(isCur&&mode==='proj')?f:1; const c1=calcTax26(r.rev-r.ded,other,rrsp);
+    rows.push(['TAX ESTIMATE (actual to date, BC resident, 2026 rates)'],['Net business income',(r.rev-r.ded).toFixed(2)],['CPP',c1.cppTotal.toFixed(2)],['Federal income tax',c1.fedTax.toFixed(2)],['BC income tax',c1.bcTax.toFixed(2)],['Total tax and CPP',c1.total.toFixed(2)],[],['GST charged',r.gstC.toFixed(2)],['GST credits on expenses',r.itc.toFixed(2)],['GST to remit',(r.gstC-r.itc).toFixed(2)]);
+    dl('KBW_Year_End_'+year+'.csv','text/csv',rows.map(x=>x.map(q).join(',')).join('\n'));
+  }
   return (
     <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
       <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
@@ -3798,7 +3829,27 @@ function TaxCard({invoices,expenses,province,cats,year,tax,setTax,T,num,bs,inp})
       <div style={{marginTop:10,padding:'9px 12px',borderRadius:9,background:'rgba(255,159,10,.12)',fontSize:13,...num}}>
         {rev>0 ? <>Set aside about <b>{pct.toFixed(0)}%</b> of every payment (before GST). Separately, GST to remit so far: <b>{cad(Math.max(0,gstNet))}</b>.</> : 'No invoices sent yet this year.'}
       </div>
-      <button style={{background:'none',border:'none',color:T.accent,fontSize:12,marginTop:8,padding:0}} onClick={()=>setOpen(o=>!o)}>{open?'Hide details':'Details and assumptions'}</button>
+      <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${T.border}`}}>
+        <div style={{fontWeight:600,fontSize:14,marginBottom:6}}>Saved for taxes</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',rowGap:5,fontSize:14,...num}}>
+          <div style={{opacity:.7}}>Tax + CPP + GST due April 30, {+year+1}</div><div style={{textAlign:'right'}}>{cad(bill)}</div>
+          <div style={{opacity:.7}}>Moved aside so far</div><div style={{textAlign:'right',color:T.green}}>{cad(savedTot)}</div>
+          <div style={{fontWeight:700}}>{left>0?'Still to save':'Ahead by'}</div><div style={{textAlign:'right',fontWeight:700,color:left>0?T.amber:T.green}}>{cad(Math.abs(left))}</div>
+        </div>
+        {left>0&&nPay>0&&<div style={{fontSize:13,marginTop:6,opacity:.8}}>About <b>{cad(left/nPay)}</b> from each of your next {nPay} payments gets you there.</div>}
+        <div style={{display:'flex',gap:8,marginTop:10}}>
+          <input type="number" inputMode="decimal" style={inp} placeholder="Amount you moved aside" value={sv} onChange={e=>setSv(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') addSaved(); }}/>
+          <button style={{...bs,flexShrink:0}} onClick={addSaved}>Add</button>
+        </div>
+        {saved.length>0&&<div style={{marginTop:8,fontSize:12}}>
+          {saved.slice().reverse().slice(0,open?100:3).map(x=>(<div key={x.id} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 0',opacity:.8}}><span style={{flex:1}}>{x.date}</span><span style={num}>{cad(x.amount)}</span><button style={{background:'none',border:'none',color:T.red,fontSize:12}} onClick={()=>{ if(window.confirm('Remove this entry?')) set('saved',saved.filter(y=>y.id!==x.id)); }}>✕</button></div>))}
+          {!open&&saved.length>3&&<div style={{opacity:.5}}>and {saved.length-3} more in Details</div>}
+        </div>}
+      </div>
+      <div style={{display:'flex',gap:14,flexWrap:'wrap',marginTop:8}}>
+        <button style={{background:'none',border:'none',color:T.accent,fontSize:12,padding:0}} onClick={()=>setOpen(o=>!o)}>{open?'Hide details':'Details and assumptions'}</button>
+        <button style={{background:'none',border:'none',color:T.accent,fontSize:12,padding:0}} onClick={exportYear}>Download year-end summary (CSV)</button>
+      </div>
       {open && <div style={{marginTop:10}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
           <div className="fg"><label className="fl">Other income (optional)</label><input type="number" inputMode="decimal" style={inp} placeholder="0" value={t.other||''} onChange={e=>set('other',e.target.value)}/></div>
@@ -4009,7 +4060,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
         <div style={{fontSize:11,opacity:.5,marginTop:8}}>Based on invoice dates. Check against your GST filing method before you file.</div>
       </div>
 
-      <TaxCard {...{invoices,expenses,province,cats,year,T,num,bs,inp}} tax={P.tax} setTax={v=>setP('tax',v)} />
+      <TaxCard {...{invoices,expenses,province,cats,year,T,num,bs,inp,dl}} days={P.recur.days} tax={P.tax} setTax={v=>setP('tax',v)} />
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
         <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={newInvoice}>+ New invoice</button>
@@ -5159,7 +5210,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26u</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26v</div>
       </div>
     </div>
   );
