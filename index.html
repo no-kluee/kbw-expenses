@@ -3877,6 +3877,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
   const [year,setYear]=useState(thisYear);
   const [period,setPeriod]=useState('year');
   const [edit,setEdit]=useState(null);          // invoice being edited
+  const [sub,setSub]=useState('inv');
   const [showSet,setShowSet]=useState(false);
   const [showCl,setShowCl]=useState(false);
   const [prv,setPrv]=useState(null);   // PDF preview
@@ -4041,27 +4042,15 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
 
   return (
     <div>
+      <div style={{display:'flex',gap:4,padding:3,borderRadius:11,background:T.bg4,border:`1px solid ${T.border}`,marginBottom:14,maxWidth:340}}>
+        {[['inv','Invoices'],['tax','Taxes']].map(([k,l])=>(<button key={k} onClick={()=>setSub(k)} style={{flex:1,padding:'8px 12px',borderRadius:9,border:'none',fontSize:13,fontWeight:600,cursor:'pointer',background:sub===k?T.accent:'transparent',color:sub===k?'#fff':T.text,opacity:sub===k?1:.7}}>{l}</button>))}
+      </div>
+
+      {sub==='inv' && (<>
       <div className="sgrid" style={{marginBottom:14}}>
         <div className="sc" style={{background:T.bg2,borderColor:T.border}}><div className="sc-bar" style={{background:T.blue}}/><div className="sc-lbl">Invoiced {year}</div><div className="sc-val" style={{color:T.blue,...num}}>{cad(invoices.filter(i=>i.date.startsWith(year)&&(i.sent||i.paid)).reduce((s,i)=>s+invSub(i),0))}</div><div className="sc-sub">before GST</div></div>
         <div className="sc" style={{background:T.bg2,borderColor:T.border}}><div className="sc-bar" style={{background:unpaid>0?T.amber:T.green}}/><div className="sc-lbl">Waiting to be paid</div><div className="sc-val" style={{color:unpaid>0?T.amber:T.green,...num}}>{cad(unpaid)}</div><div className="sc-sub">{drafts?`${drafts} draft${drafts>1?'s':''} not sent`:'all sent'}</div></div>
       </div>
-
-      <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
-          <div style={{fontWeight:700,flex:1}}>GST to remit</div>
-          <select value={period} onChange={e=>setPeriod(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
-            <option style={{color:'#000'}} value="year">Whole year</option><option style={{color:'#000'}} value="q1">Jan to Mar</option><option style={{color:'#000'}} value="q2">Apr to Jun</option><option style={{color:'#000'}} value="q3">Jul to Sep</option><option style={{color:'#000'}} value="q4">Oct to Dec</option>
-          </select>
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr auto',rowGap:6,fontSize:14,...num}}>
-          <div style={{opacity:.7}}>GST charged on invoices sent</div><div style={{textAlign:'right'}}>{cad(gstC)}</div>
-          <div style={{opacity:.7}}>GST paid on expenses (ITCs)</div><div style={{textAlign:'right'}}>- {cad(itc)}</div>
-          <div style={{fontWeight:700,borderTop:`1px solid ${T.border}`,paddingTop:8}}>{net>=0?'You owe':'Refund'}</div><div style={{textAlign:'right',fontWeight:700,borderTop:`1px solid ${T.border}`,paddingTop:8,color:net>=0?T.amber:T.green}}>{cad(Math.abs(net))}</div>
-        </div>
-        <div style={{fontSize:11,opacity:.5,marginTop:8}}>Based on invoice dates. Check against your GST filing method before you file.</div>
-      </div>
-
-      <TaxCard {...{invoices,expenses,province,cats,year,T,num,bs,inp,dl}} days={P.recur.days} tax={P.tax} setTax={v=>setP('tax',v)} />
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
         <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={newInvoice}>+ New invoice</button>
@@ -4158,6 +4147,29 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                 </div>}
               </div>);})}
           </div>}
+      </>)}
+
+      {sub==='tax' && (<>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}><span style={{fontSize:12,opacity:.5}}>Year:</span><select value={year} onChange={e=>setYear(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>{years.map(y=><option key={y} style={{color:'#000'}}>{y}</option>)}</select></div>
+
+      <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+          <div style={{fontWeight:700,flex:1}}>GST to remit</div>
+          <select value={period} onChange={e=>setPeriod(e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
+            <option style={{color:'#000'}} value="year">Whole year</option><option style={{color:'#000'}} value="q1">Jan to Mar</option><option style={{color:'#000'}} value="q2">Apr to Jun</option><option style={{color:'#000'}} value="q3">Jul to Sep</option><option style={{color:'#000'}} value="q4">Oct to Dec</option>
+          </select>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',rowGap:6,fontSize:14,...num}}>
+          <div style={{opacity:.7}}>GST charged on invoices sent</div><div style={{textAlign:'right'}}>{cad(gstC)}</div>
+          <div style={{opacity:.7}}>GST paid on expenses (ITCs)</div><div style={{textAlign:'right'}}>- {cad(itc)}</div>
+          <div style={{fontWeight:700,borderTop:`1px solid ${T.border}`,paddingTop:8}}>{net>=0?'You owe':'Refund'}</div><div style={{textAlign:'right',fontWeight:700,borderTop:`1px solid ${T.border}`,paddingTop:8,color:net>=0?T.amber:T.green}}>{cad(Math.abs(net))}</div>
+        </div>
+        <div style={{fontSize:11,opacity:.5,marginTop:8}}>Based on invoice dates. Check against your GST filing method before you file.</div>
+      </div>
+
+      <TaxCard {...{invoices,expenses,province,cats,year,T,num,bs,inp,dl}} days={P.recur.days} tax={P.tax} setTax={v=>setP('tax',v)} />
+      </>)}
+
 
       {prv && (
         <div className="ov" style={{zIndex:1200}} onClick={closePrv}>
@@ -5211,7 +5223,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26w</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26x</div>
       </div>
     </div>
   );
