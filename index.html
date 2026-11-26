@@ -3438,6 +3438,22 @@ function SummaryExtras({filtered, cats, province, T, calcBD}) {
     </div>
   );
 }
+// Address to distance: OpenStreetMap search + OSRM driving route (free, no key)
+const _geoCache={};
+async function geocodeAddr(q){
+  const k=q.trim().toLowerCase(); if(_geoCache[k]) return _geoCache[k];
+  const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ca&q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});
+  if(!r.ok) throw new Error('Address search is busy. Try again in a moment.');
+  const j=await r.json(); if(!j.length) throw new Error('Could not find "'+q+'". Add the city, e.g. "123 Main St, Burnaby".');
+  return (_geoCache[k]={lat:+j[0].lat,lon:+j[0].lon});
+}
+async function drivingKm(a,b){
+  const A=await geocodeAddr(a); await new Promise(r=>setTimeout(r,1100)); const B=await geocodeAddr(b);
+  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lon},${A.lat};${B.lon},${B.lat}?overview=false`);
+  if(!r.ok) throw new Error('Route lookup failed. Try again, or type the km.');
+  const j=await r.json(); if(!j.routes||!j.routes.length) throw new Error('No driving route found between those addresses.');
+  return j.routes[0].distance/1000;
+}
 function Mileage({mileage, setMileage, clients, T, dl}) {
   const inp={background:T.bg4,borderColor:T.border,color:T.text};
   const thisYear = String(new Date().getFullYear());
@@ -3446,7 +3462,29 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
   const [purpose,setPurpose]=useState('');
   const [client,setClient]=useState('');
   const [km,setKm]=useState('');
-  const trips = mileage.filter(m=>m.kind!=='total');
+  const [from,setFrom]=useState('');
+  const [to,setTo]=useState('');
+  const [round,setRound]=useState(true);
+  const [calc,setCalc]=useState({busy:false,err:'',note:''});
+  const places = mileage.filter(m=>m.kind==='place');
+  const resolveAddr = v => { const p=places.find(x=>x.name.toLowerCase()===v.trim().toLowerCase()); return p?p.addr:v.trim(); };
+  async function calcKm(){
+    if(!from.trim()||!to.trim()){ setCalc({busy:false,err:'Enter a start and an end address.',note:''}); return; }
+    setCalc({busy:true,err:'',note:''});
+    try{
+      const one=await drivingKm(resolveAddr(from),resolveAddr(to));
+      const tot=one*(round?2:1);
+      setKm(String(Math.round(tot*10)/10));
+      setCalc({busy:false,err:'',note:`${one.toFixed(1)} km each way${round?', doubled for the return trip':''}. You can edit the number.`});
+    }catch(e){ setCalc({busy:false,err:(e&&e.message)||'Could not work out the distance. Type the km instead.',note:''}); }
+  }
+  function savePlace(v,setV){
+    const addr=v.trim(); if(!addr) return;
+    const name=(window.prompt('Name this place (e.g. Home, Office, BFC)')||'').trim(); if(!name) return;
+    setMileage(p=>[...p.filter(m=>!(m.kind==='place'&&m.name.toLowerCase()===name.toLowerCase())),{id:Date.now(),kind:'place',name,addr}]);
+    setV(name);
+  }
+  const trips = mileage.filter(m=>!m.kind);
   const years = [...new Set([thisYear, ...trips.map(m=>m.date.slice(0,4)), ...mileage.filter(m=>m.kind==='total').map(m=>String(m.year))])].sort().reverse();
   const yTrips = trips.filter(m=>m.date.startsWith(year)).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
   const bizKm = yTrips.reduce((s,m)=>s+(+m.km||0),0);
@@ -3459,8 +3497,10 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
   }
   function add(){
     const k=parseFloat(km); if(!(k>0)||!purpose.trim()){ alert('Enter where you went and the kilometres.'); return; }
-    setMileage(p=>[...p,{id:Date.now(),date,purpose:purpose.trim(),client,km:k}]);
-    setPurpose(''); setKm('');
+    const t={id:Date.now(),date,purpose:purpose.trim(),client,km:k};
+    if(from.trim()&&to.trim()){ t.from=from.trim(); t.to=to.trim(); t.round=round; }
+    setMileage(p=>[...p,t]);
+    setPurpose(''); setKm(''); setTo(''); setCalc({busy:false,err:'',note:''});
   }
   function exportTrips(){
     const rows=[['Date','Purpose / destination','Client','Kilometres'],...yTrips.slice().reverse().map(m=>[m.date,m.purpose,m.client||'',m.km])];
@@ -3475,6 +3515,22 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
       </div>
       <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:16}}>
         <div style={{fontWeight:700,marginBottom:10}}>Log a trip</div>
+        <datalist id="kbw-places">{places.map(p=><option key={p.id} value={p.name}/>)}</datalist>
+        <div className="fg"><label className="fl">From</label>
+          <div style={{display:'flex',gap:6}}><input type="text" list="kbw-places" style={inp} placeholder="Address or a saved place, e.g. Home" value={from} onChange={e=>setFrom(e.target.value)}/>
+            {from.trim()&&!places.some(p=>p.name.toLowerCase()===from.trim().toLowerCase())&&<button type="button" title="Save this address" style={{padding:'0 12px',borderRadius:9,border:`1px solid ${T.border}`,background:T.bg4,color:T.text,fontSize:13,flexShrink:0}} onClick={()=>savePlace(from,setFrom)}>Save</button>}</div></div>
+        <div className="fg"><label className="fl">To</label>
+          <div style={{display:'flex',gap:6}}><input type="text" list="kbw-places" style={inp} placeholder="Address or a saved place" value={to} onChange={e=>setTo(e.target.value)}/>
+            {to.trim()&&!places.some(p=>p.name.toLowerCase()===to.trim().toLowerCase())&&<button type="button" title="Save this address" style={{padding:'0 12px',borderRadius:9,border:`1px solid ${T.border}`,background:T.bg4,color:T.text,fontSize:13,flexShrink:0}} onClick={()=>savePlace(to,setTo)}>Save</button>}</div></div>
+        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:calc.err||calc.note?6:12}}>
+          <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}><input type="checkbox" style={{width:'auto',margin:0}} checked={round} onChange={e=>setRound(e.target.checked)}/>Round trip</label>
+          <button type="button" disabled={calc.busy} style={{padding:'8px 14px',borderRadius:9,border:`1px solid ${T.border}`,background:T.bg4,color:T.text,fontSize:13,fontWeight:600,opacity:calc.busy?.6:1}} onClick={calcKm}>{calc.busy?'Working it out…':'Calculate km'}</button>
+        </div>
+        {calc.err&&<div style={{fontSize:12,color:T.red,marginBottom:10}}>{calc.err}</div>}
+        {calc.note&&<div style={{fontSize:12,color:T.green,marginBottom:10}}>{calc.note}</div>}
+        {places.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+          {places.map(p=><span key={p.id} title={p.addr} style={{fontSize:12,padding:'4px 9px',borderRadius:99,background:T.bg4,border:`1px solid ${T.border}`}}>📍 {p.name}<button type="button" aria-label={'Remove '+p.name} style={{background:'none',border:'none',color:T.red,fontSize:12,marginLeft:5,padding:0}} onClick={()=>{ if(window.confirm('Remove saved place "'+p.name+'"?')) setMileage(q=>q.filter(x=>x.id!==p.id)); }}>✕</button></span>)}
+        </div>}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
           <div><label className="fl">Date</label><input type="date" style={{...inp,height:34}} value={date} onChange={e=>setDate(e.target.value)}/></div>
           <div><label className="fl">Kilometres</label><input type="number" inputMode="decimal" style={inp} placeholder="e.g. 24" value={km} onChange={e=>setKm(e.target.value)}/></div>
@@ -3497,7 +3553,7 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
             {yTrips.map(m=>(
               <div key={m.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',borderBottom:`1px solid ${T.border}`,background:T.bg2,fontSize:13}}>
                 <div style={{width:84,opacity:.6,flexShrink:0}}>{m.date}</div>
-                <div style={{flex:1,minWidth:0}}>{m.purpose}{m.client&&<div style={{fontSize:12,opacity:.55}}>👤 {m.client}</div>}</div>
+                <div style={{flex:1,minWidth:0}}>{m.purpose}{m.from&&m.to&&<div style={{fontSize:12,opacity:.55}}>{m.from} → {m.to}{m.round?' and back':''}</div>}{m.client&&<div style={{fontSize:12,opacity:.55}}>👤 {m.client}</div>}</div>
                 <div style={{fontWeight:600,...num}}>{m.km} km</div>
                 <button style={{background:'none',border:'none',color:T.red,fontSize:13}} onClick={()=>{ if(window.confirm('Delete this trip?')) setMileage(p=>p.filter(x=>x.id!==m.id)); }}>✕</button>
               </div>))}
@@ -3507,7 +3563,7 @@ function Mileage({mileage, setMileage, clients, T, dl}) {
 }
 
 // ─── INCOME / INVOICES ────────────────────────────────────────────────────────
-const INV_DEF = {name:'',addr:'',phone:'',gstNo:'',gstRate:5,notes:'',startNum:1,customers:[],mail:{accounts:[]},
+const INV_DEF = {name:'',addr:'',phone:'',gstNo:'',gstRate:5,notes:'',startNum:1,customers:[],mail:{accounts:[]},tax:{},
   recur:{on:false,customer:'',desc:'',amount:'',days:[1,15],since:'',skip:[]}};
 const JSPDF_URL='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 function loadJsPdf(){
@@ -3676,6 +3732,91 @@ async function gmailSendMail(token,{to,cc,subject,body,fname,pdf64,tokKey,sigHtm
   const raw=btoa(mime).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({raw})});
   if(!r.ok){ if(r.status===401&&tokKey) delete _gmTok[tokKey]; let m=''; try{ m=(await r.json()).error.message; }catch(e){} throw new Error(r.status===403?'Gmail is not switched on for this app yet. '+m:'Gmail said no ('+r.status+'). '+m); }
+}
+
+// ─── TAX ESTIMATE (2026 federal + BC, self-employed) ─────────────────────────
+const TAX26={
+  fed:{brk:[[58523,.14],[117045,.205],[181440,.26],[258482,.2929],[Infinity,.33]],bpaMax:16452,bpaMin:14829,bpaLo:181440,bpaHi:258482,low:.14},
+  bc:{brk:[[50363,.056],[100728,.077],[115648,.105],[140430,.1229],[190405,.147],[265545,.168],[Infinity,.205]],bpa:13216,low:.056,redMax:690,redThr:25570,redRate:.0356},
+  cpp:{ympe:74600,yampe:85000,ex:3500,rate:.119,base:.0495,cpp2:.08}
+};
+function brkTax(inc,brk){ let t=0,prev=0; for(const [top,r] of brk){ if(inc>prev) t+=(Math.min(inc,top)-prev)*r; prev=top; if(inc<=top) break; } return t; }
+function calcTax26(net,other,rrsp){
+  const {fed,bc,cpp}=TAX26, se=Math.max(0,net);
+  const cppEarn = se>cpp.ex ? Math.min(se,cpp.ympe)-cpp.ex : 0;
+  const cpp1 = cppEarn*cpp.rate;
+  const cpp2 = se>cpp.ympe ? (Math.min(se,cpp.yampe)-cpp.ympe)*cpp.cpp2 : 0;
+  const credPart = cppEarn*cpp.base;                 // basic CPP half that earns a tax credit
+  const cppDed = cpp1+cpp2-credPart;                  // rest is deducted from income
+  const netInc = Math.max(0, se+other-cppDed-rrsp);
+  const bpa = netInc<=fed.bpaLo ? fed.bpaMax : netInc>=fed.bpaHi ? fed.bpaMin : fed.bpaMax-(fed.bpaMax-fed.bpaMin)*(netInc-fed.bpaLo)/(fed.bpaHi-fed.bpaLo);
+  const fedTax = Math.max(0, brkTax(netInc,fed.brk)-(bpa+credPart)*fed.low);
+  const red = Math.max(0, bc.redMax-bc.redRate*Math.max(0,netInc-bc.redThr));
+  const bcTax = Math.max(0, brkTax(netInc,bc.brk)-(bc.bpa+credPart)*bc.low-red);
+  return {se,cpp1,cpp2,cppTotal:cpp1+cpp2,netInc,fedTax,bcTax,incomeTax:fedTax+bcTax,total:fedTax+bcTax+cpp1+cpp2};
+}
+function TaxCard({invoices,expenses,province,cats,year,tax,setTax,T,num,bs,inp}){
+  const t=tax||{};
+  const [open,setOpen]=useState(false);
+  const thisY=String(new Date().getFullYear());
+  const isCur=year===thisY;
+  const mode=t.mode||(isCur?'proj':'ytd');
+  const now=new Date(), dayN=Math.max(1,Math.round((now-new Date(now.getFullYear(),0,1))/864e5)+1), dIY=(now.getFullYear()%4===0)?366:365;
+  const f=(isCur&&mode==='proj')?Math.min(12,dIY/Math.max(dayN,31)):1;
+  const r=useMemo(()=>{
+    const yi=invoices.filter(i=>i.date.startsWith(year)&&(i.sent||i.paid)&&!i.void);
+    const rev=yi.reduce((s,i)=>s+invSub(i),0), gstC=yi.reduce((s,i)=>s+invGst(i),0);
+    let ded=0,itc=0;
+    expenses.filter(e=>e.date.startsWith(year)).forEach(e=>{ const bd=calcBD(e.amount,e.province||province,e.category,e.tax,cats); const p=(e.bizPct!=null?e.bizPct:100)/100; ded+=bd.deductibleAmount*p; itc+=bd.gstClaimable*p; });
+    return {rev,gstC,ded,itc};
+  },[invoices,expenses,year,province,cats]);
+  const rev=r.rev*f, ded=r.ded*f, net=rev-ded, other=parseFloat(t.other)||0, rrsp=parseFloat(t.rrsp)||0, paid=parseFloat(t.paid)||0;
+  const c=calcTax26(net,other,rrsp);
+  const gstNet=r.gstC-r.itc;
+  const owe=c.total-paid;
+  const pct=rev>0?c.total/rev*100:0;
+  const row=(l,v,o={})=><React.Fragment><div style={{opacity:o.dim?0.55:0.75,paddingLeft:o.ind?12:0,fontWeight:o.b?700:400,borderTop:o.line?`1px solid ${T.border}`:'none',paddingTop:o.line?8:0}}>{l}</div><div style={{textAlign:'right',fontWeight:o.b?700:400,color:o.c,borderTop:o.line?`1px solid ${T.border}`:'none',paddingTop:o.line?8:0}}>{v}</div></React.Fragment>;
+  const set=(k,v)=>setTax({...t,[k]:v});
+  return (
+    <div className="card" style={{background:T.bg2,borderColor:T.border,marginBottom:14}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+        <div style={{fontWeight:700,flex:1}}>Tax estimate {year}</div>
+        {isCur && <select value={mode} onChange={e=>set('mode',e.target.value)} className="xbtn" style={{borderColor:T.border,color:T.text,background:'transparent'}}>
+          <option style={{color:'#000'}} value="proj">Projected full year</option><option style={{color:'#000'}} value="ytd">Year to date</option></select>}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr auto',rowGap:6,fontSize:14,...num}}>
+        {row('Invoiced (before GST)'+(f>1?' projected':''),cad(rev))}
+        {row('Business expenses (deductible)','- '+cad(ded))}
+        {row('Net business income',cad(net),{b:1,line:1})}
+        {row('CPP (self-employed)',cad(c.cppTotal))}
+        {row('Federal income tax',cad(c.fedTax))}
+        {row('BC income tax',cad(c.bcTax))}
+        {row(paid>0?'Total tax + CPP':'Estimated you owe CRA',cad(c.total),{b:1,line:1,c:T.amber})}
+        {paid>0 && row('Already paid / instalments','- '+cad(paid))}
+        {paid>0 && row(owe>=0?'Still to pay':'Refund',cad(Math.abs(owe)),{b:1,c:owe>=0?T.amber:T.green})}
+      </div>
+      <div style={{marginTop:10,padding:'9px 12px',borderRadius:9,background:'rgba(255,159,10,.12)',fontSize:13,...num}}>
+        {rev>0 ? <>Set aside about <b>{pct.toFixed(0)}%</b> of every payment (before GST). Separately, GST to remit so far: <b>{cad(Math.max(0,gstNet))}</b>.</> : 'No invoices sent yet this year.'}
+      </div>
+      <button style={{background:'none',border:'none',color:T.accent,fontSize:12,marginTop:8,padding:0}} onClick={()=>setOpen(o=>!o)}>{open?'Hide details':'Details and assumptions'}</button>
+      {open && <div style={{marginTop:10}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <div className="fg"><label className="fl">Other income (optional)</label><input type="number" inputMode="decimal" style={inp} placeholder="0" value={t.other||''} onChange={e=>set('other',e.target.value)}/></div>
+          <div className="fg"><label className="fl">RRSP deduction (optional)</label><input type="number" inputMode="decimal" style={inp} placeholder="0" value={t.rrsp||''} onChange={e=>set('rrsp',e.target.value)}/></div>
+          <div className="fg" style={{gridColumn:'1/-1'}}><label className="fl">Tax already paid or instalments (optional)</label><input type="number" inputMode="decimal" style={inp} placeholder="0" value={t.paid||''} onChange={e=>set('paid',e.target.value)}/></div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr auto',rowGap:5,fontSize:13,marginTop:6,...num}}>
+          {row('Taxable income (after CPP deduction'+(rrsp?' and RRSP':'')+')',cad(c.netInc),{dim:1})}
+          {row('CPP, base and enhanced',cad(c.cpp1),{dim:1,ind:1})}
+          {row('CPP2 (above $'+TAX26.cpp.ympe.toLocaleString()+')',cad(c.cpp2),{dim:1,ind:1})}
+          {row('GST charged on invoices',cad(r.gstC),{dim:1})}
+          {row('GST paid on expenses (ITCs)','- '+cad(r.itc),{dim:1})}
+          {row(gstNet>=0?'GST to remit':'GST refund',cad(Math.abs(gstNet)),{dim:1})}
+        </div>
+        <div style={{fontSize:11,opacity:.55,marginTop:10,lineHeight:1.5}}>An estimate, not tax advice. Uses 2026 federal and BC rates for a BC resident, and counts invoices sent in {year} (not when paid). Expenses are your deductible amounts after the 50% meals rule and business-use %. Includes the basic personal amount, CPP credit and BC tax reduction credit. Not included: medical, donation, tuition and other credits, the GST/HST credit benefit, and any employment income unless you add it above. Projection scales the year so far to a full year, so early in the year it can swing. Your accountant or CRA's numbers are what count.</div>
+      </div>}
+    </div>
+  );
 }
 
 function Income({invoices, setInvoices, prof, setProf, expenses, province, cats, T, dl, logoImg, gClientId}) {
@@ -3867,6 +4008,8 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
         </div>
         <div style={{fontSize:11,opacity:.5,marginTop:8}}>Based on invoice dates. Check against your GST filing method before you file.</div>
       </div>
+
+      <TaxCard {...{invoices,expenses,province,cats,year,T,num,bs,inp}} tax={P.tax} setTax={v=>setP('tax',v)} />
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
         <button style={{...bs,background:T.accent,color:'#fff',border:'none'}} onClick={newInvoice}>+ New invoice</button>
@@ -5016,7 +5159,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26t</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26u</div>
       </div>
     </div>
   );
