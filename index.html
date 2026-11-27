@@ -3949,7 +3949,7 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
     delete i._new; delete i.gst; setInvoices(p=>p.some(x=>x.id===i.id)?p.map(x=>x.id===i.id?i:x):[...p,i]); setEdit(null); setMsg('');
   }
   function delInvoice(i){
-    if(!window.confirm('Delete invoice '+i.num+'? This cannot be undone here.')) return;
+    if(!window.confirm('Delete invoice #'+i.num+' for good? This cannot be undone.'+((i.sent||i.paid)&&!i.void?'\n\nThis one was sent to a client. Void keeps its number on record, so Void is usually the better choice.':''))) return;
     setInvoices(p=>p.filter(x=>x.id!==i.id));
     if(i.rk) setProf({...P,recur:{...P.recur,skip:[...(P.recur.skip||[]),i.rk]}});
     setEdit(null);
@@ -4135,15 +4135,16 @@ function Income({invoices, setInvoices, prof, setProf, expenses, province, cats,
                   <span style={{padding:'3px 9px',borderRadius:20,fontSize:11,fontWeight:600,background:c[0],color:c[1]}}>{s}</span>
                   <div style={{fontWeight:600,minWidth:84,textAlign:'right',...num}}>{cad(invTot(i))}</div>
                 </div>
-                {i.imported && /^https:\/\/next\.waveapps\.com\//.test(i.waveUrl||'') && <div style={{marginTop:6}}><a href={i.waveUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12}} onClick={e=>e.stopPropagation()}>View in Wave</a>{/^https:\/\/drive\.google\.com\//.test(i.pdfUrl||'') && <a href={i.pdfUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12,marginLeft:14}} onClick={e=>e.stopPropagation()}>Wave PDF (Drive)</a>}</div>}
-                {i.imported && <div style={{display:'flex',gap:8,marginTop:8}}><button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>{i.void?<button style={bs} onClick={()=>unvoid(i)}>Restore</button>:<button style={{...bs,color:T.red}} onClick={()=>voidInv(i)}>Void</button>}</div>}
-                {!i.imported && <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap'}}>
+                {i.imported && /^https:\/\/drive\.google\.com\//.test(i.pdfUrl||'') && <div style={{marginTop:6}}><a href={i.pdfUrl} target="_blank" rel="noopener noreferrer" style={{color:T.blue,fontSize:12}} onClick={e=>e.stopPropagation()}>View PDF</a></div>}
+                {i.imported && <div style={{display:'flex',gap:8,marginTop:8,alignItems:'center'}}><button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>{i.void?<button style={bs} onClick={()=>unvoid(i)}>Restore</button>:<button style={{...bs,color:T.red}} onClick={()=>voidInv(i)}>Void</button>}<button style={{marginLeft:'auto',background:'none',border:'none',color:T.text,opacity:.4,fontSize:12,padding:'6px 4px',cursor:'pointer'}} onClick={()=>delInvoice(i)}>Delete</button></div>}
+                {!i.imported && <div style={{display:'flex',gap:8,marginTop:8,flexWrap:'wrap',alignItems:'center'}}>
                   {!i.void && <button style={bs} disabled={busy===i.id} onClick={()=>send(i)}>{busy===i.id?'Working…':(i.sent?'Send again':'Send')}</button>}
                   <button style={bs} onClick={()=>preview(i)}>Preview</button>
                   <button style={bs} onClick={()=>download(i)}>PDF</button>
                   <button style={bs} onClick={()=>dupInvoice(i)}>Duplicate</button>
                   {!i.paid && !i.void && <button style={{...bs,color:T.green}} onClick={()=>markPaid(i)}>Mark paid</button>}
                   {i.void?<button style={bs} onClick={()=>unvoid(i)}>Restore</button>:<button style={{...bs,color:T.red}} onClick={()=>voidInv(i)}>Void</button>}
+                  <button style={{marginLeft:'auto',background:'none',border:'none',color:T.text,opacity:.4,fontSize:12,padding:'6px 4px',cursor:'pointer'}} onClick={()=>delInvoice(i)}>Delete</button>
                 </div>}
               </div>);})}
           </div>}
@@ -5223,7 +5224,7 @@ function PinScreen({pinInput, setPinInput, pinError, onSubmit, prompt, bioReady,
             🔓 Use Face ID / Touch ID
           </button>
         )}
-        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26x</div>
+        <div style={{fontSize:11,opacity:.3,marginTop:24}}>Tap the dots to use your keypad · Your PIN is the same on all your devices · v2026.11.26y</div>
       </div>
     </div>
   );
